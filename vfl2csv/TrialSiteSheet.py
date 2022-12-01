@@ -48,17 +48,24 @@ class TrialSiteSheet:
          4. number of measurements
         The 3. and 4. row are not important, the 1. and 2. form together the new column name in the format 'YYYY-XYZ'
         where YYYY is the year when the measurements where taken and XYZ is the type of measurement, so one of D, Aus and H. 
-        
         PyCharm reports a wrong type missmatch, so let's supress that:
         '''
+        # TODO: more elaborate column indexing: dont use only year, but also take growing season into account
         # noinspection PyTypeChecker
         df.columns = (
             'Bestandeseinheit',
             'Baumart',
-            'Baumnummer'
-            * [f'{multi_index[1]}_{multi_index[0].year}' for multi_index in self.data.columns[3:]]
+            'Baumnummer',
+            *[f'{multi_index[1]}_{multi_index[0].year}' for multi_index in df.columns[3:]]
         )
 
-        # Also, the first column 'Bestandeseinheit' / tree population id is not actually needed, so let's remove it
+        # Also, the first column 'Bestandeseinheit' / tree population id is not actually needed, so let's discard it
         df = df.drop(columns='Bestandeseinheit')
         return df
+
+    def write_data(self, filepath: Path):
+        self.data.to_csv(filepath, na_rep='NA', index=False)
+
+    def write_metadata(self, filepath: Path):
+        with open(filepath, 'w') as file:
+            file.writelines([f'{key}="{value}"\n' for key, value in self.metadata.items()])
