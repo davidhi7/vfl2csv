@@ -62,13 +62,13 @@ class TrialSiteSheet:
         where YYYY is the year when the measurements where taken and XYZ is the type of measurement, so one of D, Aus and H. 
         PyCharm reports a wrong type missmatch, so let's supress that:
         '''
-        # TODO: more elaborate column indexing: dont use only year, but also take growing season into account
         # noinspection PyTypeChecker
+        # TODO: column labels using years: resserach how to take growing seasons into account
         df.columns = (
             'Bestandeseinheit',
             'Baumart',
             'Baumnummer',
-            *[f'{multi_index[1]}_{multi_index[0].year}' for multi_index in df.columns[3:]]
+            *[f'{multi_index[1]}_{multi_index[0].year - (0 if multi_index[0].month > 6 else 1)}' for multi_index in df.columns[3:]]
         )
 
         # Also, the first column 'Bestandeseinheit' / tree population id is not actually needed, so let's discard it
