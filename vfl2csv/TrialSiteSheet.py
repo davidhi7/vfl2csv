@@ -1,39 +1,51 @@
+import io
 from pathlib import Path
 import openpyxl
 import pandas as pd
 
 
 class TrialSiteSheet:
-    def __init__(self, filepath: Path, sheet_name: str):
-        self.filepath = filepath
+    def __init__(self, open_workbook: openpyxl.Workbook, input_file: io.BytesIO, sheet_name: str):
+        """
+        Create a new trial site sheet object.
+        This class acts as abstraction for the low level work with different data formats.
+        :param open_workbook: Already loaded openpyxl workbook from the input file
+        :param input_file: BytesIO object containing the binary input file data
+        :param sheet_name: Name of the sheet containing all trial site data
+        """
+        self.open_workbook = open_workbook
+        self.input_file = input_file
         self.sheet_name = sheet_name
         self.metadata = self.parse_metadata()
         self.data = self.parse_data()
 
-    def parse_metadata(self):
+    def parse_metadata(self) -> dict[str, str]:
         """
         Parse the metadata from the Excel file.
         :return: Dict
         """
-        # open excel file directly to extract metadata
-        excel_file = openpyxl.load_workbook(filename=self.filepath, read_only=True)
-        sheet = excel_file[self.sheet_name]
+        # instead of loading from the BytesIO object over and over, just use the already loaded worksheet from __main__
+        # excel_file = openpyxl.load_workbook(self.input_file)
+        # sheet = excel_file[self.sheet_name]
+        sheet = self.open_workbook[self.sheet_name]
 
         # extract metadata saved in the columns A5:A11 in a 'key : value' format
         metadata = dict()
-        for row in sheet.iter_rows(min_row=5, max_row=11, min_col=1, max_col=1, values_only=True):
-            key, value = row[0].split(':')
+        # less legible syntax:
+        # for row in sheet.iter_rows(min_row=5, max_row=11, min_col=1, max_col=1, values_only=True):
+        for row in sheet['A5:A11']:
+            key, value = row[0].value.split(':')
             metadata[key.strip()] = value.strip()
         return metadata
 
-    def parse_data(self):
+    def parse_data(self) -> pd.DataFrame:
         """
         Parse the measurement data from the Excel file and return it in the target format.
         :return: DataFrame
         """
         # Read the file again, this time using pandas to create dataframe directly.
         # Everything before row 14 is only metadata that is being handled in a different function.
-        df = pd.read_excel(self.filepath, sheet_name=self.sheet_name, header=list(range(0, 4)), skiprows=13)
+        df = pd.read_excel(self.input_file, sheet_name=self.sheet_name, header=list(range(0, 4)), skiprows=13)
         '''
         Rename columns: The first three columns provide the tree population, tree species and tree id, then measurements follow.
         For each measurement recording, there are three columns:
@@ -63,9 +75,19 @@ class TrialSiteSheet:
         df = df.drop(columns='Bestandeseinheit')
         return df
 
-    def write_data(self, filepath: Path):
+    def write_data(self, filepath: Path) -> None:
+        """
+        Write data formatted in CSV to the provided filepath.
+        :param filepath: File path to save the data to
+        :return:
+        """
         self.data.to_csv(filepath, na_rep='NA', index=False)
 
-    def write_metadata(self, filepath: Path):
+    def write_metadata(self, filepath: Path) -> None:
+        """
+        Write extracted metadata formatted in simple key="value" pairs to the provided filepath.
+        :param filepath: File path to save the metadata to
+        :return:
+        """
         with open(filepath, 'w') as file:
             file.writelines([f'{key}="{value}"\n' for key, value in self.metadata.items()])
