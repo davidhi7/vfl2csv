@@ -1,0 +1,7 @@
+Forstamt=5622   Mühlhausen
+Revier=Langula
+Versuch=09201
+Parzelle=01
+Teilfläche=518 a2
+Standort=Uff-R2
+Höhenlage=426
