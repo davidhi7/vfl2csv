@@ -63,7 +63,7 @@ class TrialSiteSheet:
         PyCharm reports a wrong type missmatch, so let's supress that:
         '''
         # noinspection PyTypeChecker
-        # TODO: column labels using years: resserach how to take growing seasons into account
+        # TODO: column labels using years: research how to take growing seasons into account
         df.columns = (
             'Bestandeseinheit',
             'Baumart',
@@ -90,4 +90,4 @@ class TrialSiteSheet:
         :return:
         """
         with open(filepath, 'w') as file:
-            file.writelines([f'{key}="{value}"\n' for key, value in self.metadata.items()])
+            file.writelines([f'{key}={value}\n' for key, value in self.metadata.items()])
