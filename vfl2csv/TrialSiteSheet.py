@@ -79,6 +79,20 @@ class TrialSiteSheet:
     def simplify_column_labels(hierarchy: tuple) -> str:
         return f'{hierarchy[1]}_{hierarchy[0].year - (0 if hierarchy[0].month > 6 else 1)}'
 
+    def replace_metadata_keys(self, pattern: str) -> Path:
+        """
+        Return the given string with metadata keys being replaced with the corresponding values.
+        Metadata keys wrapped in curly brackets are replaced with the corresponding value.
+        E.g. When invoking this function with the parameter '{Forstamt}/', the return value is '1234 sample forstamt/'
+        :param pattern: string containing a variable number of metadata keys
+        :return: string with metadata values in place of the keys in the pattern
+        """
+        # wrap every key in curly brackets; get the items
+        metadata_replacements = {f'{{{key}}}': value for key, value in self.metadata.items()}.items()
+        for key, value in metadata_replacements:
+            pattern = pattern.replace(key.lower(), value)
+        return pattern
+
     def write_data(self, filepath: Path) -> None:
         """
         Write data formatted in CSV to the provided filepath.
