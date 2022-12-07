@@ -47,8 +47,8 @@ class TrialSiteSheet:
         # Everything before row 14 is only metadata that is being handled in a different function.
         df = pd.read_excel(self.input_file, sheet_name=self.sheet_name, header=list(range(0, 4)), skiprows=13)
         '''
-        Rename columns: The first three columns provide the tree population, tree species and tree id, then measurements follow.
-        For each measurement recording, there are three columns:
+        Rename columns: The first three columns provide the tree population (Bestandeseinheit), tree species (Baumart)
+        and tree id (Baumnummer), then measurements follow. For each measurement recording, there are three columns:
          1. D: Durchmesser / diameter
          2. Aus: Ausscheidungskennung / reason why a tree ceased to stand in the trial site
          3. H: Höhe / height
@@ -58,12 +58,11 @@ class TrialSiteSheet:
          2. type of measurement (see above)
          3. unit of the measurement
          4. number of measurements
-        The 3. and 4. row are not important, the 1. and 2. form together the new column name in the format 'YYYY-XYZ'
-        where YYYY is the year when the measurements where taken and XYZ is the type of measurement, so one of D, Aus and H. 
+        The 3. and 4. row are not important, the 1. and 2. form together the new column name in the format 'YYYY-ABC'
+        where YYYY is the year when the measurements where taken and ABC is the type of measurement, so one of D, Aus and H. 
         PyCharm reports a wrong type missmatch, so let's supress that:
         '''
         # noinspection PyTypeChecker
-        # TODO: column labels using years: research how to take growing seasons into account
         df.columns = (
             'Bestandeseinheit',
             'Baumart',
@@ -77,6 +76,12 @@ class TrialSiteSheet:
 
     @staticmethod
     def simplify_column_labels(hierarchy: tuple) -> str:
+        """
+        Reformat measurement column labels for the dataframe.
+        See comments of #parse_data for more explainations
+        :param hierarchy: Tuple consisting of four values
+        :return: simplified label matching the requirements
+        """
         return f'{hierarchy[1]}_{hierarchy[0].year - (0 if hierarchy[0].month > 6 else 1)}'
 
     def replace_metadata_keys(self, pattern: str) -> Path:
