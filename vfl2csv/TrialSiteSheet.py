@@ -68,12 +68,16 @@ class TrialSiteSheet:
             'Bestandeseinheit',
             'Baumart',
             'Baumnummer',
-            *[f'{multi_index[1]}_{multi_index[0].year - (0 if multi_index[0].month > 6 else 1)}' for multi_index in df.columns[3:]]
+            *[self.simplify_column_labels(multi_index) for multi_index in df.columns[3:]]
         )
 
         # Also, the first column 'Bestandeseinheit' / tree population id is not actually needed, so let's discard it
         df = df.drop(columns='Bestandeseinheit')
         return df
+
+    @staticmethod
+    def simplify_column_labels(hierarchy: tuple) -> str:
+        return f'{hierarchy[1]}_{hierarchy[0].year - (0 if hierarchy[0].month > 6 else 1)}'
 
     def write_data(self, filepath: Path) -> None:
         """

@@ -1,3 +1,4 @@
+import datetime
 import io
 import filecmp
 import unittest
@@ -10,15 +11,14 @@ import pandas as pd
 from TrialSiteSheet import TrialSiteSheet
 
 
-# PyCharm notes a lot of allegedly unresolved references; those inspections are wrong
-# noinspection PyUnresolvedReferences
-class MyTestCase(unittest.TestCase):
-    temp_dir = Path('res/test/temp')
-    test_filename = Path('res/test/test_data.xlsx')
+class TestTrialSiteSheet(unittest.TestCase):
+    test_resources = Path('res/test')
+    temp_dir = test_resources / 'tmp'
+    test_filename = test_resources / 'test_data.xlsx'
     worksheet_name = '09201_518a2'
 
-    test_data_reference_filename = Path(f'res/test/{worksheet_name}/data.csv')
-    test_metadata_reference_filename = Path(f'res/test/{worksheet_name}/metadata.txt')
+    test_data_reference_filename = test_resources / f'{worksheet_name}/data.csv'
+    test_metadata_reference_filename = test_resources / f'{worksheet_name}/metadata.txt'
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -37,12 +37,12 @@ class MyTestCase(unittest.TestCase):
         self.test_workbook = openpyxl.load_workbook(self.input_file)
         self.test_worksheet = self.test_workbook[self.worksheet_name]
 
-    def test_TrialSiteSheet_parseData(self) -> None:
+    def test_parseData(self) -> None:
         trial_site_sheet = TrialSiteSheet(self.test_workbook, self.input_file, self.worksheet_name)
         self.assertIsInstance(trial_site_sheet.data, pd.DataFrame)
         self.assertTrue(trial_site_sheet.data.equals(self.test_data_reference))
 
-    def test_TrialSiteSheet_parseMetadata(self) -> None:
+    def test_parseMetadata(self) -> None:
         trial_site_sheet = TrialSiteSheet(self.test_workbook, self.input_file, self.worksheet_name)
         self.assertIsInstance(trial_site_sheet.metadata, dict)
         self.assertEqual(trial_site_sheet.metadata, {
@@ -55,15 +55,32 @@ class MyTestCase(unittest.TestCase):
             'Höhenlage': '426'
         })
 
-    def test_TrialSiteSheet_writeData(self) -> None:
+    def test_writeData(self) -> None:
         trial_site_sheet = TrialSiteSheet(self.test_workbook, self.input_file, self.worksheet_name)
         trial_site_sheet.write_data(self.temp_dir / 'data.csv')
-        filecmp.cmp(self.temp_dir / 'data.csv', self.test_data_reference_filename)
+        self.assertTrue(filecmp.cmp(self.temp_dir / 'data.csv', self.test_data_reference_filename, shallow=False))
 
-    def test_TrialSiteSheet_writeMetadata(self) -> None:
+    def test_writeMetadata(self) -> None:
         trial_site_sheet = TrialSiteSheet(self.test_workbook, self.input_file, self.worksheet_name)
         trial_site_sheet.write_metadata(self.temp_dir / 'metadata.txt')
-        filecmp.cmp(self.temp_dir / 'metadata.txt', self.test_metadata_reference_filename)
+        self.assertTrue(
+            filecmp.cmp(self.temp_dir / 'metadata.txt', self.test_metadata_reference_filename, shallow=False))
+
+    def test_simplifyColumnLabels_first_two_quarters(self) -> None:
+        self.assertEqual('D_2021', TrialSiteSheet.simplify_column_labels(
+                             (datetime.date.fromisoformat('2022-01-01'), 'D', 'cm', '0')
+        ))
+        self.assertEqual('H_2021', TrialSiteSheet.simplify_column_labels(
+            (datetime.date.fromisoformat('2022-06-30'), 'H', 'm', '0')
+        ))
+
+    def test_simplifyColumnLabels_last_two_quarters(self) -> None:
+        self.assertEqual('D_2022', TrialSiteSheet.simplify_column_labels(
+                             (datetime.date.fromisoformat('2022-07-01'), 'D', 'cm', '0')
+        ))
+        self.assertEqual('H_2022', TrialSiteSheet.simplify_column_labels(
+            (datetime.date.fromisoformat('2022-12-31'), 'H', 'm', '0')
+        ))
 
 
 if __name__ == '__main__':
