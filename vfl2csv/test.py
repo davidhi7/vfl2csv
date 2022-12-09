@@ -1,8 +1,8 @@
 import datetime
-import io
 import filecmp
-import unittest
+import io
 import shutil
+import unittest
 from pathlib import Path
 
 import openpyxl
