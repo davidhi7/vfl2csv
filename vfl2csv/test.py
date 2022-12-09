@@ -66,17 +66,17 @@ class TestTrialSiteSheet(unittest.TestCase):
         self.assertTrue(
             filecmp.cmp(self.temp_dir / 'metadata.txt', self.test_metadata_reference_filename, shallow=False))
 
-    def test_simplifyColumnLabels_first_two_quarters(self) -> None:
+    def test_simplifyColumnLabels_expect_decremented_year(self) -> None:
         self.assertEqual('D_2021', TrialSiteSheet.simplify_column_labels(
                              (datetime.date.fromisoformat('2022-01-01'), 'D', 'cm', '0')
         ))
         self.assertEqual('H_2021', TrialSiteSheet.simplify_column_labels(
-            (datetime.date.fromisoformat('2022-06-30'), 'H', 'm', '0')
+            (datetime.date.fromisoformat('2022-05-31'), 'H', 'm', '0')
         ))
 
-    def test_simplifyColumnLabels_last_two_quarters(self) -> None:
+    def test_simplifyColumnLabels_expect_equal_year(self) -> None:
         self.assertEqual('D_2022', TrialSiteSheet.simplify_column_labels(
-                             (datetime.date.fromisoformat('2022-07-01'), 'D', 'cm', '0')
+                             (datetime.date.fromisoformat('2022-06-01'), 'D', 'cm', '0')
         ))
         self.assertEqual('H_2022', TrialSiteSheet.simplify_column_labels(
             (datetime.date.fromisoformat('2022-12-31'), 'H', 'm', '0')

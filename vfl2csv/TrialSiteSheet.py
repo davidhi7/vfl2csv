@@ -97,7 +97,7 @@ class TrialSiteSheet:
         :param hierarchy: Tuple consisting of four values
         :return: simplified label matching the requirements
         """
-        return f'{hierarchy[1]}_{hierarchy[0].year - (0 if hierarchy[0].month > 6 else 1)}'
+        return f'{hierarchy[1]}_{hierarchy[0].year - (0 if hierarchy[0].month > 5 else 1)}'
 
     def replace_metadata_keys(self, pattern: str) -> Path:
         """
