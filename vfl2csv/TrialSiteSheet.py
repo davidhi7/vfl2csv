@@ -6,17 +6,21 @@ from pathlib import Path
 import openpyxl
 import pandas as pd
 
+from ExcelWorksheet import ExcelWorksheet
 
-def worksheet_pipeline(sheet_batch, workbook, in_mem_file, output_dir, process_index):
+
+def worksheet_pipeline(excel_worksheet_batch: list[ExcelWorksheet], output_dir: Path, process_index: int) -> None:
     logger = logging.getLogger(str(process_index))
-    for sheet_name in sheet_batch:
-        logger.info(f'Converting sheet {sheet_name}...')
-        trialSiteSheet = TrialSiteSheet(workbook, in_mem_file, sheet_name)
-        # trial_site_folder = Path(trialSiteSheet.replace_metadata_keys(str(output_dir / '{versuch}_{teilfläche}')))
-        trial_site_folder = Path(output_dir / sheet_name)
+    for worksheet in excel_worksheet_batch:
+        logger.info(f'Converting sheet {worksheet.workbook_path.name}#{worksheet.name}')
+        trial_site_sheet = TrialSiteSheet(open_workbook=worksheet.workbook, input_file=worksheet.in_mem_file, sheet_name=worksheet.name)
+        trial_site_folder = Path(trial_site_sheet.replace_metadata_keys(str(output_dir / '{revier}/{versuch}/')))
+        # trial_site_folder = Path(output_dir / worksheet.name)
         os.makedirs(trial_site_folder, exist_ok=True)
-        trialSiteSheet.write_data(trial_site_folder / 'data.csv')
-        trialSiteSheet.write_metadata(trial_site_folder / 'metadata.txt')
+        trial_site_sheet.write_data(
+            trial_site_folder / trial_site_sheet.replace_metadata_keys('{parzelle}.csv')
+        )
+        trial_site_sheet.write_metadata(trial_site_folder / trial_site_sheet.replace_metadata_keys('{parzelle}_metadata.txt'))
 
 
 class TrialSiteSheet:
@@ -93,7 +97,7 @@ class TrialSiteSheet:
     def simplify_column_labels(hierarchy: tuple) -> str:
         """
         Reformat measurement column labels for the dataframe.
-        See comments of #parse_data for more explainations
+        See comments of #parse_data for more explanations
         :param hierarchy: Tuple consisting of four values
         :return: simplified label matching the requirements
         """
