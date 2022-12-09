@@ -3,3 +3,4 @@ env/
 out/
 .ipynb_checkpoints/
 __pycache__/
+.~lock.*#
