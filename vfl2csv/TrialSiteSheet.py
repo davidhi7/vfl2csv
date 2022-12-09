@@ -1,7 +1,22 @@
 import io
+import logging
+import os
 from pathlib import Path
+
 import openpyxl
 import pandas as pd
+
+
+def worksheet_pipeline(sheet_batch, workbook, in_mem_file, output_dir, process_index):
+    logger = logging.getLogger(str(process_index))
+    for sheet_name in sheet_batch:
+        logger.info(f'Converting sheet {sheet_name}...')
+        trialSiteSheet = TrialSiteSheet(workbook, in_mem_file, sheet_name)
+        # trial_site_folder = Path(trialSiteSheet.replace_metadata_keys(str(output_dir / '{versuch}_{teilfläche}')))
+        trial_site_folder = Path(output_dir / sheet_name)
+        os.makedirs(trial_site_folder, exist_ok=True)
+        trialSiteSheet.write_data(trial_site_folder / 'data.csv')
+        trialSiteSheet.write_metadata(trial_site_folder / 'metadata.txt')
 
 
 class TrialSiteSheet:
