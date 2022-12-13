@@ -8,7 +8,7 @@ from pathlib import Path
 import openpyxl
 import pandas as pd
 
-from TrialSiteSheet import TrialSiteSheet
+from TrialSiteConverter import TrialSiteSheet
 
 
 class TestTrialSiteSheet(unittest.TestCase):
@@ -82,10 +82,15 @@ class TestTrialSiteSheet(unittest.TestCase):
             (datetime.date.fromisoformat('2022-12-31'), 'H', 'm', '0')
         ))
 
-    def test_replaceMetadataKeys(self) -> None:
+    def test_replaceMetadataKeys_strings(self) -> None:
         trial_site_sheet = TrialSiteSheet(self.test_workbook, self.input_file, self.worksheet_name)
         self.assertEqual('5622   Mühlhausen:Langula:09201:01:518 a2:Uff-R2:426', trial_site_sheet.replace_metadata_keys('{forstamt}:{revier}:{versuch}:{parzelle}:{teilfläche}:{standort}:{höhenlage}'))
         self.assertEqual('5622   Mühlhausen:5622   Mühlhausen:5622   Mühlhausen:518 a2:518 a2:518 a2', trial_site_sheet.replace_metadata_keys('{forstamt}:{forstamt}:{forstamt}:{teilfläche}:{teilfläche}:{teilfläche}'))
+
+    def test_replaceMetadataKeys_paths(self) -> None:
+        trial_site_sheet = TrialSiteSheet(self.test_workbook, self.input_file, self.worksheet_name)
+        self.assertEqual(Path('5622   Mühlhausen:Langula:09201:01:518 a2:Uff-R2:426'), trial_site_sheet.replace_metadata_keys(Path('{forstamt}:{revier}:{versuch}:{parzelle}:{teilfläche}:{standort}:{höhenlage}')))
+        self.assertEqual(Path('5622   Mühlhausen:5622   Mühlhausen:5622   Mühlhausen:518 a2:518 a2:518 a2'), trial_site_sheet.replace_metadata_keys(Path('{forstamt}:{forstamt}:{forstamt}:{teilfläche}:{teilfläche}:{teilfläche}')))
 
 
 if __name__ == '__main__':
