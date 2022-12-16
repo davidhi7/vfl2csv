@@ -2,11 +2,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from pathlib import Path
+from typing import TYPE_CHECKING, Iterable
 
 # prevent a circular import
 if TYPE_CHECKING:
-    from TrialSiteConverter import TrialSite
+    from output.TrialSiteConverter import TrialSite
 
 
 class InputFile(ABC):
@@ -19,4 +20,9 @@ class InputFile(ABC):
 
     @abstractmethod
     def __str__(self) -> TrialSite:
+        pass
+
+    @staticmethod
+    @abstractmethod
+    def iterate_files(files: Iterable[Path]) -> list[InputFile]:
         pass

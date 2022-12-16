@@ -1,5 +1,4 @@
 import logging
-import configparser
 import os
 import sys
 from multiprocessing import Pool
@@ -7,13 +6,11 @@ from pathlib import Path
 
 import numpy as np
 
-import TrialSiteConverter
+from config import config
 from input.ExcelInputSheet import ExcelInputSheet
-from ExcelWorkbook import ExcelWorkbook
-from input.TsvInputFile import TSVInputFile
+from input.TsvInputFile import TsvInputFile
+from output.TrialSiteConverter import trial_site_pipeline
 
-config = configparser.ConfigParser(converters={'path': Path})
-config.read('config.ini')
 config_allowed_input_formats = ('TSV', 'Excel')
 
 logging.basicConfig(format='%(levelname)s %(name)s: %(message)s', level=logging.INFO)
@@ -28,7 +25,7 @@ if __name__ == '__main__':
         )
         exit(1)
     if len(sys.argv) < 3:
-        logger.error('Not enough parameter provided. Input file and output directory are required!')
+        logger.error('Invalid number of arguments provided. Input file or directory and output directory are required!')
         exit(1)
     input_path = Path(sys.argv[1])
     output_dir = Path(sys.argv[2])
@@ -38,18 +35,17 @@ if __name__ == '__main__':
     if input_path.is_file():
         input_files = (input_path,)
     else:
-        input_files = tuple(input_path.glob(f'*.{config["Input"]["input_file_extension"]}'))
+        input_files = list(input_path.glob(f'*.{config["Input"]["input_file_extension"]}'))
     output_data_file = output_dir / config['Output'].getpath('csv_output_pattern')
     output_metadata_file = output_dir / config['Output'].getpath('metadata_output_pattern')
 
     # managing input files
     if config["Input"]["input_format"] == 'Excel':
-        excel_workbooks = list(ExcelWorkbook(path) for path in input_files)
-        input_trial_sites = ExcelInputSheet.iterate_sheets(excel_workbooks)
-        logger.info(f'Found {len(input_trial_sites)} trial sites in {len(excel_workbooks)} Excel files')
+        input_trial_sites = ExcelInputSheet.iterate_files(input_files)
     else:
-        input_trial_sites = [TSVInputFile(path) for path in input_files]
-        logger.info(f'Found {len(input_trial_sites)} tab-delimited trial site files')
+        input_trial_sites = TsvInputFile.iterate_files(input_files)
+    logger.info(
+        f'Found {len(input_trial_sites)} trial sites in {len(input_files)} {config["Input"]["input_format"]} files')
 
     # processing input files
     logger.info(f'Writing output to {output_dir}')
@@ -64,10 +60,10 @@ if __name__ == '__main__':
                 process_count * [output_metadata_file],
                 range(process_count)
             )
-            pool.starmap(TrialSiteConverter.trial_site_pipeline, process_args)
+            pool.starmap(trial_site_pipeline, process_args)
     else:
         # allow disabling multiprocessing for easier debugging
         logger.info('Multiprocesing is disabled')
-        TrialSiteConverter.trial_site_pipeline(input_trial_sites, output_data_file, output_metadata_file, 0)
+        trial_site_pipeline(input_trial_sites, output_data_file, output_metadata_file, 0)
 
     logger.info('done')

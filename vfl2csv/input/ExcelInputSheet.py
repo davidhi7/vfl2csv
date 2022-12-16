@@ -1,13 +1,11 @@
-import io
 from pathlib import Path
-from typing import Type
+from typing import Iterable
 
-import openpyxl
 import pandas as pd
 
-from ExcelWorkbook import ExcelWorkbook
+from input.ExcelWorkbook import ExcelWorkbook
 from input.InputFile import InputFile
-from TrialSiteConverter import TrialSite
+from output.TrialSiteConverter import TrialSite
 
 
 class ExcelInputSheet(InputFile):
@@ -45,7 +43,8 @@ class ExcelInputSheet(InputFile):
         return f'{self.file_path}#{self.sheet_name}'
 
     @staticmethod
-    def iterate_sheets(workbooks: list[ExcelWorkbook]) -> list[InputFile]:
+    def iterate_files(input_files: Iterable[Path]) -> list['ExcelInputSheet']:
+        workbooks = list(ExcelWorkbook(path) for path in input_files)
         input_sheets = list()
         for workbook in workbooks:
             input_sheets.extend(ExcelInputSheet(workbook, sheet_name) for sheet_name in workbook.sheets)

@@ -1,12 +1,13 @@
 from pathlib import Path
+from typing import Iterable
 
 import pandas as pd
 
 from input.InputFile import InputFile
-from TrialSiteConverter import TrialSite
+from output.TrialSiteConverter import TrialSite
 
 
-class TSVInputFile(InputFile):
+class TsvInputFile(InputFile):
     def __init__(self, file_path: Path):
         """
         Create a new TSV input file object.
@@ -18,14 +19,14 @@ class TSVInputFile(InputFile):
         self.file_path = file_path
 
     def parse(self) -> None:
-        # TODO encoding?
+        # TODO how to deal with encoding?
         file_stream = open(self.file_path, 'r', encoding='iso8859_15')
-        # skip first 4 rows
+        # skip first 4 rows containing unused data
         metadata = dict()
         for _ in range(4):
             file_stream.readline()
         # read following 5 rows containing one key-value-pair each
-        for _ in range(5):
+        for _ in range(7):
             key, value = file_stream.readline().split(':')
             metadata[key.strip()] = value.strip()
         # move back to start of the stream
@@ -42,3 +43,7 @@ class TSVInputFile(InputFile):
 
     def get_trial_site(self) -> TrialSite:
         return self.trial_site
+
+    @staticmethod
+    def iterate_files(files: Iterable[Path]) -> list[InputFile]:
+        return [TsvInputFile(file) for file in files]
