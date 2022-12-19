@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pandas as pd
 
+from config import testconfig
 from input.ExcelInputSheet import ExcelInputSheet
 from input.ExcelWorkbook import ExcelWorkbook
-from config import testconfig
 
 
 class ExcelInputSheetTest(unittest.TestCase):
@@ -41,6 +41,9 @@ class ExcelInputSheetTest(unittest.TestCase):
             "Standort": "Uf-K1",
             "Höhenlage": "420"
         })
+
+    def test_str(self):
+        self.assertEqual(str(self.sample_instance), 'res/sample-data/excel/excel-1.xlsx#09703_P2')
 
 
 if __name__ == '__main__':

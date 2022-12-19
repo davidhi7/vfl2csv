@@ -16,18 +16,14 @@ logger = logging.getLogger(__name__)
 
 def validate(argv):
     if config["Input"]["input_format"] not in CONFIG_ALLOWED_INPUT_FORMATS:
-        logger.error(
-            f'{config["Input"]["input_format"]} is not a valid input format.'
-            f'Allowed formats are {", ".join(CONFIG_ALLOWED_INPUT_FORMATS)}!'
-        )
-        return False
+        raise ValueError(
+            f'{config["Input"]["input_format"]} is not a valid input format. Allowed formats are {", ".join(CONFIG_ALLOWED_INPUT_FORMATS)}!')
     if len(argv) < 3:
-        logger.error('Invalid number of arguments provided. Input file or directory and output directory are required!')
-        return False
+        raise ValueError(
+            'Invalid number of arguments provided. Input file or directory and output directory are required!')
     if not Path(argv[1]).exists():
-        logger.error(f'{str(argv[1])} must be a file or folder!')
-        return False
-    return True
+        raise ValueError(f'{str(argv[1])} must be a file or folder!')
+    return
 
 
 def find_input_sheets(input_path: Path) -> tuple[list[Path], list[InputFile]]:
@@ -80,8 +76,10 @@ def trial_site_pipeline(
 
 
 def run(argv):
-    validation_success = validate(argv)
-    if not validation_success:
+    try:
+        validate(argv)
+    except ValueError as e:
+        print('Validation failed:', e)
         exit(1)
     input_path = Path(argv[1])
     output_dir = Path(argv[2])

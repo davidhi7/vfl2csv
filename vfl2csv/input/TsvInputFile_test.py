@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from input.TsvInputFile import TsvInputFile
 from config import testconfig
+from input.TsvInputFile import TsvInputFile
 
 
 class TsvInputFileTest(unittest.TestCase):
@@ -40,6 +40,9 @@ class TsvInputFileTest(unittest.TestCase):
             "Höhenlage": "680"
         })
 
+    def test_str(self):
+        self.assertEqual(str(self.sample_instance), 'res/sample-data/tab-delimited/1460701.txt')
+        
 
 if __name__ == '__main__':
     unittest.main()
