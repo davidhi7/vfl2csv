@@ -1,4 +1,5 @@
 import re
+import shutil
 import unittest
 from datetime import date
 from pathlib import Path
@@ -7,6 +8,7 @@ import pandas as pd
 from pandas import MultiIndex
 
 from output.TrialSiteConverter import TrialSite
+from test.testconfig import config
 
 
 class TrialSiteConverterTest(unittest.TestCase):
@@ -23,6 +25,16 @@ class TrialSiteConverterTest(unittest.TestCase):
     pattern_string_2 = '{forstamt}:{forstamt}:{forstamt}:{teilfläche}:{teilfläche}:{teilfläche}'
     expected_matched_string_1 = '5628   Bad Berka:Tiefborn:09703:02:2524 a3:Uf-K1:420'
     expected_matched_string_2 = '5628   Bad Berka:5628   Bad Berka:5628   Bad Berka:2524 a3:2524 a3:2524 a3'
+
+    tmp_dir = config['Output'].getpath('temp_dir')
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.tmp_dir.mkdir(parents=True, exist_ok=True)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        shutil.rmtree(cls.tmp_dir)
 
     def test_refactor_dataframe(self):
         multiIndex = MultiIndex.from_tuples([
@@ -82,3 +94,32 @@ class TrialSiteConverterTest(unittest.TestCase):
                          Path(self.expected_matched_string_1))
         self.assertEqual(trial_site.replace_metadata_keys(Path(self.pattern_string_2)),
                          Path(self.expected_matched_string_2))
+
+    def test_writeData(self):
+        test_df = pd.DataFrame.from_dict({
+            'meta-data': [
+                1, 2, 3
+            ],
+            'D_2014': [
+                pd.NA, pd.NA, pd.NA
+            ]
+        })
+        trial_site = TrialSite(df=test_df, metadata=dict())
+        trial_site.write_data(filepath=self.tmp_dir / 'data.csv')
+        with open(self.tmp_dir / 'data.csv', 'r') as file:
+            self.assertEqual(file.read(), "meta-data,D_2014\n1,NA\n2,NA\n3,NA\n")
+
+    def test_writeMetadata(self):
+        test_metadata = {
+            'key-1': 'value-1',
+            'key-2': 'value-2',
+            'key-3': 'value-3'
+        }
+        trial_site = TrialSite(df=pd.DataFrame(), metadata=test_metadata)
+        trial_site.write_metadata(filepath=self.tmp_dir / 'metadata.txt')
+        with open(self.tmp_dir / 'metadata.txt', 'r') as file:
+            self.assertEqual(file.read(), "key-1=value-1\nkey-2=value-2\nkey-3=value-3\n")
+
+
+if __name__ == '__main__':
+    unittest.main()

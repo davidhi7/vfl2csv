@@ -109,15 +109,13 @@ class TrialSite:
         """
         Write data formatted in CSV to the provided filepath.
         :param filepath: File path to save the data to
-        :return:
         """
-        self.df.to_csv(filepath, na_rep='NA', index=False)
+        self.df.to_csv(filepath, na_rep='NA', sep=',', index=False)
 
     def write_metadata(self, filepath: Path) -> None:
         """
         Write extracted metadata formatted in simple key="value" pairs to the provided filepath.
         :param filepath: File path to save the metadata to
-        :return:
         """
         with open(filepath, 'w') as file:
             file.writelines([f'{key}={value}\n' for key, value in self.metadata.items()])
