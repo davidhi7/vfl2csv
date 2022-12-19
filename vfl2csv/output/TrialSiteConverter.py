@@ -1,33 +1,9 @@
 import datetime
-import logging
-import os
 from pathlib import Path
 
 import pandas as pd
 
-from input.InputFile import InputFile
-
 HierarchicalColumnLabel = tuple[datetime.date | datetime.datetime | str, str, str, str]
-
-
-def trial_site_pipeline(input_batch: list[InputFile], output_data_pattern: Path, output_metadata_pattern: Path,
-                        process_index: int) -> None:
-    logger = logging.getLogger(f'process {process_index}')
-    for input_sheet in input_batch:
-        logger.info(f'Converting input {str(input_sheet)}')
-        input_sheet.parse()
-        trial_site = input_sheet.get_trial_site()
-        trial_site.refactor_dataframe()
-
-        # write data
-        data_output_file = trial_site.replace_metadata_keys(output_data_pattern)
-        os.makedirs(data_output_file.parent, exist_ok=True)
-        trial_site.write_data(data_output_file)
-
-        # write metadata
-        metadata_output_file = trial_site.replace_metadata_keys(output_metadata_pattern)
-        os.makedirs(metadata_output_file.parent, exist_ok=True)
-        trial_site.write_metadata(metadata_output_file)
 
 
 class TrialSite:
