@@ -8,7 +8,7 @@ import pandas as pd
 from pandas import MultiIndex
 
 from output.TrialSiteConverter import TrialSite
-from test.testconfig import config
+from config import testconfig
 
 
 class TrialSiteConverterTest(unittest.TestCase):
@@ -26,7 +26,7 @@ class TrialSiteConverterTest(unittest.TestCase):
     expected_matched_string_1 = '5628   Bad Berka:Tiefborn:09703:02:2524 a3:Uf-K1:420'
     expected_matched_string_2 = '5628   Bad Berka:5628   Bad Berka:5628   Bad Berka:2524 a3:2524 a3:2524 a3'
 
-    tmp_dir = config['Output'].getpath('temp_dir')
+    tmp_dir = testconfig['Output'].getpath('temp_dir')
 
     @classmethod
     def setUpClass(cls) -> None:

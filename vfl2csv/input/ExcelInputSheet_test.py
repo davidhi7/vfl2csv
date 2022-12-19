@@ -5,17 +5,17 @@ import pandas as pd
 
 from input.ExcelInputSheet import ExcelInputSheet
 from input.ExcelWorkbook import ExcelWorkbook
-from test.testconfig import config
+from config import testconfig
 
 
 class ExcelInputSheetTest(unittest.TestCase):
 
     def setUp(self) -> None:
-        excel_workbook = ExcelWorkbook(Path(config['Input'].getpath('excel_sample_input_file')))
+        excel_workbook = ExcelWorkbook(Path(testconfig['Input'].getpath('excel_sample_input_file')))
         self.sample_instance = ExcelInputSheet(excel_workbook, '09703_P2')
 
     def test_iterate_files(self):
-        sheets = ExcelInputSheet.iterate_files(config['Input'].getpath('excel_sample_input_dir').glob('*.xlsx'))
+        sheets = ExcelInputSheet.iterate_files(testconfig['Input'].getpath('excel_sample_input_dir').glob('*.xlsx'))
         self.assertEqual(len(sheets), 17)
 
     def test_parse_dataframe(self):

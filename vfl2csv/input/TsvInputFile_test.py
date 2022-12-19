@@ -4,16 +4,16 @@ from pathlib import Path
 import pandas as pd
 
 from input.TsvInputFile import TsvInputFile
-from test.testconfig import config
+from config import testconfig
 
 
 class TsvInputFileTest(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.sample_instance = TsvInputFile(Path(config['Input'].getpath('tsv_sample_input_file')))
+        self.sample_instance = TsvInputFile(Path(testconfig['Input'].getpath('tsv_sample_input_file')))
 
     def test_iterate_files(self):
-        sheets = TsvInputFile.iterate_files(config['Input'].getpath('tsv_sample_input_dir').glob('*.txt'))
+        sheets = TsvInputFile.iterate_files(testconfig['Input'].getpath('tsv_sample_input_dir').glob('*.txt'))
         self.assertEqual(len(sheets), 6)
 
     def test_parse_dataframe(self):
