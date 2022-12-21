@@ -37,10 +37,6 @@ class TrialSite:
             *[self.simplify_column_labels(multi_index) for multi_index in self.df.columns[3:]]
         )
 
-        # Also, the first column 'Bestandeseinheit' / tree population id is not actually needed, so let's discard it
-        # self.df = self.df.drop(columns='Bestandeseinheit')
-        self.df.drop(columns='Bestandeseinheit', inplace=True)
-
     @staticmethod
     def simplify_column_labels(hierarchy: HierarchicalColumnLabel) -> str:
         """

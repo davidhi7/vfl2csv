@@ -59,18 +59,19 @@ class TrialSiteConverterTest(unittest.TestCase):
         trial_site.refactor_dataframe()
         df = trial_site.df
         # expect 2 tree data labels (id and species) and 12 (4*3) measurement columns
-        self.assertEqual(len(df.columns), 14)
-        self.assertEqual(df.columns[0], 'Baumart')
-        self.assertEqual(df.columns[1], 'Baumnummer')
-        for i, column_label in enumerate(df.columns[2:]):
+        self.assertEqual(len(df.columns), 15)
+        self.assertEqual(df.columns[0], 'Bestandeseinheit')
+        self.assertEqual(df.columns[1], 'Baumart')
+        self.assertEqual(df.columns[2], 'Baumnummer')
+        for i, column_label in enumerate(df.columns[3:]):
             self.assertIsInstance(column_label, str)
-            if (i + 3) % 3 == 0:
+            if i % 3 == 0:
                 # first measurement type: diameter
                 self.assertIsNotNone(re.fullmatch(r'D_\d{4}', column_label))
-            elif (i + 3) % 3 == 1:
+            elif i % 3 == 1:
                 # second measurement type: ausscheidungskennung
                 self.assertIsNotNone(re.fullmatch(r'Aus_\d{4}', column_label))
-            elif (i + 3) % 3 == 2:
+            elif i % 3 == 2:
                 # third measurement type: height
                 self.assertIsNotNone(re.fullmatch(r'H_\d{4}', column_label))
 
