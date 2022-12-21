@@ -1,4 +1,3 @@
-# Umwandlung VFLDBS-Excelausgabe in CSV-Dateien
+# vfl2csv
 
-### TODO
-* Nachforschung: Wie soll der Vegetationszyklus sich auf das gespeicherte Jahr im Zielformat auswirken? 
+Kommandozeilenskript zur Umwandlung und Umformatierung von Ausgaben des propritären Versuchsflächendatenbanksystems der TU Dresden Professur für Waldwachstum und Produktion von Holzbiomasse.
