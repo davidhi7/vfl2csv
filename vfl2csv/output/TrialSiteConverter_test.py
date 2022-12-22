@@ -8,7 +8,7 @@ import pandas as pd
 from pandas import MultiIndex
 
 from output.TrialSiteConverter import TrialSite
-from config import testconfig
+from config import testconfig, column_layout
 
 
 class TrialSiteConverterTest(unittest.TestCase):
@@ -28,33 +28,64 @@ class TrialSiteConverterTest(unittest.TestCase):
 
     tmp_dir = testconfig['Output'].getpath('temp_dir')
 
+    sample_multiIndex = MultiIndex.from_tuples([
+        ('Aufnahme', 'Wert', 'Einheit', 'Bst.-E.'),
+        ('Aufnahme', 'Wert', 'Einheit', 'Art'),
+        ('Aufnahme', 'Wert', 'Einheit', 'Baum'),
+        ('23.07.1984', 'D', 'cm', '159'),
+        ('23.07.1984', 'Aus', 'Unnamed: 4_level_2', '15'),
+        ('23.07.1984', 'H', 'm', '30'),
+        ('26.04.1995', 'D', 'cm', '144'),
+        ('26.04.1995', 'Aus', 'Unnamed: 7_level_2', '50'),
+        ('26.04.1995', 'H', 'm', '34'),
+        ('10.11.2006', 'D', 'cm', '94'),
+        ('10.11.2006', 'Aus', 'Unnamed: 10_level_2', '31'),
+        ('10.11.2006', 'H', 'm', '30'),
+        ('03.12.2013', 'D', 'cm', '63'),
+        ('03.12.2013', 'Aus', 'Unnamed: 13_level_2', '0'),
+        ('03.12.2013', 'H', 'm', '33')
+    ])
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.tmp_dir.mkdir(parents=True, exist_ok=True)
+        column_layout = column_layout = {
+            "head": [
+                {
+                    "override_name": "Bestandeseinheit",
+                    "type": "uint16"
+                },
+                {
+                    "override_name": "Baumart",
+                    "type": "string"
+                },
+                {
+                    "override_name": "Baumnummer",
+                    "type": "uint16"
+                }
+            ],
+            "measurements": [
+                {
+                    "override_name": "D",
+                    "type": "float64"
+                },
+                {
+                    "override_name": "Aus",
+                    "type": "uint8"
+                },
+                {
+                    "override_name": "H",
+                    "type": "float64"
+                }
+            ]
+        }
 
     @classmethod
     def tearDownClass(cls) -> None:
         shutil.rmtree(cls.tmp_dir)
 
     def test_refactor_dataframe(self):
-        multiIndex = MultiIndex.from_tuples([
-            ('Aufnahme', 'Wert', 'Einheit', 'Bst.-E.'),
-            ('Aufnahme', 'Wert', 'Einheit', 'Art'),
-            ('Aufnahme', 'Wert', 'Einheit', 'Baum'),
-            ('23.07.1984', 'D', 'cm', '159'),
-            ('23.07.1984', 'Aus', 'Unnamed: 4_level_2', '15'),
-            ('23.07.1984', 'H', 'm', '30'),
-            ('26.04.1995', 'D', 'cm', '144'),
-            ('26.04.1995', 'Aus', 'Unnamed: 7_level_2', '50'),
-            ('26.04.1995', 'H', 'm', '34'),
-            ('10.11.2006', 'D', 'cm', '94'),
-            ('10.11.2006', 'Aus', 'Unnamed: 10_level_2', '31'),
-            ('10.11.2006', 'H', 'm', '30'),
-            ('03.12.2013', 'D', 'cm', '63'),
-            ('03.12.2013', 'Aus', 'Unnamed: 13_level_2', '0'),
-            ('03.12.2013', 'H', 'm', '33')
-        ])
-        df = pd.DataFrame(columns=multiIndex)
+        df = pd.DataFrame(columns=self.sample_multiIndex)
         trial_site = TrialSite(df, metadata=dict())
         trial_site.refactor_dataframe()
         df = trial_site.df
@@ -74,14 +105,56 @@ class TrialSiteConverterTest(unittest.TestCase):
             elif i % 3 == 2:
                 # third measurement type: height
                 self.assertIsNotNone(re.fullmatch(r'H_\d{4}', column_label))
+        self.assertEqual(df.dtypes.array, (pd.UInt16Dtype, pd.StringDtype, pd.UInt16Dtype) + 4 * (
+        pd.Float64Dtype, pd.UInt8Dtype, pd.Float64Dtype))
+
+    def test_refactor_dataframe_exceptions(self):
+        # test empty column set
+        trial_site = TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([()])), metadata=dict())
+        self.assertRaises(ValueError, trial_site.refactor_dataframe)
+
+        # test column set with fewer columns than head columns in the template
+        trial_site = TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([
+            ('Aufnahme', 'Wert', 'Einheit', 'Bst.-E.'),
+            ('Aufnahme', 'Wert', 'Einheit', 'Art')
+        ])), metadata=dict())
+        self.assertRaises(ValueError, trial_site.refactor_dataframe)
+
+        # test column set with measurement columns lacking one field compared to the template
+        trial_site = TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([
+            ('Aufnahme', 'Wert', 'Einheit', 'Bst.-E.'),
+            ('Aufnahme', 'Wert', 'Einheit', 'Art'),
+            ('Aufnahme', 'Wert', 'Einheit', 'Baum'),
+            ('23.07.1984', 'D', 'cm', '159'),
+            ('23.07.1984', 'Aus', 'Unnamed: 4_level_2', '15')
+        ])), metadata=dict())
+        self.assertRaises(ValueError, trial_site.refactor_dataframe)
 
     def test_simplifyColumnLabels_expect_decremented_year(self) -> None:
-        self.assertEqual('D_2021', TrialSite.simplify_column_labels((date.fromisoformat('2022-01-01'), 'D', 'cm', '0')))
-        self.assertEqual('H_2021', TrialSite.simplify_column_labels((date.fromisoformat('2022-05-31'), 'H', 'm', '0')))
+        self.assertEqual('D_2021', TrialSite.simplify_measurement_column_labels(
+            (date.fromisoformat('2022-01-01'), 'D', 'cm', '0'), override_name=None))
+        self.assertEqual('H_2021',
+                         TrialSite.simplify_measurement_column_labels((date.fromisoformat('2022-05-31'), 'H', 'm', '0'),
+                                                                      override_name=None))
+
+        self.assertEqual('test123_2021', TrialSite.simplify_measurement_column_labels(
+            (date.fromisoformat('2022-01-01'), 'D', 'cm', '0'), override_name='test123'))
+        self.assertEqual('test456_2021',
+                         TrialSite.simplify_measurement_column_labels((date.fromisoformat('2022-05-31'), 'H', 'm', '0'),
+                                                                      override_name='test456'))
 
     def test_simplifyColumnLabels_expect_equal_year(self) -> None:
-        self.assertEqual('D_2022', TrialSite.simplify_column_labels((date.fromisoformat('2022-06-01'), 'D', 'cm', '0')))
-        self.assertEqual('H_2022', TrialSite.simplify_column_labels((date.fromisoformat('2022-12-31'), 'H', 'm', '0')))
+        self.assertEqual('D_2022', TrialSite.simplify_measurement_column_labels(
+            (date.fromisoformat('2022-06-01'), 'D', 'cm', '0'), override_name=None))
+        self.assertEqual('H_2022',
+                         TrialSite.simplify_measurement_column_labels((date.fromisoformat('2022-12-31'), 'H', 'm', '0'),
+                                                                      override_name=None))
+
+        self.assertEqual('test123_2022', TrialSite.simplify_measurement_column_labels(
+            (date.fromisoformat('2022-06-01'), 'D', 'cm', '0'), override_name='test123'))
+        self.assertEqual('test456_2022',
+                         TrialSite.simplify_measurement_column_labels((date.fromisoformat('2022-12-31'), 'H', 'm', '0'),
+                                                                      override_name='test456'))
 
     def test_replaceMetadataKeys_strings(self) -> None:
         trial_site = TrialSite(pd.DataFrame(), self.sample_metadata)
