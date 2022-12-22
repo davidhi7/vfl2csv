@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+from collections import Counter
 from multiprocessing import RLock, Pool
 from pathlib import Path
 
@@ -46,40 +47,48 @@ def trial_site_pipeline(
         output_metadata_pattern: Path,
         lock: RLock,
         process_index: int
-) -> None:
+) -> dict[str, int]:
     logger = logging.getLogger(f'process {process_index}')
+    errors = list()
     for input_sheet in input_batch:
-        logger.info(f'Converting input {str(input_sheet)}')
-        input_sheet.parse()
-        trial_site = input_sheet.get_trial_site()
-        trial_site.refactor_dataframe()
+        # noinspection PyBroadException
+        try:
+            logger.info(f'Converting input {str(input_sheet)}')
+            input_sheet.parse()
+            trial_site = input_sheet.get_trial_site()
+            trial_site.refactor_dataframe()
 
-        data_output_file = trial_site.replace_metadata_keys(output_data_pattern)
-        metadata_output_file = trial_site.replace_metadata_keys(output_metadata_pattern)
+            data_output_file = trial_site.replace_metadata_keys(output_data_pattern)
+            metadata_output_file = trial_site.replace_metadata_keys(output_metadata_pattern)
 
-        data_output_file.parent.mkdir(parents=True, exist_ok=True)
-        metadata_output_file.parent.mkdir(parents=True, exist_ok=True)
+            data_output_file.parent.mkdir(parents=True, exist_ok=True)
+            metadata_output_file.parent.mkdir(parents=True, exist_ok=True)
 
-        # lock this segment to prevent race conditions during multiprocessing.
-        # If lock is None, it is assumed that no multiprocessing is used.
-        if lock is not None:
+            # lock this segment to prevent race conditions during multiprocessing.
             with lock:
                 try:
                     data_output_file.touch(exist_ok=False)
                     metadata_output_file.touch(exist_ok=False)
-                except FileExistsError as err:
+                except FileExistsError as e:
                     raise Exception(
-                        f'Process {process_index}: Corresponding output file(s) for trial site {input_sheet} does already exist!') from err
+                        f'Process {process_index}: Corresponding output file(s) for trial site {input_sheet} does already exist!') from e
 
-        trial_site.write_data(data_output_file)
-        trial_site.write_metadata(metadata_output_file)
+            trial_site.write_data(data_output_file)
+            trial_site.write_metadata(metadata_output_file)
+        except Exception as e:
+            logger.warning(f'Exception in process {process_index}: {str(e)}')
+            errors.append(e)
+    return {
+        'total_count': len(input_batch),
+        'errors': len(errors)
+    }
 
 
 def run(argv):
     try:
         validate(argv)
     except ValueError as e:
-        print('Validation failed:', e)
+        logger.error('Validation failed:', e)
         exit(1)
     input_path = Path(argv[1])
     output_dir = Path(argv[2])
@@ -90,10 +99,11 @@ def run(argv):
     output_data_file = output_dir / config['Output'].getpath('csv_output_pattern')
     output_metadata_file = output_dir / config['Output'].getpath('metadata_output_pattern')
     logger.info(f'Writing output to {output_dir}')
-    if config['Multiprocessing'].getboolean('enabled', False):
+
+    process_count = max(round(len(input_trial_sites) / config['Multiprocessing'].getint('sheets_per_core', 32)), 1)
+    if config['Multiprocessing'].getboolean('enabled', False) and process_count > 1:
         # use multiprocessing for improved performance with larger inputs
-        process_count = max(round(len(input_trial_sites) / config['Multiprocessing'].getint('sheets_per_core', 32)), 1)
-        logger.info(f'Found {multiprocessing.cpu_count()} CPU threads, {process_count} processes will be used')
+        logger.info(f'Found {multiprocessing.cpu_count()} CPU threads, {process_count} processes are going to be used')
 
         with multiprocessing.Manager() as manager:
             lock = manager.RLock()
@@ -105,11 +115,15 @@ def run(argv):
                     process_count * [lock],
                     range(process_count)
                 )
-                pool.starmap(trial_site_pipeline, process_args)
-
+                result = pool.starmap(trial_site_pipeline, process_args)
+                summarised_result = Counter()
+                for r in result:
+                    summarised_result.update(r)
     else:
-        # allow disabling multiprocessing for easier debugging
-        logger.info('Multiprocesing is disabled')
-        trial_site_pipeline(input_trial_sites, output_data_file, output_metadata_file, lock=None, process_index=0)
+        # allow disabling multiprocessing for easier debugging and optimized performance when working with little data
+        logger.info('Multiprocessing is disabled')
+        summarised_result = trial_site_pipeline(input_trial_sites, output_data_file, output_metadata_file, lock=RLock(),
+                                                process_index=0)
 
-    logger.info('done')
+    logger.info(
+        f'Converted {summarised_result["total_count"]} trial sites, {summarised_result["errors"]} errors occured.')
