@@ -42,7 +42,7 @@ class TsvInputFileTest(unittest.TestCase):
 
     def test_str(self):
         self.assertEqual(str(self.sample_instance), 'res/sample-data/tab-delimited/1460701.txt')
-        
+
 
 if __name__ == '__main__':
     unittest.main()

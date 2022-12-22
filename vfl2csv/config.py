@@ -2,7 +2,6 @@ import configparser
 import json
 from pathlib import Path
 
-
 custom_converters = {'path': Path}
 
 config = configparser.ConfigParser(converters=custom_converters)

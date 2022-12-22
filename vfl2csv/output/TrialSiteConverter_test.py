@@ -7,8 +7,8 @@ from pathlib import Path
 import pandas as pd
 from pandas import MultiIndex
 
+from config import testconfig
 from output.TrialSiteConverter import TrialSite
-from config import testconfig, column_layout
 
 
 class TrialSiteConverterTest(unittest.TestCase):
@@ -106,7 +106,7 @@ class TrialSiteConverterTest(unittest.TestCase):
                 # third measurement type: height
                 self.assertIsNotNone(re.fullmatch(r'H_\d{4}', column_label))
         self.assertEqual(df.dtypes.array, (pd.UInt16Dtype, pd.StringDtype, pd.UInt16Dtype) + 4 * (
-        pd.Float64Dtype, pd.UInt8Dtype, pd.Float64Dtype))
+            pd.Float64Dtype, pd.UInt8Dtype, pd.Float64Dtype))
 
     def test_refactor_dataframe_exceptions(self):
         # test empty column set

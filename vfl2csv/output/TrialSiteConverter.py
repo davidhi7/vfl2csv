@@ -1,6 +1,6 @@
 import datetime
-from typing import Optional
 from pathlib import Path
+from typing import Optional
 
 import pandas as pd
 
@@ -65,7 +65,8 @@ class TrialSite:
             for i, column_hierarchy in enumerate(self.df.columns[column_shift:column_shift + measurement_fields_count]):
                 measurement_column_template = config.column_layout['measurements'][i]
                 new_column_names.append(
-                    self.simplify_measurement_column_labels(column_hierarchy, measurement_column_template['override_name'])
+                    self.simplify_measurement_column_labels(column_hierarchy,
+                                                            measurement_column_template['override_name'])
                 )
                 self.df[column_hierarchy] = self.df[column_hierarchy].astype(
                     dtypes_mapping[measurement_column_template['type']]
