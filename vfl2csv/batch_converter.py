@@ -88,7 +88,7 @@ def run(argv):
     try:
         validate(argv)
     except ValueError as e:
-        logger.error('Validation failed:', e)
+        logger.error('Validation failed: ' + str(e))
         exit(1)
     input_path = Path(argv[1])
     output_dir = Path(argv[2])
