@@ -2,30 +2,17 @@ import re
 import shutil
 import unittest
 from datetime import date
-from pathlib import Path
 
 import pandas as pd
 from pandas import MultiIndex
 
+from vfl2csv_base.TrialSite import TrialSite
 from config import testconfig
-from output.TrialSiteConverter import TrialSite
+from output.TrialSiteConverter import TrialSiteConverter
 
 
+# noinspection PyTypeChecker
 class TrialSiteConverterTest(unittest.TestCase):
-    sample_metadata = {
-        "Forstamt": "5628   Bad Berka",
-        "Revier": "Tiefborn",
-        "Versuch": "09703",
-        "Parzelle": "02",
-        "Teilfläche": "2524 a3",
-        "Standort": "Uf-K1",
-        "Höhenlage": "420"
-    }
-    pattern_string_1 = '{forstamt}:{revier}:{versuch}:{parzelle}:{teilfläche}:{standort}:{höhenlage}'
-    pattern_string_2 = '{forstamt}:{forstamt}:{forstamt}:{teilfläche}:{teilfläche}:{teilfläche}'
-    expected_matched_string_1 = '5628   Bad Berka:Tiefborn:09703:02:2524 a3:Uf-K1:420'
-    expected_matched_string_2 = '5628   Bad Berka:5628   Bad Berka:5628   Bad Berka:2524 a3:2524 a3:2524 a3'
-
     tmp_dir = testconfig['Output'].getpath('temp_dir')
 
     sample_multiIndex = MultiIndex.from_tuples([
@@ -86,9 +73,9 @@ class TrialSiteConverterTest(unittest.TestCase):
 
     def test_refactor_dataframe(self):
         df = pd.DataFrame(columns=self.sample_multiIndex)
-        trial_site = TrialSite(df, metadata=dict())
-        trial_site.refactor_dataframe()
-        df = trial_site.df
+        trial_site_converter = TrialSiteConverter(TrialSite(df, metadata=dict()))
+        trial_site_converter.refactor_dataframe()
+        df = trial_site_converter.trial_site.df
         # expect 2 tree data labels (id and species) and 12 (4*3) measurement columns
         self.assertEqual(len(df.columns), 15)
         self.assertEqual(df.columns[0], 'Bestandeseinheit')
@@ -108,66 +95,69 @@ class TrialSiteConverterTest(unittest.TestCase):
         self.assertEqual(df.dtypes.array, (pd.UInt16Dtype, pd.StringDtype, pd.UInt16Dtype) + 4 * (
             pd.Float64Dtype, pd.UInt8Dtype, pd.Float64Dtype))
 
+    def test_refactor_metadata(self):
+        trial_site_converter = TrialSiteConverter(TrialSite(df=None, metadata={
+            '0': '    ',
+            '1': 'a  b',
+            '2': 'a\nb',
+            '3': 'a \n b'
+        }))
+        expectations = [' ', 'a b', 'a b', 'a b']
+        trial_site_converter.refactor_metadata()
+        for i in range(4):
+            self.assertEqual(trial_site_converter.trial_site.metadata[str(i)], expectations[i])
+
     def test_refactor_dataframe_exceptions(self):
         # test empty column set
-        trial_site = TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([()])), metadata=dict())
+        trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([()])), metadata=dict()))
         self.assertRaises(ValueError, trial_site.refactor_dataframe)
 
         # test column set with fewer columns than head columns in the template
-        trial_site = TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([
+        trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([
             ('Aufnahme', 'Wert', 'Einheit', 'Bst.-E.'),
             ('Aufnahme', 'Wert', 'Einheit', 'Art')
-        ])), metadata=dict())
+        ])), metadata=dict()))
         self.assertRaises(ValueError, trial_site.refactor_dataframe)
 
         # test column set with measurement columns lacking one field compared to the template
-        trial_site = TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([
+        trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([
             ('Aufnahme', 'Wert', 'Einheit', 'Bst.-E.'),
             ('Aufnahme', 'Wert', 'Einheit', 'Art'),
             ('Aufnahme', 'Wert', 'Einheit', 'Baum'),
             ('23.07.1984', 'D', 'cm', '159'),
             ('23.07.1984', 'Aus', 'Unnamed: 4_level_2', '15')
-        ])), metadata=dict())
+        ])), metadata=dict()))
         self.assertRaises(ValueError, trial_site.refactor_dataframe)
 
     def test_simplifyColumnLabels_expect_decremented_year(self) -> None:
-        self.assertEqual('D_2021', TrialSite.simplify_measurement_column_labels(
+        self.assertEqual('D_2021', TrialSiteConverter.simplify_measurement_column_labels(
             (date.fromisoformat('2022-01-01'), 'D', 'cm', '0'), override_name=None))
-        self.assertEqual('H_2021',
-                         TrialSite.simplify_measurement_column_labels((date.fromisoformat('2022-05-31'), 'H', 'm', '0'),
-                                                                      override_name=None))
+        self.assertEqual('H_2021', TrialSiteConverter.simplify_measurement_column_labels(
+            (date.fromisoformat('2022-05-31'), 'H', 'm', '0'),
+            override_name=None)
+        )
 
-        self.assertEqual('test123_2021', TrialSite.simplify_measurement_column_labels(
+        self.assertEqual('test123_2021', TrialSiteConverter.simplify_measurement_column_labels(
             (date.fromisoformat('2022-01-01'), 'D', 'cm', '0'), override_name='test123'))
-        self.assertEqual('test456_2021',
-                         TrialSite.simplify_measurement_column_labels((date.fromisoformat('2022-05-31'), 'H', 'm', '0'),
-                                                                      override_name='test456'))
+        self.assertEqual('test456_2021', TrialSiteConverter.simplify_measurement_column_labels(
+            (date.fromisoformat('2022-05-31'), 'H', 'm', '0'),
+            override_name='test456')
+         )
 
     def test_simplifyColumnLabels_expect_equal_year(self) -> None:
-        self.assertEqual('D_2022', TrialSite.simplify_measurement_column_labels(
+        self.assertEqual('D_2022', TrialSiteConverter.simplify_measurement_column_labels(
             (date.fromisoformat('2022-06-01'), 'D', 'cm', '0'), override_name=None))
-        self.assertEqual('H_2022',
-                         TrialSite.simplify_measurement_column_labels((date.fromisoformat('2022-12-31'), 'H', 'm', '0'),
-                                                                      override_name=None))
+        self.assertEqual('H_2022', TrialSiteConverter.simplify_measurement_column_labels(
+            (date.fromisoformat('2022-12-31'), 'H', 'm', '0'),
+            override_name=None)
+        )
 
-        self.assertEqual('test123_2022', TrialSite.simplify_measurement_column_labels(
+        self.assertEqual('test123_2022', TrialSiteConverter.simplify_measurement_column_labels(
             (date.fromisoformat('2022-06-01'), 'D', 'cm', '0'), override_name='test123'))
-        self.assertEqual('test456_2022',
-                         TrialSite.simplify_measurement_column_labels((date.fromisoformat('2022-12-31'), 'H', 'm', '0'),
-                                                                      override_name='test456'))
-
-    def test_replaceMetadataKeys_strings(self) -> None:
-        trial_site = TrialSite(pd.DataFrame(), self.sample_metadata)
-        self.assertEqual(trial_site.replace_metadata_keys(self.pattern_string_1), self.expected_matched_string_1)
-        self.assertEqual(trial_site.replace_metadata_keys(self.pattern_string_2), self.expected_matched_string_2)
-
-    def test_replaceMetadataKeys_paths(self) -> None:
-        trial_site = TrialSite(pd.DataFrame(), self.sample_metadata)
-
-        self.assertEqual(trial_site.replace_metadata_keys(Path(self.pattern_string_1)),
-                         Path(self.expected_matched_string_1))
-        self.assertEqual(trial_site.replace_metadata_keys(Path(self.pattern_string_2)),
-                         Path(self.expected_matched_string_2))
+        self.assertEqual('test456_2022', TrialSiteConverter.simplify_measurement_column_labels(
+            (date.fromisoformat('2022-12-31'), 'H', 'm', '0'),
+            override_name='test456')
+        )
 
     def test_writeData(self):
         test_df = pd.DataFrame.from_dict({
@@ -178,7 +168,7 @@ class TrialSiteConverterTest(unittest.TestCase):
                 pd.NA, pd.NA, pd.NA
             ]
         })
-        trial_site = TrialSite(df=test_df, metadata=dict())
+        trial_site = TrialSiteConverter(TrialSite(df=test_df, metadata=dict()))
         trial_site.write_data(filepath=self.tmp_dir / 'data.csv')
         with open(self.tmp_dir / 'data.csv', 'r') as file:
             self.assertEqual(file.read(), "meta-data,D_2014\n1,NA\n2,NA\n3,NA\n")
@@ -189,7 +179,7 @@ class TrialSiteConverterTest(unittest.TestCase):
             'key-2': 'value-2',
             'key-3': 'value-3'
         }
-        trial_site = TrialSite(df=pd.DataFrame(), metadata=test_metadata)
+        trial_site = TrialSiteConverter(TrialSite(df=pd.DataFrame(), metadata=test_metadata))
         trial_site.write_metadata(filepath=self.tmp_dir / 'metadata.txt')
         with open(self.tmp_dir / 'metadata.txt', 'r') as file:
             self.assertEqual(file.read(), "key-1=value-1\nkey-2=value-2\nkey-3=value-3\n")

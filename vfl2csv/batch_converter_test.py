@@ -8,15 +8,15 @@ class BatchConverterTest(unittest.TestCase):
 
     def test_validate_arguments_validation(self):
         config.set('Input', 'input_format', 'Excel')
-        self.assertRaises(ValueError, validate, ['vfl2csv'])
-        self.assertRaises(ValueError, validate, ['vfl2csv', 'random_path_60I#h64B'])
-        self.assertRaises(ValueError, validate, ['vfl2csv', 'random_path_60I#h64B', 'random_path_4w27NG@o'])
+        self.assertRaises(ValueError, validate, ['vfl2csv_base'])
+        self.assertRaises(ValueError, validate, ['vfl2csv_base', 'random_path_60I#h64B'])
+        self.assertRaises(ValueError, validate, ['vfl2csv_base', 'random_path_60I#h64B', 'random_path_4w27NG@o'])
         # use two paths that definitely exist
-        self.assertIsNone(validate(['vfl2csv', 'vfl2csv', 'vfl2csv']))
+        self.assertIsNone(validate(['vfl2csv_base', 'vfl2csv_base', 'vfl2csv_base']))
 
     def test_validate_basic_config_validation(self):
         config.set('Input', 'input_format', 'Excel')
-        argv = ['vfl2csv', 'vfl2csv', 'vfl2csv']
+        argv = ['vfl2csv_base', 'vfl2csv_base', 'vfl2csv_base']
         self.assertIsNone(validate(argv))
         config.set('Input', 'input_format', 'TSV')
         self.assertIsNone(validate(argv))

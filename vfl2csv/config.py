@@ -6,7 +6,7 @@ custom_converters = {'path': Path}
 
 config = configparser.ConfigParser(converters=custom_converters)
 testconfig = configparser.ConfigParser(converters=custom_converters)
-config.read('config/config.ini')
+config.read('config/config_vfl2csv.ini')
 testconfig.read('tests/test-config.ini')
 
 with open('config/columns.json', 'r') as file:

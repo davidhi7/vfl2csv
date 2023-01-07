@@ -1,5 +1,6 @@
 import logging
 import multiprocessing
+import traceback
 from collections import Counter
 from multiprocessing import RLock, Pool
 from pathlib import Path
@@ -7,9 +8,10 @@ from pathlib import Path
 import numpy as np
 
 from config import config
-from input.ExcelInputSheet import ExcelInputSheet
 from input.InputFile import InputFile
+from input.ExcelInputSheet import ExcelInputSheet
 from input.TsvInputFile import TsvInputFile
+from output.TrialSiteConverter import TrialSiteConverter
 
 CONFIG_ALLOWED_INPUT_FORMATS = ('TSV', 'Excel')
 logger = logging.getLogger(__name__)
@@ -18,7 +20,7 @@ logger = logging.getLogger(__name__)
 def validate(argv):
     if config["Input"]["input_format"] not in CONFIG_ALLOWED_INPUT_FORMATS:
         raise ValueError(
-            f'{config["Input"]["input_format"]} is not a valid input format. Allowed formats are {", ".join(CONFIG_ALLOWED_INPUT_FORMATS)}!')
+            f'{config["Input"]["input_format"]} is not a valid output format. Allowed formats are {", ".join(CONFIG_ALLOWED_INPUT_FORMATS)}!')
     if len(argv) < 3:
         raise ValueError(
             'Invalid number of arguments provided. Input file or directory and output directory are required!')
@@ -53,10 +55,12 @@ def trial_site_pipeline(
     for input_sheet in input_batch:
         # noinspection PyBroadException
         try:
-            logger.info(f'Converting input {str(input_sheet)}')
+            logger.info(f'Converting output {str(input_sheet)}')
             input_sheet.parse()
             trial_site = input_sheet.get_trial_site()
-            trial_site.refactor_dataframe()
+            converter = TrialSiteConverter(trial_site)
+            converter.refactor_dataframe()
+            converter.refactor_metadata()
 
             data_output_file = trial_site.replace_metadata_keys(output_data_pattern)
             metadata_output_file = trial_site.replace_metadata_keys(output_metadata_pattern)
@@ -73,9 +77,10 @@ def trial_site_pipeline(
                     raise Exception(
                         f'Process {process_index}: Corresponding output file(s) for trial site {input_sheet} does already exist!') from e
 
-            trial_site.write_data(data_output_file)
-            trial_site.write_metadata(metadata_output_file)
+            converter.write_data(data_output_file)
+            converter.write_metadata(metadata_output_file)
         except Exception as e:
+            traceback.print_exc();
             logger.warning(f'Exception in process {process_index}: {str(e)}')
             errors.append(e)
     return {

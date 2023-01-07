@@ -3,16 +3,16 @@ from typing import Iterable
 
 import pandas as pd
 
-from input.ExcelWorkbook import ExcelWorkbook
+from vfl2csv_base.TrialSite import TrialSite
 from input.InputFile import InputFile
-from output.TrialSiteConverter import TrialSite
+from input.ExcelWorkbook import ExcelWorkbook
 
 
 class ExcelInputSheet(InputFile):
     def __init__(self, workbook: ExcelWorkbook, sheet_name: str):
         """
-        Create a new Excel input file object.
-        This class acts as abstraction for parsing Excel input files and acts as the interface between Excel and the
+        Create a new Excel output file object.
+        This class acts as abstraction for parsing Excel output files and acts as the interface between Excel and the
         TrialSite class, which represents measurement and metadata in a common format.
         ;param workbook: ExcelWorkbook instance
         :param sheet_name: Name of the sheet containing all trial site data

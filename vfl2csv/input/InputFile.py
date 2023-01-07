@@ -3,11 +3,9 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import TYPE_CHECKING, Iterable
+from typing import Iterable
 
-# prevent a circular import
-if TYPE_CHECKING:
-    from output.TrialSiteConverter import TrialSite
+from vfl2csv_base.TrialSite import TrialSite
 
 
 class InputFile(ABC):
