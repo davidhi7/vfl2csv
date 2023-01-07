@@ -64,6 +64,7 @@ def trial_site_pipeline(
 
             data_output_file = trial_site.replace_metadata_keys(output_data_pattern)
             metadata_output_file = trial_site.replace_metadata_keys(output_metadata_pattern)
+            converter.trial_site.metadata['data_path'] = str(data_output_file.absolute().relative_to(metadata_output_file.parent.absolute()))
 
             data_output_file.parent.mkdir(parents=True, exist_ok=True)
             metadata_output_file.parent.mkdir(parents=True, exist_ok=True)
