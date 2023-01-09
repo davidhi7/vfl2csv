@@ -26,12 +26,3 @@ vfl2csv$ python vfl2csv path/to/input out/
 PS G:\vfl2csv> $env:PYTHONPATH = '.'
 PS G:\vfl2csv> python vfl2csv path/to/input out/
 ```
-
-
-
-
-
-
-
-
-

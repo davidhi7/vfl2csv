@@ -1,5 +1,5 @@
 from pathlib import Path
 
-import config_factory
+from .config_factory import get_config
 
-testconfig = config_factory.get_config(Path('tests/test-config.ini'))
+testconfig = get_config(Path('tests/test-config.ini'))

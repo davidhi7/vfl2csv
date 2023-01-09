@@ -6,12 +6,12 @@ from openpyxl.reader.excel import load_workbook
 from openpyxl.utils import get_column_letter, column_index_from_string
 from openpyxl.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
+from .FormulaeColumn import FormulaeColumn
 
 from excel import styles
 from excel.utilities import zeroBasedCell
-from output.FormulaeColumn import FormulaeColumn
-from vfl2csv_forms import config
 from vfl2csv_base.input.TrialSite import TrialSite
+from vfl2csv_forms import config
 
 dtypes_styles_mapping = {
     pd.StringDtype(): styles.table_body_text,
@@ -55,14 +55,25 @@ class TrialSiteFormular:
         Write the dataframe and return the corresponding workbook and worksheet.
         :return:
         """
+        # TODO find other way to batch write all sheets using pd.ExcelWriter, clear up this undocumented behaviour
+        workbook = load_workbook(self.output_path)
+        writer = pd.ExcelWriter(self.output_path)
+        writer.book = workbook
+        self.df.to_excel(
+            writer,
+            sheet_name=self.sheet_name,
+            startrow=self.table_head_row,
+            index=False
+        )
+        """
         self.df.to_excel(
             self.output_path,
             sheet_name=self.sheet_name,
             startrow=self.table_head_row,
             index=False
         )
+        """
 
-        workbook = load_workbook(self.output_path)
         return workbook, workbook[self.sheet_name]
 
     def write_metadata(self):
