@@ -7,10 +7,10 @@ from pathlib import Path
 
 import numpy as np
 
-from input.ExcelInputSheet import ExcelInputSheet
-from input.InputFile import InputFile
-from input.TsvInputFile import TsvInputFile
-from output.TrialSiteConverter import TrialSiteConverter
+from .input.ExcelInputSheet import ExcelInputSheet
+from .input.InputFile import InputFile
+from .input.TsvInputFile import TsvInputFile
+from .output.TrialSiteConverter import TrialSiteConverter
 from vfl2csv import config
 
 CONFIG_ALLOWED_INPUT_FORMATS = ('TSV', 'Excel')

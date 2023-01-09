@@ -3,8 +3,8 @@ from typing import Iterable
 
 import pandas as pd
 
-from input.ExcelWorkbook import ExcelWorkbook
-from input.InputFile import InputFile
+from .ExcelWorkbook import ExcelWorkbook
+from .InputFile import InputFile
 from vfl2csv_base.input.TrialSite import TrialSite
 
 
