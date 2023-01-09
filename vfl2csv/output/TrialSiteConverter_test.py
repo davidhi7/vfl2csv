@@ -6,9 +6,9 @@ from datetime import date
 import pandas as pd
 from pandas import MultiIndex
 
-from vfl2csv_base.TrialSite import TrialSite
-from config import testconfig
 from output.TrialSiteConverter import TrialSiteConverter
+from vfl2csv import testconfig
+from vfl2csv_base.input.TrialSite import TrialSite
 
 
 # noinspection PyTypeChecker
@@ -135,14 +135,14 @@ class TrialSiteConverterTest(unittest.TestCase):
         self.assertEqual('H_2021', TrialSiteConverter.simplify_measurement_column_labels(
             (date.fromisoformat('2022-05-31'), 'H', 'm', '0'),
             override_name=None)
-        )
+                         )
 
         self.assertEqual('test123_2021', TrialSiteConverter.simplify_measurement_column_labels(
             (date.fromisoformat('2022-01-01'), 'D', 'cm', '0'), override_name='test123'))
         self.assertEqual('test456_2021', TrialSiteConverter.simplify_measurement_column_labels(
             (date.fromisoformat('2022-05-31'), 'H', 'm', '0'),
             override_name='test456')
-         )
+                         )
 
     def test_simplifyColumnLabels_expect_equal_year(self) -> None:
         self.assertEqual('D_2022', TrialSiteConverter.simplify_measurement_column_labels(
@@ -150,14 +150,14 @@ class TrialSiteConverterTest(unittest.TestCase):
         self.assertEqual('H_2022', TrialSiteConverter.simplify_measurement_column_labels(
             (date.fromisoformat('2022-12-31'), 'H', 'm', '0'),
             override_name=None)
-        )
+                         )
 
         self.assertEqual('test123_2022', TrialSiteConverter.simplify_measurement_column_labels(
             (date.fromisoformat('2022-06-01'), 'D', 'cm', '0'), override_name='test123'))
         self.assertEqual('test456_2022', TrialSiteConverter.simplify_measurement_column_labels(
             (date.fromisoformat('2022-12-31'), 'H', 'm', '0'),
             override_name='test456')
-        )
+                         )
 
     def test_writeData(self):
         test_df = pd.DataFrame.from_dict({

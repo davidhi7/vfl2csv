@@ -3,9 +3,9 @@ from typing import Iterable
 
 import pandas as pd
 
-from vfl2csv_base.TrialSite import TrialSite
-from config import config
 from input.InputFile import InputFile
+from vfl2csv import config
+from vfl2csv_base.input.TrialSite import TrialSite
 
 
 class TsvInputFile(InputFile):

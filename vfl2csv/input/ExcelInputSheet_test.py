@@ -3,9 +3,9 @@ from pathlib import Path
 
 import pandas as pd
 
-from config import testconfig
 from input.ExcelInputSheet import ExcelInputSheet
 from input.ExcelWorkbook import ExcelWorkbook
+from vfl2csv import testconfig
 
 
 class ExcelInputSheetTest(unittest.TestCase):

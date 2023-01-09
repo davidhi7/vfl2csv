@@ -3,9 +3,9 @@ import re
 from pathlib import Path
 from typing import Optional
 
-import config as config
-from vfl2csv_base.TrialSite import TrialSite
-from vfl2csv_base.datatypes_mapping import pandas_datatypes_mapping as dtypes_mapping
+from vfl2csv import column_layout
+from vfl2csv_base.input.TrialSite import TrialSite
+from vfl2csv_base.input.datatypes_mapping import pandas_datatypes_mapping as dtypes_mapping
 
 HierarchicalColumnLabel = tuple[datetime.date | datetime.datetime | str, str, str, str]
 
@@ -33,8 +33,8 @@ class TrialSiteConverter:
         
         The entire column specification as well as the corresponding data types are declared in the 
         config/columns.json file.'''
-        head_column_count = len(config.column_layout['head'])
-        measurement_fields_count = len(config.column_layout['measurements'])
+        head_column_count = len(column_layout.head)
+        measurement_fields_count = len(column_layout.measurements)
 
         column_count = len(self.trial_site.df.columns)
         measurement_column_count = column_count - head_column_count
@@ -44,14 +44,15 @@ class TrialSiteConverter:
 
         new_column_names = list()
         for i, column in enumerate(self.trial_site.df.columns[0:head_column_count]):
-            head_column_template = config.column_layout['head'][i]
+            head_column_template = column_layout.head[i]
             new_column_names.append(head_column_template['override_name'])
             self.trial_site.df[column] = self.trial_site.df[column].astype(dtypes_mapping[head_column_template['type']])
 
         for measurement_index in range(measurement_count):
             column_shift = head_column_count + measurement_index * measurement_fields_count
-            for i, column_hierarchy in enumerate(self.trial_site.df.columns[column_shift:column_shift + measurement_fields_count]):
-                measurement_column_template = config.column_layout['measurements'][i]
+            for i, column_hierarchy in enumerate(
+                    self.trial_site.df.columns[column_shift:column_shift + measurement_fields_count]):
+                measurement_column_template = column_layout.measurements[i]
                 new_column_names.append(
                     self.simplify_measurement_column_labels(column_hierarchy,
                                                             measurement_column_template['override_name'])

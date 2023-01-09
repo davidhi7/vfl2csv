@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 
 import pandas as pd
@@ -24,3 +26,21 @@ class TrialSite:
         if isinstance(pattern, Path):
             return Path(str_pattern)
         return str_pattern
+
+    @staticmethod
+    def from_metadata_file(metadata_path: Path) -> TrialSite:
+        if not metadata_path.is_file():
+            raise ValueError(f'{metadata_path} is not a valid file')
+        metadata = dict()
+        with open(metadata_path, 'r', encoding='utf-8') as file:
+            for line in file.readlines():
+                # use maxsplit to avoid removing equality symbols in the value
+                key, value = line.split('=', maxsplit=1)
+                # remove trailing newline in value
+                metadata[key] = value.rstrip()
+
+        df_path = metadata_path.parent / Path(metadata['DataFrame'])
+        if not df_path.is_file():
+            raise ValueError(f'Relative path {Path(metadata["DataFrame"])} is not a valid file')
+        df = pd.read_csv(df_path)
+        return TrialSite(df, metadata)

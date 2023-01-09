@@ -7,11 +7,11 @@ from openpyxl.utils import get_column_letter, column_index_from_string
 from openpyxl.workbook import Workbook
 from openpyxl.worksheet.worksheet import Worksheet
 
-from TrialSite import TrialSite
-from config import config
 from excel import styles
-from excel.utilities import EXCEL_COLUMN_NAMES, zeroBasedCell
+from excel.utilities import zeroBasedCell
 from output.FormulaeColumn import FormulaeColumn
+from vfl2csv_forms import config
+from vfl2csv_base.input.TrialSite import TrialSite
 
 dtypes_styles_mapping = {
     pd.StringDtype(): styles.table_body_text,

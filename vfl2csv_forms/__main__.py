@@ -1,4 +1,5 @@
 import datetime
+import math
 import re
 import sys
 from pathlib import Path
@@ -6,12 +7,12 @@ from typing import Iterator, Generator
 
 import pandas as pd
 
-from ColumnLayout import ColumnLayout
 from excel import styles
 from output.FormulaeColumn import FormulaeColumn
 from output.TrialSiteFormular import TrialSiteFormular
-from vfl2csv_base.TrialSite import TrialSite
-from vfl2csv_base.datatypes_mapping import pandas_datatypes_mapping as dtypes_mapping
+from vfl2csv_base.input.ColumnLayout import ColumnLayout
+from vfl2csv_base.input.TrialSite import TrialSite
+from vfl2csv_base.input.datatypes_mapping import pandas_datatypes_mapping as dtypes_mapping
 
 measurement_column_pattern = re.compile(r'\w+_\d{4}')
 
@@ -38,7 +39,7 @@ def expand_column_labels(index: Iterator[str]) -> Generator[tuple[str], None, No
             yield int(record_year), record_type
         else:
             # for head columns, only use the original column label
-            yield -1, label
+            yield math.nan, label
 
 
 def parse_metadata(path: Path) -> dict[str, str]:
@@ -58,12 +59,10 @@ if __name__ == '__main__':
     column_layout = ColumnLayout(Path('config/columns.json'))
 
     # parse output file
-    input_file = Path(sys.argv[1])
-    input_metadata_file = Path(sys.argv[2])
-    output_file = Path(sys.argv[3])
-    df = pd.read_csv(input_file)
-    metadata = parse_metadata(input_metadata_file)
-    trial_site = TrialSite(df, metadata)
+    input_metadata_file = Path(sys.argv[1])
+    output_file = Path(sys.argv[2])
+    trial_site = TrialSite.from_metadata_file(input_metadata_file)
+    df = trial_site.df
 
     # counts of head/tree metadata columns
     head_column_count = len(column_layout.head)
@@ -121,7 +120,7 @@ if __name__ == '__main__':
     for column in column_layout.head:
         if 'form_include' in column and column['form_include'] is False:
             continue
-        head_columns.append((-1, column['override_name'],))
+        head_columns.append((math.nan, column['override_name'],))
 
     for column in column_layout.measurements:
         if 'form_include' in column and column['form_include'] is False:
@@ -174,5 +173,5 @@ if __name__ == '__main__':
     # set compressed names (type_YYYY)
     df_subset.columns = compress_column_labels(df_subset.columns)
 
-    form = TrialSiteFormular(TrialSite(df_subset, metadata), output_file, formulae_columns)
+    form = TrialSiteFormular(TrialSite(df_subset, trial_site.metadata), output_file, formulae_columns)
     form.create()

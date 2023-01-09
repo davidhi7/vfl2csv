@@ -3,7 +3,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from TrialSite import TrialSite
+from vfl2csv_base import testconfig
+from vfl2csv_base.input.TrialSite import TrialSite
 
 
 class TrialSiteTest(unittest.TestCase):
@@ -34,6 +35,21 @@ class TrialSiteTest(unittest.TestCase):
                          Path(self.expected_matched_string_1))
         self.assertEqual(trial_site.replace_metadata_keys(Path(self.pattern_string_2)),
                          Path(self.expected_matched_string_2))
+
+    def test_fromMetaDataFile(self) -> None:
+        trial_site = TrialSite.from_metadata_file(Path(testconfig['Input']['metadata_sample_output_file']))
+        expected_df = pd.read_csv(testconfig['Input']['csv_sample_output_file'])
+        self.assertTrue(trial_site.df.equals(expected_df))
+        self.assertDictEqual(trial_site.metadata, {
+            'Forstamt': '44 Schönheide',
+            'Revier': 'Hundshübel',
+            'Versuch': '14607',
+            'Parzelle': '01',
+            'Teilfläche': '112 a2',
+            'Standort': 'Mf-Z3',
+            'Höhenlage': '680',
+            'DataFrame': '14607-01.csv',
+        })
 
 
 if __name__ == '__main__':

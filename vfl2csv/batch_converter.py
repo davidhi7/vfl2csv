@@ -7,11 +7,11 @@ from pathlib import Path
 
 import numpy as np
 
-from config import config
-from input.InputFile import InputFile
 from input.ExcelInputSheet import ExcelInputSheet
+from input.InputFile import InputFile
 from input.TsvInputFile import TsvInputFile
 from output.TrialSiteConverter import TrialSiteConverter
+from vfl2csv import config
 
 CONFIG_ALLOWED_INPUT_FORMATS = ('TSV', 'Excel')
 logger = logging.getLogger(__name__)
@@ -55,7 +55,7 @@ def trial_site_pipeline(
     for input_sheet in input_batch:
         # noinspection PyBroadException
         try:
-            logger.info(f'Converting output {str(input_sheet)}')
+            logger.info(f'Converting input {str(input_sheet)}')
             input_sheet.parse()
             trial_site = input_sheet.get_trial_site()
             converter = TrialSiteConverter(trial_site)
@@ -64,7 +64,8 @@ def trial_site_pipeline(
 
             data_output_file = trial_site.replace_metadata_keys(output_data_pattern)
             metadata_output_file = trial_site.replace_metadata_keys(output_metadata_pattern)
-            converter.trial_site.metadata['data_path'] = str(data_output_file.absolute().relative_to(metadata_output_file.parent.absolute()))
+            converter.trial_site.metadata['DataFrame'] = str(
+                data_output_file.absolute().relative_to(metadata_output_file.parent.absolute()))
 
             data_output_file.parent.mkdir(parents=True, exist_ok=True)
             metadata_output_file.parent.mkdir(parents=True, exist_ok=True)
