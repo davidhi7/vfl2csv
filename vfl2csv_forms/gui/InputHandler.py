@@ -2,13 +2,15 @@ import logging
 import traceback
 from pathlib import Path
 
-import openpyxl
 from PySide6.QtCore import Slot, Qt, Signal, QSize
 from PySide6.QtWidgets import QWidget, QHBoxLayout, QPushButton, QFileDialog, QLabel, QVBoxLayout, QMessageBox, \
     QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView
+from openpyxl.reader.excel import load_workbook
+from pandas import ExcelWriter
 
 from vfl2csv_base.input.TrialSite import TrialSite
 from .qt_util import QHLine
+from ..excel.styles import register
 from ..trial_site_conversion import run
 
 logger = logging.getLogger(__name__)
@@ -192,7 +194,16 @@ class InputHandler(QWidget):
             output_path += '.xlsx'
 
         # TODO remove and replace with better solution
-        openpyxl.Workbook().save(output_path)
-        for trial_site in self.trial_sites:
-            run(trial_site, Path(output_path))
+        trial_site_forms = []
+        with ExcelWriter(Path(output_path)) as writer:
+            for trial_site in self.trial_sites:
+                trial_site_form = run(trial_site, Path(output_path))
+                trial_site_form.init(writer)
+                trial_site_forms.append(trial_site_form)
+
+        workbook = load_workbook(output_path)
+        register(workbook)
+        for trial_site_form in trial_site_forms:
+            trial_site_form.create(workbook)
+
         self.notification_success.emit('Formularerzeugung abgeschlossen')

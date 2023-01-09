@@ -2,16 +2,14 @@ from pathlib import Path
 from typing import Iterable
 
 import pandas as pd
-from openpyxl.reader.excel import load_workbook
 from openpyxl.utils import get_column_letter, column_index_from_string
-from openpyxl.workbook import Workbook
-from openpyxl.worksheet.worksheet import Worksheet
-from .FormulaeColumn import FormulaeColumn
+from pandas import ExcelWriter
 
-from excel import styles
-from excel.utilities import zeroBasedCell
 from vfl2csv_base.input.TrialSite import TrialSite
 from vfl2csv_forms import config
+from .FormulaeColumn import FormulaeColumn
+from ..excel import styles
+from ..excel.utilities import zeroBasedCell
 
 dtypes_styles_mapping = {
     pd.StringDtype(): styles.table_body_text,
@@ -41,8 +39,9 @@ class TrialSiteFormular:
 
         self.worksheet = None
 
-    def create(self):
-        workbook, worksheet = self.init()
+    def create(self, workbook):
+        # workbook = load_workbook(self.output_path)
+        worksheet = workbook[self.sheet_name]
         self.worksheet = worksheet
         self.write_metadata()
         self.write_formulae_columns()
@@ -50,15 +49,11 @@ class TrialSiteFormular:
         self.adjust_column_width()
         workbook.save(self.output_path)
 
-    def init(self) -> tuple[Workbook, Worksheet]:
+    def init(self, writer: ExcelWriter):
         """
         Write the dataframe and return the corresponding workbook and worksheet.
         :return:
         """
-        # TODO find other way to batch write all sheets using pd.ExcelWriter, clear up this undocumented behaviour
-        workbook = load_workbook(self.output_path)
-        writer = pd.ExcelWriter(self.output_path)
-        writer.book = workbook
         self.df.to_excel(
             writer,
             sheet_name=self.sheet_name,
@@ -73,8 +68,6 @@ class TrialSiteFormular:
             index=False
         )
         """
-
-        return workbook, workbook[self.sheet_name]
 
     def write_metadata(self):
         # merge two horizontally adjacent cells each
@@ -99,15 +92,15 @@ class TrialSiteFormular:
 
     def apply_formatting(self):
         for row in self.worksheet['A1:A4'] + self.worksheet['F1:F4']:
-            row[0].style = styles.metadata_keys
+            row[0].style = styles.metadata_keys.name
         for row in self.worksheet['C1:C4'] + self.worksheet['H1:H4']:
-            row[0].style = styles.metadata_values
+            row[0].style = styles.metadata_values.name
 
         for column in range(self.first_empty_column):
             # header column
-            zeroBasedCell(self.worksheet, self.table_head_row, column).style = styles.table_head
+            zeroBasedCell(self.worksheet, self.table_head_row, column).style = styles.table_head.name
             if len(self.df.columns) > column:
-                style = dtypes_styles_mapping[self.df[self.df.columns[column]].dtype]
+                style = dtypes_styles_mapping[self.df[self.df.columns[column]].dtype].name
                 for row in self.rowspan[1:]:
                     zeroBasedCell(self.worksheet, row, column).style = style
 

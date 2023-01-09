@@ -1,18 +1,17 @@
+import datetime
 import math
 import re
-import sys
-import datetime
 from pathlib import Path
 from typing import Iterator, Generator
 
 import pandas as pd
 
-from excel import styles
-from . import column_layout
-from .output.FormulaeColumn import FormulaeColumn
-from .output.TrialSiteFormular import TrialSiteFormular
 from vfl2csv_base.input.TrialSite import TrialSite
 from vfl2csv_base.input.datatypes_mapping import pandas_datatypes_mapping as dtypes_mapping
+from . import column_layout
+from .excel import styles
+from .output.FormulaeColumn import FormulaeColumn
+from .output.TrialSiteFormular import TrialSiteFormular
 
 measurement_column_pattern = re.compile(r'\w+_\d{4}')
 
@@ -42,7 +41,7 @@ def expand_column_labels(index: Iterator[str]) -> Generator[tuple[str], None, No
             yield math.nan, label
 
 
-def run(trial_site: TrialSite, output_path: Path):
+def run(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
     #### READ INPUT ####
     df = trial_site.df
 
@@ -58,19 +57,18 @@ def run(trial_site: TrialSite, output_path: Path):
     df.columns = expand_column_labels(df.columns)
 
     dtypes_styles_mapping = {
-        pd.StringDtype(): styles.table_body_text,
-        pd.Int8Dtype(): styles.table_body_integer,
-        pd.Int16Dtype(): styles.table_body_integer,
-        pd.Int32Dtype(): styles.table_body_integer,
-        pd.Int64Dtype(): styles.table_body_integer,
-        pd.UInt8Dtype(): styles.table_body_integer,
-        pd.UInt16Dtype(): styles.table_body_integer,
-        pd.UInt32Dtype(): styles.table_body_integer,
-        pd.UInt64Dtype(): styles.table_body_integer,
-        pd.Float32Dtype(): styles.table_body_rational,
-        pd.Float64Dtype(): styles.table_body_rational
+        pd.StringDtype(): styles.table_body_text.name,
+        pd.Int8Dtype(): styles.table_body_integer.name,
+        pd.Int16Dtype(): styles.table_body_integer.name,
+        pd.Int32Dtype(): styles.table_body_integer.name,
+        pd.Int64Dtype(): styles.table_body_integer.name,
+        pd.UInt8Dtype(): styles.table_body_integer.name,
+        pd.UInt16Dtype(): styles.table_body_integer.name,
+        pd.UInt32Dtype(): styles.table_body_integer.name,
+        pd.UInt64Dtype(): styles.table_body_integer.name,
+        pd.Float32Dtype(): styles.table_body_rational.name,
+        pd.Float64Dtype(): styles.table_body_rational.name
     }
-
     #### verify trial site, set datatypes ####
 
     # verify dataframe columns and set datatypes
@@ -130,7 +128,7 @@ def run(trial_site: TrialSite, output_path: Path):
             columns_count = layout['new_columns_count']
             formulae_column = FormulaeColumn(False, 'AVERAGE', f'{column_name}_{current_year}',
                                              list(range(index + 1, index + 1 + columns_count)),
-                                             styles.table_body_rational, [])
+                                             styles.table_body_rational.name, [])
             formulae_columns.append(formulae_column)
             # iterate in a declining manner so that the column with the highest index is shifted the farthest away
             # from the index
@@ -140,15 +138,15 @@ def run(trial_site: TrialSite, output_path: Path):
             if layout.get('add_difference', False):
                 formulae_columns.append(
                     FormulaeColumn(True, '-', f'Diff', [formulae_column, index],
-                                   styles.table_body_rational, [styles.conditional_formatting_less_than,
-                                                                styles.conditional_formatting_greater_than]))
+                                   styles.table_body_rational.name, [styles.conditional_formatting_less_than,
+                                                                     styles.conditional_formatting_greater_than]))
         else:
             df_subset.insert(index + 1, (current_year, column_name), pd.Series(data=pd.NA, dtype=column_datatype))
             if layout.get('add_difference', False):
                 formulae_columns.append(
                     FormulaeColumn(True, '-', f'Diff {column_name}_{current_year}', [index + 1, index],
-                                   styles.table_body_rational, [styles.conditional_formatting_less_than,
-                                                                styles.conditional_formatting_greater_than]))
+                                   styles.table_body_rational.name, [styles.conditional_formatting_less_than,
+                                                                     styles.conditional_formatting_greater_than]))
 
     #### output ####
 
@@ -156,4 +154,4 @@ def run(trial_site: TrialSite, output_path: Path):
     df_subset.columns = compress_column_labels(df_subset.columns)
 
     form = TrialSiteFormular(TrialSite(df_subset, trial_site.metadata), output_path, formulae_columns)
-    form.create()
+    return form
