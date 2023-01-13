@@ -6,9 +6,9 @@ from PySide6.QtCore import Qt, Slot, QSize
 from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QTableWidget, \
     QAbstractItemView, QHeaderView, QMessageBox, QFileDialog, QTableWidgetItem, QProgressBar
 
-from .InputHandler import InputHandler
-from .QHLine import QHLine
-from .. import config
+from vfl2csv_forms import config
+from vfl2csv_forms.gui.InputHandler import InputHandler
+from vfl2csv_forms.gui.QHLine import QHLine
 
 logger = logging.getLogger(__name__)
 
@@ -199,6 +199,7 @@ class GraphicalUI(QWidget):
     """
     Shamelessly stolen from https://stackoverflow.com/a/41543029
     """
+
     def getQTableWidgetSize(self) -> QSize:
         self.status_table.resizeRowsToContents()
         width = self.status_table.verticalHeader().width() + 4  # +4 seems to be needed

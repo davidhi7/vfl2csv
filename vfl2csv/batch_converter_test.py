@@ -1,7 +1,7 @@
 import unittest
 
-from batch_converter import validate, find_input_sheets
 from vfl2csv import config, testconfig
+from vfl2csv.batch_converter import validate, find_input_sheets
 
 
 class BatchConverterTest(unittest.TestCase):

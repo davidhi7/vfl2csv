@@ -7,11 +7,11 @@ from pathlib import Path
 
 import numpy as np
 
-from .input.ExcelInputSheet import ExcelInputSheet
-from .input.InputFile import InputFile
-from .input.TsvInputFile import TsvInputFile
-from .output.TrialSiteConverter import TrialSiteConverter
 from vfl2csv import config
+from vfl2csv.input.ExcelInputSheet import ExcelInputSheet
+from vfl2csv.input.InputFile import InputFile
+from vfl2csv.input.TsvInputFile import TsvInputFile
+from vfl2csv.output.TrialSiteConverter import TrialSiteConverter
 
 CONFIG_ALLOWED_INPUT_FORMATS = ('TSV', 'Excel')
 logger = logging.getLogger(__name__)

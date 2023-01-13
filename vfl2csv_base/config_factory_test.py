@@ -2,7 +2,7 @@ import unittest
 from configparser import ConfigParser
 from pathlib import Path
 
-from config_factory import get_config
+from vfl2csv_base.config_factory import get_config
 
 
 class ConfigFactory(unittest.TestCase):

@@ -6,9 +6,9 @@ from openpyxl.reader.excel import load_workbook
 from pandas import ExcelWriter
 
 from vfl2csv_base.input.TrialSite import TrialSite
-from ..excel import styles
-from ..trial_site_conversion import convert
-from .. import config
+from vfl2csv_forms import config
+from vfl2csv_forms.excel import styles
+from vfl2csv_forms.trial_site_conversion import convert
 
 logger = logging.getLogger(__name__)
 

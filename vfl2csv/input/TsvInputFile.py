@@ -3,8 +3,8 @@ from typing import Iterable
 
 import pandas as pd
 
-from .InputFile import InputFile
-from .. import config
+from vfl2csv import config
+from vfl2csv.input.InputFile import InputFile
 from vfl2csv_base.input.TrialSite import TrialSite
 
 

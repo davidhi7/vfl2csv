@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pandas as pd
 
-from input.TsvInputFile import TsvInputFile
 from vfl2csv import testconfig
+from vfl2csv.input.TsvInputFile import TsvInputFile
 
 
 class TsvInputFileTest(unittest.TestCase):

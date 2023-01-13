@@ -8,10 +8,10 @@ import pandas as pd
 
 from vfl2csv_base.input.TrialSite import TrialSite
 from vfl2csv_base.input.datatypes_mapping import pandas_datatypes_mapping as dtypes_mapping
-from . import column_layout
-from .excel import styles
-from .output.FormulaeColumn import FormulaeColumn
-from .output.TrialSiteFormular import TrialSiteFormular
+from vfl2csv_forms import column_layout
+from vfl2csv_forms.excel import styles
+from vfl2csv_forms.output.FormulaeColumn import FormulaeColumn
+from vfl2csv_forms.output.TrialSiteFormular import TrialSiteFormular
 
 measurement_column_pattern = re.compile(r'\w+_\d{4}')
 

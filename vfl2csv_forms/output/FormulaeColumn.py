@@ -4,7 +4,7 @@ from typing import Union
 
 from openpyxl.styles import NamedStyle
 
-from ..excel.utilities import zeroBasedCell, EXCEL_COLUMN_NAMES
+from vfl2csv_forms.excel.utilities import zeroBasedCell, EXCEL_COLUMN_NAMES
 
 
 class FormulaeColumn:

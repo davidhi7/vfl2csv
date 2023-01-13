@@ -7,9 +7,9 @@ from pandas import ExcelWriter
 
 from vfl2csv_base.input.TrialSite import TrialSite
 from vfl2csv_forms import config
-from .FormulaeColumn import FormulaeColumn
-from ..excel import styles
-from ..excel.utilities import zeroBasedCell
+from vfl2csv_forms.excel import styles
+from vfl2csv_forms.excel.utilities import zeroBasedCell
+from vfl2csv_forms.output.FormulaeColumn import FormulaeColumn
 
 dtypes_styles_mapping = {
     pd.StringDtype(): styles.table_body_text,
