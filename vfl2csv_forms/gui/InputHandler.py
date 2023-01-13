@@ -66,7 +66,6 @@ class InputHandler:
         trial_site_forms = []
         with ExcelWriter(output_file, engine='openpyxl') as writer:
             for trial_site in self.trial_sites:
-                print(trial_site.metadata)
                 trial_site_form = convert(trial_site, output_file)
                 trial_site_forms.append(trial_site_form)
                 trial_site_form.init_worksheet(writer)
