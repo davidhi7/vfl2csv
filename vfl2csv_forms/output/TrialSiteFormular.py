@@ -28,6 +28,7 @@ dtypes_styles_mapping = {
 
 class TrialSiteFormular:
     def __init__(self, trial_site: TrialSite, output_path: Path, formulae_columns: Iterable[FormulaeColumn]):
+        self.trial_site = trial_site
         self.df = trial_site.df
         self.metadata = trial_site.metadata
         self.output_path = output_path
@@ -49,7 +50,7 @@ class TrialSiteFormular:
         self.adjust_column_width()
         workbook.save(self.output_path)
 
-    def init(self, writer: ExcelWriter):
+    def init_worksheet(self, writer: ExcelWriter):
         """
         Write the dataframe and return the corresponding workbook and worksheet.
         :return:
@@ -60,14 +61,6 @@ class TrialSiteFormular:
             startrow=self.table_head_row,
             index=False
         )
-        """
-        self.df.to_excel(
-            self.output_path,
-            sheet_name=self.sheet_name,
-            startrow=self.table_head_row,
-            index=False
-        )
-        """
 
     def write_metadata(self):
         # merge two horizontally adjacent cells each
@@ -84,11 +77,11 @@ class TrialSiteFormular:
         self.worksheet['F2'] = 'durch: '
 
     def write_formulae_columns(self):
-        for column in self.formulae_columns:
-            if column.yielded_column is not None:
+        for formulae_column in self.formulae_columns:
+            if formulae_column.yielded_column is not None:
                 # in this case, `insert` was already called recursively by another instance
                 continue
-            self.first_empty_column += column.insert(self.first_empty_column, self.rowspan, self.worksheet)
+            self.first_empty_column += formulae_column.insert(self.first_empty_column, self.rowspan, self.worksheet)
 
     def apply_formatting(self):
         for row in self.worksheet['A1:A4'] + self.worksheet['F1:F4']:

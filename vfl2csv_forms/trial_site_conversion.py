@@ -31,7 +31,6 @@ def expand_column_labels(index: Iterator[str]) -> Generator[tuple[str], None, No
     """
     Convert labels from the string 'type_year' into the tuple `(year, type)` (`(type)` for tree metadata labels)
     """
-
     for label in index:
         if measurement_column_pattern.fullmatch(label):
             record_type, record_year = label.split('_')
@@ -41,7 +40,7 @@ def expand_column_labels(index: Iterator[str]) -> Generator[tuple[str], None, No
             yield math.nan, label
 
 
-def run(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
+def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
     #### READ INPUT ####
     df = trial_site.df
 
@@ -56,19 +55,6 @@ def run(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
     # value
     df.columns = expand_column_labels(df.columns)
 
-    dtypes_styles_mapping = {
-        pd.StringDtype(): styles.table_body_text.name,
-        pd.Int8Dtype(): styles.table_body_integer.name,
-        pd.Int16Dtype(): styles.table_body_integer.name,
-        pd.Int32Dtype(): styles.table_body_integer.name,
-        pd.Int64Dtype(): styles.table_body_integer.name,
-        pd.UInt8Dtype(): styles.table_body_integer.name,
-        pd.UInt16Dtype(): styles.table_body_integer.name,
-        pd.UInt32Dtype(): styles.table_body_integer.name,
-        pd.UInt64Dtype(): styles.table_body_integer.name,
-        pd.Float32Dtype(): styles.table_body_rational.name,
-        pd.Float64Dtype(): styles.table_body_rational.name
-    }
     #### verify trial site, set datatypes ####
 
     # verify dataframe columns and set datatypes
@@ -153,5 +139,4 @@ def run(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
     # set compressed names (type_YYYY)
     df_subset.columns = compress_column_labels(df_subset.columns)
 
-    form = TrialSiteFormular(TrialSite(df_subset, trial_site.metadata), output_path, formulae_columns)
-    return form
+    return TrialSiteFormular(TrialSite(df_subset, trial_site.metadata), output_path, formulae_columns)
