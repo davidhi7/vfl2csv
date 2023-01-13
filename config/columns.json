@@ -7,12 +7,10 @@
     },
     {
       "override_name": "Baumart",
-      "form_name": "BA",
       "type": "string"
     },
     {
       "override_name": "Baumnummer",
-      "form_name": "NR",
       "type": "uint32"
     }
   ],
