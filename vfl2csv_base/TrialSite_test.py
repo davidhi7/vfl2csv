@@ -4,8 +4,8 @@ from pathlib import Path
 import pandas as pd
 
 from vfl2csv_base import testconfig
-from ColumnScheme import ColumnScheme
-from TrialSite import TrialSite
+from vfl2csv_base.ColumnScheme import ColumnScheme
+from vfl2csv_base.TrialSite import TrialSite
 
 
 class TrialSiteTest(unittest.TestCase):

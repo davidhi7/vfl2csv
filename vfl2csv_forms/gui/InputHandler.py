@@ -5,7 +5,8 @@ from typing import Generator
 from openpyxl.reader.excel import load_workbook
 from pandas import ExcelWriter
 
-from TrialSite import TrialSite
+from vfl2csv_base.TrialSite import TrialSite
+from vfl2csv_base.errors.FileParsingError import FileParsingError
 from vfl2csv_forms import config
 from vfl2csv_forms.excel import styles
 from vfl2csv_forms.trial_site_conversion import convert
@@ -25,7 +26,7 @@ class InputHandler:
             return
         path = Path(input_paths)
         if not path.exists():
-            raise ValueError(f'File or directory {path} does not exist')
+            raise FileNotFoundError(str(path))
 
         if path.is_dir():
             if config['Input'].getboolean('directory_search_recursively', False):
@@ -39,7 +40,7 @@ class InputHandler:
             try:
                 path = Path(input_paths)
                 self.trial_sites.append(TrialSite.from_metadata_file(path))
-            except ValueError as err:
+            except FileParsingError as err:
                 logger.error(f'Error during reading file {input_paths}', exc_info=True)
                 raise ValueError(f'Error during reading file {input_paths}') from err
 

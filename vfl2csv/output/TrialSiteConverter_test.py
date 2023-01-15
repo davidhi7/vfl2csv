@@ -8,7 +8,7 @@ from pandas import MultiIndex
 
 from vfl2csv import testconfig
 from vfl2csv.output.TrialSiteConverter import TrialSiteConverter
-from TrialSite import TrialSite
+from vfl2csv_base.TrialSite import TrialSite
 
 
 # noinspection PyTypeChecker

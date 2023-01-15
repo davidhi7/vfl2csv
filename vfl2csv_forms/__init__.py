@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 
 from vfl2csv_base import config_factory
-from ColumnScheme import ColumnScheme
+from vfl2csv_base.ColumnScheme import ColumnScheme
 
 logging.basicConfig(format='%(levelname)s %(name)s: %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)

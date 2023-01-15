@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Iterable
 
-from TrialSite import TrialSite
+from vfl2csv_base.TrialSite import TrialSite
 
 
 class InputFile(ABC):

@@ -4,7 +4,7 @@ from typing import Iterable
 from openpyxl.utils import get_column_letter, column_index_from_string
 from pandas import ExcelWriter
 
-from TrialSite import TrialSite
+from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_forms import config
 from vfl2csv_forms.excel import styles
 from vfl2csv_forms.excel.utilities import zeroBasedCell

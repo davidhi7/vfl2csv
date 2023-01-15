@@ -6,8 +6,9 @@ from typing import Iterator, Generator
 
 import pandas as pd
 
-from ColumnScheme import ColumnScheme
-from datatypes_mapping import pandas_datatypes_mapping
+from vfl2csv_base.ColumnScheme import ColumnScheme
+from vfl2csv_base.datatypes_mapping import pandas_datatypes_mapping
+from vfl2csv_base.errors.FileParsingError import FileParsingError
 
 measurement_column_pattern = re.compile(r'\w+_\d{4}')
 
@@ -102,7 +103,7 @@ class TrialSite:
     @staticmethod
     def from_metadata_file(metadata_path: Path) -> TrialSite:
         if not metadata_path.is_file():
-            raise ValueError(f'{metadata_path} is not a valid file')
+            raise FileNotFoundError(f'{metadata_path} is not a valid file')
         metadata = dict()
         with open(metadata_path, 'r', encoding='utf-8') as file:
             for line in file.readlines():
@@ -113,6 +114,6 @@ class TrialSite:
 
         df_path = metadata_path.parent / Path(metadata['DataFrame'])
         if not df_path.is_file():
-            raise ValueError(f'Relative path {Path(metadata["DataFrame"])} is not a valid file')
+            raise FileParsingError(f'Relative path {Path(metadata["DataFrame"])} is not a valid file')
         df = pd.read_csv(df_path)
         return TrialSite(df, metadata)

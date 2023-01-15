@@ -49,7 +49,7 @@ class GraphicalUI(QWidget):
 
         run_button = QPushButton('Formular erzeugen')
         run_button.clicked.connect(self.create)
-        run_button.setStyleSheet('padding: 15px;')
+        run_button.setMinimumHeight(50)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
@@ -102,6 +102,10 @@ class GraphicalUI(QWidget):
                 self.notify_warning('Keine Versuchsflächen gefunden!')
             else:
                 self.input_handler.sort()
+        except FileNotFoundError as err:
+            logger.error(err)
+            traceback.print_exc()
+            self.notify_error('Datei ', err, traceback.format_exc())
         except Exception as err:
             logger.error(err)
             traceback.print_exc()
