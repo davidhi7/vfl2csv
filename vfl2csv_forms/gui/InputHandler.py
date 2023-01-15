@@ -5,7 +5,7 @@ from typing import Generator
 from openpyxl.reader.excel import load_workbook
 from pandas import ExcelWriter
 
-from vfl2csv_base.input.TrialSite import TrialSite
+from TrialSite import TrialSite
 from vfl2csv_forms import config
 from vfl2csv_forms.excel import styles
 from vfl2csv_forms.trial_site_conversion import convert
@@ -28,7 +28,11 @@ class InputHandler:
             raise ValueError(f'File or directory {path} does not exist')
 
         if path.is_dir():
-            for content in path.glob(config['Input'].get('metadata_search_pattern')):
+            if config['Input'].getboolean('directory_search_recursively', False):
+                generator = path.rglob(config['Input'].get('metadata_search_pattern'))
+            else:
+                generator = path.glob(config['Input'].get('metadata_search_pattern'))
+            for content in generator:
                 self.load_input(content)
             return
         elif path.is_file():

@@ -5,7 +5,7 @@ import pandas as pd
 
 from vfl2csv.input.ExcelWorkbook import ExcelWorkbook
 from vfl2csv.input.InputFile import InputFile
-from vfl2csv_base.input.TrialSite import TrialSite
+from TrialSite import TrialSite
 
 
 class ExcelInputSheet(InputFile):

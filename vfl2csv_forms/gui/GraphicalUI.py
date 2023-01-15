@@ -140,14 +140,13 @@ class GraphicalUI(QWidget):
             for _ in self.input_handler.createAll(Path(output_path), exist_ok=True):
                 self.progress_bar.setValue(self.progress_bar.value() + 1)
             self.notify_success('Formular erstellt')
-            self.progress_bar.setVisible(False)
-            self.manage_space()
         except Exception as err:
             logger.error(err)
             traceback.print_exc()
             self.notify_error('Fehler während des Speichern der Dateien', err, traceback.format_exc())
         finally:
             self.progress_bar.setVisible(False)
+            self.manage_space()
 
     @Slot()
     def notify_success(self, message: str):
@@ -196,11 +195,10 @@ class GraphicalUI(QWidget):
                 self.status_table.setItem(row, 1, widget1)
         self.manage_space()
 
-    """
-    Shamelessly stolen from https://stackoverflow.com/a/41543029
-    """
-
     def getQTableWidgetSize(self) -> QSize:
+        """
+        Shamelessly stolen from https://stackoverflow.com/a/41543029
+        """
         self.status_table.resizeRowsToContents()
         width = self.status_table.verticalHeader().width() + 4  # +4 seems to be needed
         for i in range(self.status_table.columnCount()):

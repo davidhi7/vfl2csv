@@ -1,28 +1,27 @@
 from pathlib import Path
 from typing import Iterable
 
-import pandas as pd
 from openpyxl.utils import get_column_letter, column_index_from_string
 from pandas import ExcelWriter
 
-from vfl2csv_base.input.TrialSite import TrialSite
+from TrialSite import TrialSite
 from vfl2csv_forms import config
 from vfl2csv_forms.excel import styles
 from vfl2csv_forms.excel.utilities import zeroBasedCell
 from vfl2csv_forms.output.FormulaeColumn import FormulaeColumn
 
 dtypes_styles_mapping = {
-    pd.StringDtype(): styles.table_body_text,
-    pd.Int8Dtype(): styles.table_body_integer,
-    pd.Int16Dtype(): styles.table_body_integer,
-    pd.Int32Dtype(): styles.table_body_integer,
-    pd.Int64Dtype(): styles.table_body_integer,
-    pd.UInt8Dtype(): styles.table_body_integer,
-    pd.UInt16Dtype(): styles.table_body_integer,
-    pd.UInt32Dtype(): styles.table_body_integer,
-    pd.UInt64Dtype(): styles.table_body_integer,
-    pd.Float32Dtype(): styles.table_body_rational,
-    pd.Float64Dtype(): styles.table_body_rational
+    'string': styles.table_body_text,
+    'Int8': styles.table_body_integer,
+    'Int16': styles.table_body_integer,
+    'Int32': styles.table_body_integer,
+    'Int64': styles.table_body_integer,
+    'UInt8': styles.table_body_integer,
+    'UInt16': styles.table_body_integer,
+    'UInt32': styles.table_body_integer,
+    'UInt64': styles.table_body_integer,
+    'Float32': styles.table_body_rational,
+    'Float64': styles.table_body_rational
 }
 
 
@@ -89,13 +88,16 @@ class TrialSiteFormular:
         for row in self.worksheet['C1:C4'] + self.worksheet['H1:H4']:
             row[0].style = styles.metadata_values.name
 
-        for column in range(self.first_empty_column):
+        for column_index in range(self.first_empty_column):
             # header column
-            zeroBasedCell(self.worksheet, self.table_head_row, column).style = styles.table_head.name
-            if len(self.df.columns) > column:
-                style = dtypes_styles_mapping[self.df[self.df.columns[column]].dtype].name
+            zeroBasedCell(self.worksheet, self.table_head_row, column_index).style = styles.table_head.name
+            if len(self.df.columns) > column_index:
+                style = dtypes_styles_mapping.get(
+                    self.df.dtypes[column_index].name,
+                    'string'
+                ).name
                 for row in self.rowspan[1:]:
-                    zeroBasedCell(self.worksheet, row, column).style = style
+                    zeroBasedCell(self.worksheet, row, column_index).style = style
 
     def adjust_column_width(self):
         for column in range(self.first_empty_column):

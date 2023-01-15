@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import Optional
 
 from vfl2csv import column_layout
-from vfl2csv_base.input.TrialSite import TrialSite
-from vfl2csv_base.input.datatypes_mapping import pandas_datatypes_mapping as dtypes_mapping
+from TrialSite import TrialSite
+from datatypes_mapping import pandas_datatypes_mapping as dtypes_mapping
 
 HierarchicalColumnLabel = tuple[datetime.date | datetime.datetime | str, str, str, str]
 

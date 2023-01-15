@@ -5,7 +5,7 @@ import pandas as pd
 
 from vfl2csv import config
 from vfl2csv.input.InputFile import InputFile
-from vfl2csv_base.input.TrialSite import TrialSite
+from TrialSite import TrialSite
 
 
 class TsvInputFile(InputFile):
