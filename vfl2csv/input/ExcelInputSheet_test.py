@@ -43,7 +43,7 @@ class ExcelInputSheetTest(unittest.TestCase):
         })
 
     def test_str(self):
-        self.assertEqual(str(self.sample_instance), 'res/sample-data/excel/excel-1.xlsx#09703_P2')
+        self.assertEqual(str(self.sample_instance), str(Path('res/sample-data/excel/excel-1.xlsx')) + '#09703_P2')
 
 
 if __name__ == '__main__':
