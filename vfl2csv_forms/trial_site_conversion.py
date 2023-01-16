@@ -22,25 +22,25 @@ def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
     # Determine the latest record year. This year's data will be the reference in the
     latest_year = max(map(lambda label: label[0], df.columns[head_column_count:]))
     # find columns that are supposed to be included into the form
-    head_columns: list[tuple[int, str]] = list()
-    body_columns: list[tuple[int, str]] = list()
+    included_head_columns: list[tuple[int, str]] = list()
+    included_body_columns: list[tuple[int, str]] = list()
     for column in column_scheme.head:
         if not column.get('form_include', True):
             continue
-        head_columns.append((-1, column['override_name'],))
+        included_head_columns.append((-1, column['override_name'],))
 
     for column in column_scheme.measurements:
         if not column.get('form_include', True):
             continue
-        body_columns.append((latest_year, column['override_name']))
+        included_body_columns.append((latest_year, column['override_name']))
     # create a subset of df containing only relevant columns
-    df_subset = df[head_columns + body_columns]
+    df_subset = df[included_head_columns + included_body_columns]
     # filter out all rows that have no value in any record attribute
-    df_subset = df_subset[df_subset.notnull().sum(axis='columns') > head_column_count]
+    df_subset = df_subset[df_subset.notnull().sum(axis='columns') > len(included_head_columns)]
     # add new columns for each record attribute with the current year
     current_year = datetime.date.today().year
     formulae_columns: list[FormulaeColumn] = []
-    for column in body_columns:
+    for column in included_body_columns:
         column_name = column[1]
         layout = column_scheme.measurements.by_name[column_name]
         index = df_subset.columns.get_loc(column)
