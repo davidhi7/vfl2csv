@@ -60,15 +60,14 @@ def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
             if layout.get('add_difference', False):
                 formulae_columns.append(
                     FormulaeColumn(True, '-', f'Diff {column_name}', [formulae_column, index],
-                                   styles.table_body_rational.name, [styles.conditional_formatting_less_than,
-                                                                     styles.conditional_formatting_greater_than]))
+                                   styles.table_body_rational.name, styles.full_conditional_formatting_list))
         else:
             df_subset.insert(index + 1, (current_year, column_name), pd.Series(dtype=column_datatype))
             if layout.get('add_difference', False):
                 formulae_columns.append(
                     FormulaeColumn(True, '-', f'Diff {column_name}_{current_year}', [index + 1, index],
-                                   styles.table_body_rational.name, [styles.conditional_formatting_less_than,
-                                                                     styles.conditional_formatting_greater_than]))
+                                   styles.table_body_rational.name, styles.full_conditional_formatting_list))
     # set compressed names (type_YYYY)
     df_subset.columns = TrialSite.compress_column_labels(df_subset.columns)
+
     return TrialSiteFormular(TrialSite(df_subset, trial_site.metadata), output_path, formulae_columns)

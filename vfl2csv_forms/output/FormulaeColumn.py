@@ -65,10 +65,15 @@ class FormulaeColumn:
                 # Separator must be a comma, see https://openpyxl.readthedocs.io/en/stable/usage.html#using-formulae
                 column_enumeration = ', '.join(f'{letter}{row + 1}' for letter in column_argument_letters)
                 formula = f'{self.function}({column_enumeration})'
+            # wrapping the formular inside an IFERROR function leads to
             zeroBasedCell(ws, row, column).value = f'=IFERROR({formula}, "")'
+            # zeroBasedCell(ws, row, column).value = f'={formula}'
             zeroBasedCell(ws, row, column).style = self.style
         column_letter = EXCEL_COLUMN_NAMES[column]
         for conditional_format in self.conditional_formatting_rules:
-            ws.conditional_formatting.add(f'{column_letter}{rows[1]}:{column_letter}{rows[-1] + 1}', conditional_format)
+            ws.conditional_formatting.add(
+                f'{column_letter}{rows[1] + 1}:{column_letter}{rows[-1] + 1}',
+                conditional_format
+            )
         self.yielded_column = column + column_shift
         return column_shift + 1
