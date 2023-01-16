@@ -33,10 +33,10 @@ def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
         if not column.get('form_include', True):
             continue
         included_body_columns.append((latest_year, column['override_name']))
-    # create a subset of df containing only relevant columns
-    df_subset = df[included_head_columns + included_body_columns]
-    # filter out all rows that have no value in any record attribute
-    df_subset = df_subset[df_subset.notnull().sum(axis='columns') > len(included_head_columns)]
+
+    # filter the dataframe
+    df_subset = filter(df, included_head_columns + included_body_columns, len(included_head_columns))
+
     # add new columns for each record attribute with the current year
     current_year = datetime.date.today().year
     formulae_columns: list[FormulaeColumn] = []
@@ -71,3 +71,15 @@ def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
     df_subset.columns = TrialSite.compress_column_labels(df_subset.columns)
 
     return TrialSiteFormular(TrialSite(df_subset, trial_site.metadata), output_path, formulae_columns)
+
+
+def filter(df: pd.DataFrame, columns: list[tuple[int, str]], lower_notnull_offset: int) -> pd.DataFrame:
+    """
+    Filter dataframe:
+    1. Filter columns, only select those whose labels are in the `column` parameter
+    2. Filter rows that have a higher count of notnull values than `lower_notnull_offset`.
+    If `lower_notnull_offset` equals the number of filtered head columns, then any column that contains at least one
+    measurement value in the remaining columns is included.
+    """
+    df = df[columns]
+    return df[df.notnull().sum(axis='columns') > lower_notnull_offset]
