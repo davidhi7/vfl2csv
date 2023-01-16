@@ -1,12 +1,17 @@
 from pathlib import Path
 from typing import Iterable
 
+import pandas as pd
+from openpyxl.formatting import Rule
+from openpyxl.styles import PatternFill
+from openpyxl.styles.differential import DifferentialStyle
 from openpyxl.utils import get_column_letter, column_index_from_string
 from pandas import ExcelWriter
 
 from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_forms import config
 from vfl2csv_forms.excel import styles
+from vfl2csv_forms.excel.utilities import EXCEL_COLUMN_NAMES
 from vfl2csv_forms.excel.utilities import zeroBasedCell
 from vfl2csv_forms.output.FormulaeColumn import FormulaeColumn
 
@@ -27,17 +32,39 @@ dtypes_styles_mapping = {
 
 class TrialSiteFormular:
     def __init__(self, trial_site: TrialSite, output_path: Path, formulae_columns: Iterable[FormulaeColumn]):
-        self.trial_site = trial_site
         self.df = trial_site.df
         self.metadata = trial_site.metadata
         self.output_path = output_path
         self.formulae_columns = formulae_columns
         self.sheet_name = trial_site.replace_metadata_keys(config['Output']['excel_sheet_pattern'])
         self.table_head_row = 5
-        self.first_empty_column = len(trial_site.df.columns) + 1
-        self.rowspan = list(range(self.table_head_row, self.table_head_row + len(self.df.index) + 1))
+        self.row_span = list(range(self.table_head_row, self.table_head_row + len(self.df.index) + 1))
 
         self.worksheet = None
+
+        self.first_empty_column = len(trial_site.df.columns)
+        self.conditional_formatting_rules = dict()
+
+        self.add_comment_column()
+
+    def add_comment_column(self):
+        # add new 'Bemerkung' (comment) column for notes about missing trees
+        comment_column_name = EXCEL_COLUMN_NAMES[len(self.df.columns)]
+        self.df.insert(len(self.df.columns), 'Bemerkung', pd.Series(dtype=pd.StringDtype()))
+        # conditional formatting for the entire data row if a Bemerkung is added, indicating that the row's tree does
+        # not exist and no measurements are to be taken
+        comment_row_formatting = Rule(
+            dxf=DifferentialStyle(fill=PatternFill(bgColor='F79646')),
+            type='expression',
+            stopIfTrue=True,
+            formula=[f'LEN(TRIM(${comment_column_name}{self.row_span[1] + 1}))<>0']
+        )
+
+        self.conditional_formatting_rules[
+            f'A{self.row_span[1] + 1}:{comment_column_name}{self.row_span[-1] + 1}'
+        ] = comment_row_formatting
+
+        self.first_empty_column += 2
 
     def create(self, workbook):
         # workbook = load_workbook(self.output_path)
@@ -80,7 +107,7 @@ class TrialSiteFormular:
             if formulae_column.yielded_column is not None:
                 # in this case, `insert` was already called recursively by another instance
                 continue
-            self.first_empty_column += formulae_column.insert(self.first_empty_column, self.rowspan, self.worksheet)
+            self.first_empty_column += formulae_column.insert(self.first_empty_column, self.row_span, self.worksheet)
 
     def apply_formatting(self):
         for row in self.worksheet['A1:A4'] + self.worksheet['F1:F4']:
@@ -94,10 +121,13 @@ class TrialSiteFormular:
             if len(self.df.columns) > column_index:
                 style = dtypes_styles_mapping.get(
                     self.df.dtypes[column_index].name,
-                    'string'
+                    styles.table_body_text
                 ).name
-                for row in self.rowspan[1:]:
+                for row in self.row_span[1:]:
                     zeroBasedCell(self.worksheet, row, column_index).style = style
+
+        for key, rule in self.conditional_formatting_rules.items():
+            self.worksheet.conditional_formatting.add(key, rule)
 
     def adjust_column_width(self):
         for column in range(self.first_empty_column):
