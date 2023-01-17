@@ -39,32 +39,40 @@ class TrialSiteFormular:
         self.sheet_name = trial_site.replace_metadata_keys(config['Output']['excel_sheet_pattern'])
         self.table_head_row = 5
         self.row_span = list(range(self.table_head_row, self.table_head_row + len(self.df.index) + 1))
-
         self.worksheet = None
 
-        self.first_empty_column = len(trial_site.df.columns)
-        self.conditional_formatting_rules = dict()
-
+        self.conditional_formatting_rules: list[tuple[str, Rule]] = []
         self.add_comment_column()
+        self.first_empty_column = len(self.df.columns) + 1
 
     def add_comment_column(self):
-        # add new 'Bemerkung' (comment) column for notes about missing trees
-        comment_column_name = EXCEL_COLUMN_NAMES[len(self.df.columns)]
-        self.df.insert(len(self.df.columns), 'Bemerkung', pd.Series(dtype=pd.StringDtype()))
-        # conditional formatting for the entire data row if a Bemerkung is added, indicating that the row's tree does
-        # not exist and no measurements are to be taken
-        comment_row_formatting = Rule(
-            dxf=DifferentialStyle(fill=PatternFill(bgColor='F79646')),
+        # add two new columns:
+        # 1. "Aus" for trees that were removed ore are supposed to removed from the forest for various reasons
+        # 2. "Bruch" for trees that suffered from a break in the wood
+        aus_column_name = EXCEL_COLUMN_NAMES[len(self.df.columns)]
+        break_column_name = EXCEL_COLUMN_NAMES[len(self.df.columns) + 1]
+        # wrap 'Aus' in space to achieve same string length and consequently column width as 'Bruch'
+        self.df.insert(len(self.df.columns), ' Aus ', pd.Series(dtype=pd.StringDtype()))
+        self.df.insert(len(self.df.columns), 'Bruch', pd.Series(dtype=pd.StringDtype()))
+        # conditional formatting for the entire data row if either Aus or Bruch is not empty
+        # TODO: merge into one rule, figure out a working formula using OR
+        aus_rule = Rule(
+            dxf=DifferentialStyle(fill=PatternFill(bgColor='FDFDD9')),
             type='expression',
             stopIfTrue=True,
-            formula=[f'LEN(TRIM(${comment_column_name}{self.row_span[1] + 1}))<>0']
+            formula=[f'LEN(TRIM(${aus_column_name}{self.row_span[1] + 1}))>0']
+        )
+        break_rule = Rule(
+            dxf=DifferentialStyle(fill=PatternFill(bgColor='FDFDD9')),
+            type='expression',
+            stopIfTrue=True,
+            formula=[f'LEN(TRIM(${break_column_name}{self.row_span[1] + 1}))>0']
         )
 
-        self.conditional_formatting_rules[
-            f'A{self.row_span[1] + 1}:{comment_column_name}{self.row_span[-1] + 1}'
-        ] = comment_row_formatting
+        cell_range = f'A{self.row_span[1] + 1}:{break_column_name}{self.row_span[-1] + 1}'
 
-        self.first_empty_column += 2
+        self.conditional_formatting_rules.append((cell_range, aus_rule))
+        self.conditional_formatting_rules.append((cell_range, break_rule))
 
     def create(self, workbook):
         # workbook = load_workbook(self.output_path)
@@ -126,7 +134,7 @@ class TrialSiteFormular:
                 for row in self.row_span[1:]:
                     zeroBasedCell(self.worksheet, row, column_index).style = style
 
-        for key, rule in self.conditional_formatting_rules.items():
+        for key, rule in self.conditional_formatting_rules:
             self.worksheet.conditional_formatting.add(key, rule)
 
     def adjust_column_width(self):
