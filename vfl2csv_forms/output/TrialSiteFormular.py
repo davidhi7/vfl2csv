@@ -13,7 +13,7 @@ from vfl2csv_forms import config
 from vfl2csv_forms.excel import styles
 from vfl2csv_forms.excel.utilities import EXCEL_COLUMN_NAMES
 from vfl2csv_forms.excel.utilities import zeroBasedCell
-from vfl2csv_forms.output.FormulaeColumn import FormulaeColumn
+from vfl2csv_forms.output.FormulaColumn import FormulaColumn
 
 dtypes_styles_mapping = {
     'string': styles.table_body_text,
@@ -31,7 +31,7 @@ dtypes_styles_mapping = {
 
 
 class TrialSiteFormular:
-    def __init__(self, trial_site: TrialSite, output_path: Path, formulae_columns: Iterable[FormulaeColumn]):
+    def __init__(self, trial_site: TrialSite, output_path: Path, formulae_columns: Iterable[FormulaColumn]):
         self.df = trial_site.df
         self.metadata = trial_site.metadata
         self.output_path = output_path

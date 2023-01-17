@@ -7,13 +7,13 @@ from openpyxl.styles import NamedStyle
 from vfl2csv_forms.excel.utilities import zeroBasedCell, EXCEL_COLUMN_NAMES
 
 
-class FormulaeColumn:
+class FormulaColumn:
 
     def __init__(self,
                  is_binary_operator: bool,
                  function: str,
                  label: str,
-                 column_arguments: list[Union[int, FormulaeColumn]],
+                 column_arguments: list[Union[int, FormulaColumn]],
                  style: NamedStyle,
                  conditional_formatting: list
                  ):
@@ -50,7 +50,7 @@ class FormulaeColumn:
         zeroBasedCell(ws, rows[0], column).value = self.label
         column_argument_letters = []
         for column_arg in self.column_arguments:
-            if isinstance(column_arg, FormulaeColumn):
+            if isinstance(column_arg, FormulaColumn):
                 if column_arg.yielded_column is None:
                     column_arg.insert(column=column + column_shift, rows=rows, ws=ws)
                     column_shift += 1
