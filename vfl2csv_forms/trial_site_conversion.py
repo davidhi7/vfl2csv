@@ -35,42 +35,15 @@ def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
         included_body_columns.append((latest_year, column['override_name']))
 
     # filter the dataframe
-    df_subset = filter_df(df, included_head_columns + included_body_columns, len(included_head_columns) + 1)
+    df = filter_df(df, included_head_columns + included_body_columns, len(included_head_columns) + 1)
 
     # add new columns for each record attribute with the current year
     current_year = datetime.date.today().year
-    formulae_columns: list[FormulaeColumn] = []
-    for column in included_body_columns:
-        column_name = column[1]
-        layout = column_scheme.measurements.by_name[column_name]
-        index = df_subset.columns.get_loc(column)
-        # datatype of this column and all associated columns
-        column_datatype = df[column].dtype
-        # allow for multiple output values, e.g. two diameter measurements
-        if layout.get('new_columns_count', 1) > 1:
-            columns_count = layout['new_columns_count']
-            formulae_column = FormulaeColumn(False, 'AVERAGE', f'{column_name}_{current_year}',
-                                             list(range(index + 1, index + 1 + columns_count)),
-                                             styles.table_body_rational.name, [])
-            formulae_columns.append(formulae_column)
-            # iterate in a declining manner so that the column with the highest index is shifted the farthest away
-            # from the index
-            for i in range(layout['new_columns_count'], 0, -1):
-                df_subset.insert(index + 1, (current_year, f'{column_name}{i}'), pd.Series(dtype=column_datatype))
-            if layout.get('add_difference', False):
-                formulae_columns.append(
-                    FormulaeColumn(True, '-', f'Diff {column_name}', [formulae_column, index],
-                                   styles.table_body_rational.name, styles.full_conditional_formatting_list))
-        else:
-            df_subset.insert(index + 1, (current_year, column_name), pd.Series(dtype=column_datatype))
-            if layout.get('add_difference', False):
-                formulae_columns.append(
-                    FormulaeColumn(True, '-', f'Diff {column_name}_{current_year}', [index + 1, index],
-                                   styles.table_body_rational.name, styles.full_conditional_formatting_list))
+    formulae_columns = insert_new_columns(current_year, df, included_body_columns)
     # set compressed names (type_YYYY)
-    df_subset.columns = TrialSite.compress_column_labels(df_subset.columns)
+    df.columns = TrialSite.compress_column_labels(df.columns)
 
-    return TrialSiteFormular(TrialSite(df_subset, trial_site.metadata), output_path, formulae_columns)
+    return TrialSiteFormular(TrialSite(df, trial_site.metadata), output_path, formulae_columns)
 
 
 def filter_df(df: pd.DataFrame, columns: list[tuple[int, str]], lower_notnull_offset: int) -> pd.DataFrame:
@@ -83,3 +56,38 @@ def filter_df(df: pd.DataFrame, columns: list[tuple[int, str]], lower_notnull_of
     """
     df = df[columns]
     return df[df.notnull().sum(axis='columns') >= lower_notnull_offset]
+
+
+def insert_new_columns(df, new_year, column_templates):
+    formulae_columns = []
+    for column_template in column_templates:
+        column_name = column_template[1]
+        column_layout = column_scheme.measurements.by_name[column_name]
+        # index of the old column in df
+        column_index = df.columns.get_loc(column_template)
+        # datatype of the old column, will also be the datatype of the new column
+        column_datatype = df[column_template].dtype
+        # allow for multiple output values, e.g. two diameter measurements
+        if column_layout.get('new_columns_count', 1) > 1:
+            columns_count = column_layout['new_columns_count']
+            # iterate in a declining manner so that the new column with the highest index is shifted the farthest away
+            # from the index
+            for i in range(columns_count, 0, -1):
+                df.insert(column_index + 1, (new_year, f'{column_name}{i}'), pd.Series(dtype=column_datatype))
+
+            # add formula column that calculates the mean of the new column's values
+            formula_column = FormulaeColumn(False, 'AVERAGE', f'{column_name}_{new_year}',
+                                            list(range(column_index + 1, column_index + 1 + columns_count)),
+                                            styles.table_body_rational.name, [])
+            formulae_columns.append(formula_column)
+            if column_layout.get('add_difference', False):
+                formulae_columns.append(
+                    FormulaeColumn(True, '-', f'Diff {column_name}', [formula_column, column_index],
+                                   styles.table_body_rational.name, styles.full_conditional_formatting_list))
+        else:
+            df.insert(column_index + 1, (new_year, column_name), pd.Series(dtype=column_datatype))
+            if column_layout.get('add_difference', False):
+                formulae_columns.append(
+                    FormulaeColumn(True, '-', f'Diff {column_name}_{new_year}', [column_index + 1, column_index],
+                                   styles.table_body_rational.name, styles.full_conditional_formatting_list))
+    return formulae_columns
