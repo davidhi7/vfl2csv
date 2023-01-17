@@ -46,8 +46,8 @@ class FormulaeColumn:
         """
         # number of columns to shift the parameter 'column' after inserting other columns recursively
         column_shift = 0
-        # Worksheet#cell is 1-based, so substract 1 from the column
         zeroBasedCell(ws, rows[0], column).value = self.label
+        #
         column_argument_letters = []
         for column_arg in self.column_arguments:
             if isinstance(column_arg, FormulaeColumn):
@@ -60,20 +60,24 @@ class FormulaeColumn:
             column_argument_letters.append(EXCEL_COLUMN_NAMES[index])
         for row in rows[1:]:
             if self.is_binary_operator:
-                formula = f'{column_argument_letters[0]}{row + 1} {self.function} {column_argument_letters[1]}{row + 1}'
+                cell_0 = f'{column_argument_letters[0]}{row + 1}'
+                cell_1 = f'{column_argument_letters[1]}{row + 1}'
+                inner_formula = f'{cell_0} {self.function} {cell_1}'
+                # wrap formula into if clauses so if one of the cells is empty, the resulting cell is also empty
+                formula = f'=IF(AND(ISNUMBER({cell_0}), ISNUMBER({cell_1})), {inner_formula}, "")'
             else:
                 # Separator must be a comma, see https://openpyxl.readthedocs.io/en/stable/usage.html#using-formulae
                 column_enumeration = ', '.join(f'{letter}{row + 1}' for letter in column_argument_letters)
-                formula = f'{self.function}({column_enumeration})'
-            # wrapping the formular inside an IFERROR function leads to
-            zeroBasedCell(ws, row, column).value = f'=IFERROR({formula}, "")'
+                # wrap the formula into IFERROR to prevent ugly error codes
+                formula = f'=IFERROR({self.function}({column_enumeration}), "")'
+            zeroBasedCell(ws, row, column).value = formula
             # zeroBasedCell(ws, row, column).value = f'={formula}'
-            zeroBasedCell(ws, row, column).style = self.style
+            zeroBasedCell(ws, row, column).style = self.style.name
         column_letter = EXCEL_COLUMN_NAMES[column]
-        for conditional_format in self.conditional_formatting_rules:
+        for rule in self.conditional_formatting_rules:
             ws.conditional_formatting.add(
                 f'{column_letter}{rows[1] + 1}:{column_letter}{rows[-1] + 1}',
-                conditional_format
+                rule
             )
         self.yielded_column = column + column_shift
         return column_shift + 1

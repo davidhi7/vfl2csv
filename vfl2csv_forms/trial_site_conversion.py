@@ -51,7 +51,7 @@ def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
             columns_count = layout['new_columns_count']
             formulae_column = FormulaeColumn(False, 'AVERAGE', f'{column_name}_{current_year}',
                                              list(range(index + 1, index + 1 + columns_count)),
-                                             styles.table_body_rational.name, [])
+                                             styles.table_body_rational, [])
             formulae_columns.append(formulae_column)
             # iterate in a declining manner so that the column with the highest index is shifted the farthest away
             # from the index
@@ -60,13 +60,13 @@ def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
             if layout.get('add_difference', False):
                 formulae_columns.append(
                     FormulaeColumn(True, '-', f'Diff {column_name}', [formulae_column, index],
-                                   styles.table_body_rational.name, styles.full_conditional_formatting_list))
+                                   styles.table_body_rational, styles.full_conditional_formatting_list()))
         else:
             df_subset.insert(index + 1, (current_year, column_name), pd.Series(dtype=column_datatype))
             if layout.get('add_difference', False):
                 formulae_columns.append(
-                    FormulaeColumn(True, '-', f'Diff {column_name}_{current_year}', [index + 1, index],
-                                   styles.table_body_rational.name, styles.full_conditional_formatting_list))
+                    FormulaeColumn(True, '-', f'Diff {column_name}', [index + 1, index],
+                                   styles.table_body_rational, styles.full_conditional_formatting_list()))
     # set compressed names (type_YYYY)
     df_subset.columns = TrialSite.compress_column_labels(df_subset.columns)
 
