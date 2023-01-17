@@ -62,7 +62,7 @@ class InputHandler:
     def __len__(self):
         return len(self.trial_sites)
 
-    def createAll(self, output_file: Path, exist_ok=False) -> Generator[str, None, None]:
+    def create_all(self, output_file: Path, exist_ok=False) -> Generator[str, None, None]:
         try:
             output_file.touch(exist_ok=exist_ok)
         except Exception as err:

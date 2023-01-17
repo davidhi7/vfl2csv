@@ -141,7 +141,7 @@ class GraphicalUI(QWidget):
 
         try:
             # allow overriding (exit_ok=True) because QFileDialog already asks whether to allow
-            for _ in self.input_handler.createAll(Path(output_path), exist_ok=True):
+            for _ in self.input_handler.create_all(Path(output_path), exist_ok=True):
                 self.progress_bar.setValue(self.progress_bar.value() + 1)
             self.notify_success('Formular erstellt')
         except Exception as err:
