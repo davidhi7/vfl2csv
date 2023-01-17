@@ -86,16 +86,16 @@ def insert_new_columns(df: pd.DataFrame, new_year: int, old_columns: list[Expand
             # add formula column that calculates the mean of the new column's values
             formula_column = FormulaColumn(False, 'AVERAGE', f'{column_name}_{new_year}',
                                            list(range(column_index + 1, column_index + 1 + columns_count)),
-                                           styles.table_body_rational.name, [])
+                                           styles.table_body_rational, [])
             formulae_columns.append(formula_column)
             if column_layout.get('add_difference', False):
                 formulae_columns.append(
                     FormulaColumn(True, '-', f'Diff {column_name}', [formula_column, column_index],
-                                  styles.table_body_rational.name, styles.full_conditional_formatting_list))
+                                  styles.table_body_rational, styles.full_conditional_formatting_list()))
         else:
             df.insert(column_index + 1, (new_year, column_name), pd.Series(dtype=column_datatype))
             if column_layout.get('add_difference', False):
                 formulae_columns.append(
                     FormulaColumn(True, '-', f'Diff {column_name}_{new_year}', [column_index + 1, column_index],
-                                  styles.table_body_rational.name, styles.full_conditional_formatting_list))
+                                  styles.table_body_rational, styles.full_conditional_formatting_list()))
     return df, formulae_columns
