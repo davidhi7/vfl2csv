@@ -68,31 +68,29 @@ class GraphicalUI(QWidget):
 
     @Slot()
     def single_file_input(self):
-        self.input_handler.clear()
-        self.update_input_status()
         files_input = QFileDialog.getOpenFileNames(
             parent=self,
             caption='Metadaten-Datei auswählen',
             filter=f'Metadaten ({config["Input"].get("metadata_search_pattern")});;Alle Dateien (*)'
         )
-        # file dialog likely cancelled
         if not files_input[0]:
-            self.update_input_status()
             return
+
+        self.input_handler.clear()
         self.load_input(files_input[0])
 
     @Slot()
     def directory_input(self):
-        self.input_handler.clear()
         directory_input = QFileDialog.getExistingDirectory(
             parent=self,
             caption='Metadaten-Verzeichnis auswählen',
             options=QFileDialog.ShowDirsOnly
         )
-        if not directory_input:
-            self.update_input_status()
-            return
         # QFileDialog.getExistingDirectory returns only the selected path, no other nested values
+        if not directory_input:
+            return
+
+        self.input_handler.clear()
         self.load_input(directory_input)
 
     def load_input(self, input_paths: str | Path | list[str | Path]):
@@ -150,6 +148,8 @@ class GraphicalUI(QWidget):
             self.notify_error('Fehler während des Speichern der Dateien', err, traceback.format_exc())
         finally:
             self.progress_bar.setVisible(False)
+            self.input_handler.clear()
+            self.update_input_status()
             self.manage_space()
 
     @Slot()
