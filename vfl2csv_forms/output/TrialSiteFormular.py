@@ -55,24 +55,20 @@ class TrialSiteFormular:
         self.df.insert(len(self.df.columns), ' Aus ', pd.Series(dtype=pd.StringDtype()))
         self.df.insert(len(self.df.columns), 'Bruch', pd.Series(dtype=pd.StringDtype()))
         # conditional formatting for the entire data row if either Aus or Bruch is not empty
-        # TODO: merge into one rule, figure out a working formula using OR
-        aus_rule = Rule(
+        rule = Rule(
             dxf=DifferentialStyle(fill=PatternFill(bgColor='FDFDD9')),
             type='expression',
             stopIfTrue=True,
-            formula=[f'LEN(TRIM(${aus_column_name}{self.row_span[1] + 1}))>0']
-        )
-        break_rule = Rule(
-            dxf=DifferentialStyle(fill=PatternFill(bgColor='FDFDD9')),
-            type='expression',
-            stopIfTrue=True,
-            formula=[f'LEN(TRIM(${break_column_name}{self.row_span[1] + 1}))>0']
+            # comma instead of semicolon is required for this to work for some reason
+            formula=[f'OR('
+                     f'LEN(TRIM(${break_column_name}{self.row_span[1] + 1}))>0,'
+                     f'LEN(TRIM(${aus_column_name}{self.row_span[1] + 1}))>0'
+                     f')']
         )
 
         cell_range = f'A{self.row_span[1] + 1}:{break_column_name}{self.row_span[-1] + 1}'
 
-        self.conditional_formatting_rules.append((cell_range, aus_rule))
-        self.conditional_formatting_rules.append((cell_range, break_rule))
+        self.conditional_formatting_rules.append((cell_range, rule))
 
     def create(self, workbook):
         # workbook = load_workbook(self.output_path)
