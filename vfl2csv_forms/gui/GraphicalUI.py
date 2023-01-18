@@ -2,9 +2,10 @@ import logging
 import traceback
 from pathlib import Path
 
-from PySide6.QtCore import Qt, Slot, QSize
+from PySide6.QtCore import Qt, Slot, QSize, Signal
+from PySide6.QtGui import QScreen
 from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QTableWidget, \
-    QAbstractItemView, QHeaderView, QMessageBox, QFileDialog, QTableWidgetItem, QProgressBar
+    QAbstractItemView, QHeaderView, QMessageBox, QFileDialog, QTableWidgetItem, QProgressBar, QApplication
 
 from vfl2csv_forms import config
 from vfl2csv_forms.gui.InputHandler import InputHandler
@@ -14,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 
 class GraphicalUI(QWidget):
+    require_centre = Signal()
 
     def __init__(self):
         super().__init__()
@@ -64,7 +66,7 @@ class GraphicalUI(QWidget):
         self.layout().addWidget(self.progress_bar)
 
         self.input_handler = InputHandler()
-        self.update_input_status()
+        self.update_input_status(skip_window_move=True)
 
     @Slot()
     def single_file_input(self):
@@ -178,7 +180,7 @@ class GraphicalUI(QWidget):
             msg_box.setDetailedText(detailed_text)
         msg_box.exec()
 
-    def update_input_status(self):
+    def update_input_status(self, skip_window_move=False):
         trial_site_count = len(self.input_handler)
         if trial_site_count == 0:
             self.status_label.setText('Es sind keine Versuchsflächen ausgewählt.')
@@ -197,7 +199,7 @@ class GraphicalUI(QWidget):
                 widget1.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.status_table.setItem(row, 0, widget0)
                 self.status_table.setItem(row, 1, widget1)
-        self.manage_space()
+        self.manage_space(skip_window_move=skip_window_move)
 
     def getQTableWidgetSize(self) -> QSize:
         """
@@ -213,7 +215,8 @@ class GraphicalUI(QWidget):
             height += self.status_table.rowHeight(i)
         return QSize(width, height)
 
-    def manage_space(self) -> None:
+    def manage_space(self, skip_window_move=False) -> None:
+        old_geometry = self.frameGeometry()
         table_widget_size = self.getQTableWidgetSize()
         self.status_table.setMinimumHeight(table_widget_size.height())
         self.status_table.setMaximumHeight(table_widget_size.height())
@@ -221,3 +224,15 @@ class GraphicalUI(QWidget):
         root_size_hint = self.sizeHint()
         self.setMinimumSize(root_size_hint)
         self.setMaximumSize(root_size_hint)
+
+        # Allow to skip moving the window. This is useful on the initial call when the window is later centered when
+        # showing it initially
+        if skip_window_move:
+            return
+
+        # window size management: make sure that on window resize the resized window shares the same center as the
+        # window before the resize
+        new_geometry = self.frameGeometry()
+        new_geometry.moveCenter(old_geometry.center())
+        print(new_geometry.topLeft())
+        self.move(new_geometry.topLeft())
