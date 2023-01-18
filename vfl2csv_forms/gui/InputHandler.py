@@ -80,4 +80,4 @@ class InputHandler:
         styles.register(workbook)
         for trial_site_form in trial_site_forms:
             trial_site_form.create(workbook)
-            yield 'done'
+            yield trial_site_form.sheet_name
