@@ -234,5 +234,4 @@ class GraphicalUI(QWidget):
         # window before the resize
         new_geometry = self.frameGeometry()
         new_geometry.moveCenter(old_geometry.center())
-        print(new_geometry.topLeft())
         self.move(new_geometry.topLeft())
