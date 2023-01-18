@@ -20,13 +20,14 @@ class GraphicalUI(QWidget):
         super().__init__()
         self.setLayout(QVBoxLayout())
 
-        self.setWindowTitle('Neues Formular erstellen')
+        self.setWindowTitle('Formular erstellen')
         title = QLabel('Formular erstellen')
         title_font = title.font()
         title_font.setPointSize(24)
         title.setFont(title_font)
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        title.setMargin(12)
+        # this way, the spacing between the label and the top of the viewport are equally wide as to the sides
+        title.setContentsMargins(8, 0, 8, 8)
 
         single_file_input = QPushButton('Datei(en) auswählen')
         single_file_input.clicked.connect(self.single_file_input)
