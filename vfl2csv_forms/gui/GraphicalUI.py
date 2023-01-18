@@ -201,7 +201,7 @@ class GraphicalUI(QWidget):
                 self.status_table.setItem(row, 1, widget1)
         self.manage_space(skip_window_move=skip_window_move)
 
-    def getQTableWidgetSize(self) -> QSize:
+    def get_qtable_widget_size(self) -> QSize:
         """
         Shamelessly stolen from https://stackoverflow.com/a/41543029
         """
@@ -217,7 +217,7 @@ class GraphicalUI(QWidget):
 
     def manage_space(self, skip_window_move=False) -> None:
         old_geometry = self.frameGeometry()
-        table_widget_size = self.getQTableWidgetSize()
+        table_widget_size = self.get_qtable_widget_size()
         self.status_table.setMinimumHeight(table_widget_size.height())
         self.status_table.setMaximumHeight(table_widget_size.height())
         # this needs to be done after setting size constraints for the table so these changes are taken into account
