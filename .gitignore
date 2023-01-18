@@ -4,3 +4,5 @@ env/
 .ipynb_checkpoints/
 __pycache__/
 .~lock.*#
+dist/
+build/
