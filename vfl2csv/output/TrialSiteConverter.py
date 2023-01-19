@@ -62,7 +62,7 @@ class TrialSiteConverter:
                 )
         self.trial_site.df.columns = new_column_names
 
-    def refactor_metadata(self):
+    def refactor_metadata(self) -> None:
         """
         Replace double whitespaces in metadata keys with simple spaces.
         :return:
@@ -79,6 +79,9 @@ class TrialSiteConverter:
         :param override_name: If not None, use this as measurement name prefix instead of the prefix provided in the
         column hiearchy.
         :return: simplified label matching the requirements
+
+        Not to confuse with `vfl2csv_base.Trialsite#compress_column_labels`, which only takes a tuple of two values as
+        input column names
         """
         if isinstance(hierarchy[0], datetime.datetime) or isinstance(hierarchy[0], datetime.date):
             date = hierarchy[0]

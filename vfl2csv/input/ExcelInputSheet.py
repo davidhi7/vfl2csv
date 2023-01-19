@@ -39,7 +39,7 @@ class ExcelInputSheet(InputFile):
     def get_trial_site(self) -> TrialSite:
         return self.trial_site
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'{self.file_path}#{self.sheet_name}'
 
     @staticmethod

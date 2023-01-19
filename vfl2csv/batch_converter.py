@@ -4,6 +4,7 @@ import traceback
 from collections import Counter
 from multiprocessing import RLock, Pool
 from pathlib import Path
+from typing import NoReturn
 
 import numpy as np
 
@@ -17,7 +18,7 @@ CONFIG_ALLOWED_INPUT_FORMATS = ('TSV', 'Excel')
 logger = logging.getLogger(__name__)
 
 
-def validate(argv):
+def validate(argv: list[str]) -> None:
     if config["Input"]["input_format"] not in CONFIG_ALLOWED_INPUT_FORMATS:
         raise ValueError(
             f'{config["Input"]["input_format"]} is not a valid output format. Allowed formats are {", ".join(CONFIG_ALLOWED_INPUT_FORMATS)}!')
@@ -91,7 +92,7 @@ def trial_site_pipeline(
     }
 
 
-def run(argv):
+def run(argv) -> NoReturn:
     try:
         validate(argv)
     except ValueError as e:
@@ -133,4 +134,5 @@ def run(argv):
                                                 process_index=0)
 
     logger.info(
-        f'Converted {summarised_result["total_count"]} trial sites, {summarised_result["errors"]} errors occured.')
+        f'Converted {summarised_result["total_count"]} trial sites, {summarised_result["errors"]} errors occurred.')
+    exit(0)
