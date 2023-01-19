@@ -1,5 +1,5 @@
-from openpyxl.formatting.rule import CellIsRule
-from openpyxl.styles import NamedStyle, Font, Alignment, PatternFill
+from openpyxl.formatting.rule import CellIsRule, Rule, ColorScale, FormatObject
+from openpyxl.styles import NamedStyle, Font, Alignment, PatternFill, Color
 from openpyxl.workbook import Workbook
 
 metadata_keys = NamedStyle(name='metadata-keys',
@@ -24,6 +24,10 @@ def full_conditional_formatting_list(__mutable={'count': 1}):
     # This is required so returned conditional formatting rules have different priorities all the time, while still
     # maintaining the difference between priorities of the same rules.
     # This is required to fix a bug, see https://foss.heptapod.net/openpyxl/openpyxl/-/issues/1941
+
+    # alternatively to the color scale defined below: set background to one of three colors depending on whether the
+    # number is positive, negative or zero
+    """
     conditional_formatting_greater_than = CellIsRule(
         operator='greaterThan',
         formula=['0'],
@@ -45,6 +49,27 @@ def full_conditional_formatting_list(__mutable={'count': 1}):
         fill=PatternFill(bgColor='ffcccc')
     )
     conditional_formatting_less_than.priority = __mutable['count'] + 1000
+    """
+
+    color_scale = Rule(
+        type='colorScale',
+        colorScale=ColorScale(
+            cfvo=[
+                FormatObject(type='min'),
+                FormatObject(type='num', val=0),
+                FormatObject(type='max')
+            ],
+            color=[
+                # use a very aggressive red color combined with a pale green tone so that negative values stand out
+                # strongly
+                Color('C00000'),
+                Color('FFFFFF'),
+                Color('63BE7B')
+            ]
+        ),
+        priority=1000
+    )
+
     # in Excel, the formula `= "" > 0` returns true. To prevent wrong formatting on empty columns, we therefore need to
     # cancel applying formatting if the cell is an empty string.
     conditional_formatting_empty = CellIsRule(
@@ -57,12 +82,7 @@ def full_conditional_formatting_list(__mutable={'count': 1}):
 
     __mutable['count'] += 1
 
-    return [
-        conditional_formatting_empty,
-        conditional_formatting_less_than,
-        conditional_formatting_equal,
-        conditional_formatting_greater_than
-    ]
+    return [conditional_formatting_empty, color_scale]
 
 
 def register(workbook: Workbook):
