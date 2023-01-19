@@ -154,15 +154,12 @@ class GraphicalUI(QWidget):
             self.update_input_status()
             self.manage_space()
 
-    @Slot()
     def notify_success(self, message: str):
         self.notification(message, None, None, icon=QMessageBox.Icon.Information)
 
-    @Slot()
     def notify_warning(self, message: str):
         self.notification(message, None, None, icon=QMessageBox.Icon.Warning)
 
-    @Slot()
     def notify_error(self, message: str, exception: Exception, traceback: str):
         self.notification(text=message,
                           informative_text=f'{type(exception).__name__}: {str(exception)}',
