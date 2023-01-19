@@ -1,8 +1,14 @@
 .idea/
-.env/
-env/
+.env*/
+env*/
 .ipynb_checkpoints/
 __pycache__/
 .~lock.*#
+
+# build dirs from pyinstaller
 dist/
 build/
+
+# build dirs from nuitka
+__main__.build
+__main__.dist

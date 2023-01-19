@@ -1,0 +1,1 @@
+python -m nuitka --standalone --follow-imports --enable-plugin=pyside6 --include-data-files=config/config_forms.ini=config/config_forms.ini --include-data-files=config/columns.json=config/columns.json vfl2csv_forms/__main__.py
