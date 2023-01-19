@@ -77,7 +77,7 @@ class TrialSite:
         self.df = self.df.astype(df.dtypes)
 
     @staticmethod
-    def compress_column_labels(multi_index: Iterator[tuple[any, str]]) -> Generator[str, None, None]:
+    def compress_column_labels(multi_index: Iterator[tuple[int, str]]) -> Generator[str, None, None]:
         """
         Convert labels from the tuple `(year or -1, type)` into the string 'type_year'
         """
@@ -88,7 +88,7 @@ class TrialSite:
                 yield label[1]
 
     @staticmethod
-    def expand_column_labels(index: Iterator[str]) -> Generator[tuple[float | int, str], None, None]:
+    def expand_column_labels(index: Iterator[str]) -> Generator[tuple[int, str], None, None]:
         """
         Convert labels from the string 'type_year' into the tuple `(year or -1, type)`
         """

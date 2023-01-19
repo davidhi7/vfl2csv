@@ -69,7 +69,7 @@ class GraphicalUI(QWidget):
         self.update_input_status(skip_window_move=True)
 
     @Slot()
-    def single_file_input(self):
+    def single_file_input(self) -> None:
         files_input = QFileDialog.getOpenFileNames(
             parent=self,
             caption='Metadaten-Datei auswählen',
@@ -82,7 +82,7 @@ class GraphicalUI(QWidget):
         self.load_input(files_input[0])
 
     @Slot()
-    def directory_input(self):
+    def directory_input(self) -> None:
         directory_input = QFileDialog.getExistingDirectory(
             parent=self,
             caption='Metadaten-Verzeichnis auswählen',
@@ -95,7 +95,7 @@ class GraphicalUI(QWidget):
         self.input_handler.clear()
         self.load_input(directory_input)
 
-    def load_input(self, input_paths: str | Path | list[str | Path]):
+    def load_input(self, input_paths: str | Path | list[str | Path]) -> None:
         try:
             self.input_handler.load_input(input_paths)
             if len(self.input_handler) == 0:
@@ -115,7 +115,7 @@ class GraphicalUI(QWidget):
             self.update_input_status()
 
     @Slot()
-    def create(self):
+    def create(self) -> None:
         if len(self.input_handler) == 0:
             self.notify_warning('Keine Versuchsflächen ausgewählt!')
             return
@@ -154,20 +154,21 @@ class GraphicalUI(QWidget):
             self.update_input_status()
             self.manage_space()
 
-    def notify_success(self, message: str):
+    def notify_success(self, message: str) -> None:
         self.notification(message, None, None, icon=QMessageBox.Icon.Information)
 
-    def notify_warning(self, message: str):
+    def notify_warning(self, message: str) -> None:
         self.notification(message, None, None, icon=QMessageBox.Icon.Warning)
 
-    def notify_error(self, message: str, exception: Exception, traceback: str):
+    def notify_error(self, message: str, exception: Exception, traceback: str) -> None:
         self.notification(text=message,
                           informative_text=f'{type(exception).__name__}: {str(exception)}',
                           detailed_text=traceback,
                           icon=QMessageBox.Icon.Critical
                           )
 
-    def notification(self, text: str, informative_text: str | None, detailed_text: str | None, icon: QMessageBox.Icon):
+    def notification(self, text: str, informative_text: str | None, detailed_text: str | None, icon: QMessageBox.Icon)\
+            -> None:
         msg_box = QMessageBox(self)
         msg_box.setIcon(icon or QMessageBox.Icon.NoIcon)
         msg_box.setText(text)
@@ -177,7 +178,7 @@ class GraphicalUI(QWidget):
             msg_box.setDetailedText(detailed_text)
         msg_box.exec()
 
-    def update_input_status(self, skip_window_move=False):
+    def update_input_status(self, skip_window_move=False) -> None:
         trial_site_count = len(self.input_handler)
         if trial_site_count == 0:
             self.status_label.setText('Es sind keine Versuchsflächen ausgewählt.')

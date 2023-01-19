@@ -19,7 +19,7 @@ class InputHandler:
     def __init__(self):
         self.trial_sites = []
 
-    def load_input(self, input_paths: str | Path | list[str | Path]):
+    def load_input(self, input_paths: str | Path | list[str | Path]) -> None:
         if isinstance(input_paths, list):
             for path in input_paths:
                 self.load_input(path)
@@ -35,7 +35,6 @@ class InputHandler:
                 generator = path.glob(config['Input'].get('metadata_search_pattern'))
             for content in generator:
                 self.load_input(content)
-            return
         elif path.is_file():
             try:
                 path = Path(input_paths)
@@ -44,7 +43,7 @@ class InputHandler:
                 logger.error(f'Error during reading file {input_paths}', exc_info=True)
                 raise ValueError(f'Error during reading file {input_paths}') from err
 
-    def sort(self):
+    def sort(self) -> None:
         self.trial_sites = sorted(self.trial_sites, key=self.decorate_trial_site)
 
     @staticmethod
@@ -56,10 +55,10 @@ class InputHandler:
             plot = trial_site.metadata['Parzelle']
         return trial, plot
 
-    def clear(self):
+    def clear(self) -> None:
         self.trial_sites.clear()
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.trial_sites)
 
     def create_all(self, output_file: Path, exist_ok=False) -> Generator[str, None, None]:

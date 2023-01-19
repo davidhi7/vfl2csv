@@ -1,5 +1,5 @@
 from openpyxl.formatting.rule import CellIsRule, Rule, ColorScale, FormatObject
-from openpyxl.styles import NamedStyle, Font, Alignment, PatternFill, Color
+from openpyxl.styles import NamedStyle, Font, Alignment, Color
 from openpyxl.workbook import Workbook
 
 metadata_keys = NamedStyle(name='metadata-keys',
@@ -19,7 +19,7 @@ table_body_integer = NamedStyle(name='table-body-integer', font=Font(name='Calib
 table_body_rational = NamedStyle(name='table-body-rational', font=Font(name='Calibri', size=12), number_format='0.0')
 
 
-def full_conditional_formatting_list(__mutable={'count': 1}):
+def full_conditional_formatting_list(__mutable={'count': 1}) -> list[Rule]:
     # __mutable['count'] counts the calls to this function, incrementing by one after every call.
     # This is required so returned conditional formatting rules have different priorities all the time, while still
     # maintaining the difference between priorities of the same rules.
@@ -79,12 +79,10 @@ def full_conditional_formatting_list(__mutable={'count': 1}):
         # fill=PatternFill(bgColor='E7E6E6')
     )
     conditional_formatting_empty.priority = __mutable['count']
-
     __mutable['count'] += 1
-
     return [conditional_formatting_empty, color_scale]
 
 
-def register(workbook: Workbook):
+def register(workbook: Workbook) -> None:
     for style in (metadata_keys, metadata_values, table_head, table_body_text, table_body_integer, table_body_rational):
         workbook.add_named_style(style)

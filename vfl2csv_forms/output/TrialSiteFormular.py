@@ -45,7 +45,7 @@ class TrialSiteFormular:
         self.add_comment_column()
         self.first_empty_column = len(self.df.columns) + 1
 
-    def add_comment_column(self):
+    def add_comment_column(self) -> None:
         # add two new columns:
         # 1. "Aus" for trees that were removed ore are supposed to removed from the forest for various reasons
         # 2. "Bruch" for trees that suffered from a break in the wood
@@ -70,7 +70,7 @@ class TrialSiteFormular:
 
         self.conditional_formatting_rules.append((cell_range, rule))
 
-    def create(self, workbook):
+    def create(self, workbook) -> None:
         # workbook = load_workbook(self.output_path)
         worksheet = workbook[self.sheet_name]
         self.worksheet = worksheet
@@ -80,7 +80,7 @@ class TrialSiteFormular:
         self.adjust_column_width()
         workbook.save(self.output_path)
 
-    def init_worksheet(self, writer: ExcelWriter):
+    def init_worksheet(self, writer: ExcelWriter) -> None:
         """
         Write the dataframe and return the corresponding workbook and worksheet.
         :return:
@@ -92,7 +92,7 @@ class TrialSiteFormular:
             index=False
         )
 
-    def write_metadata(self):
+    def write_metadata(self) -> None:
         # merge two horizontally adjacent cells each
         for column in ('A', 'C', 'F', 'H'):
             letters = (column, get_column_letter(column_index_from_string(column) + 1))
@@ -106,14 +106,14 @@ class TrialSiteFormular:
         self.worksheet['F1'] = 'Vermessung am: '
         self.worksheet['F2'] = 'durch: '
 
-    def write_formulae_columns(self):
+    def write_formulae_columns(self) -> None:
         for formulae_column in self.formulae_columns:
             if formulae_column.yielded_column is not None:
                 # in this case, `insert` was already called recursively by another instance
                 continue
             self.first_empty_column += formulae_column.insert(self.first_empty_column, self.row_span, self.worksheet)
 
-    def apply_formatting(self):
+    def apply_formatting(self) -> None:
         for row in self.worksheet['A1:A4'] + self.worksheet['F1:F4']:
             row[0].style = styles.metadata_keys.name
         for row in self.worksheet['C1:C4'] + self.worksheet['H1:H4']:
@@ -133,7 +133,7 @@ class TrialSiteFormular:
         for key, rule in self.conditional_formatting_rules:
             self.worksheet.conditional_formatting.add(key, rule)
 
-    def adjust_column_width(self):
+    def adjust_column_width(self) -> None:
         for column in range(self.first_empty_column):
             table_head_cell = zeroBasedCell(self.worksheet, self.table_head_row, column)
             # factor 1.5 is an arbitrary value that fits quite nicely

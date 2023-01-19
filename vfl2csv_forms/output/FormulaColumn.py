@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Union
 
+from openpyxl.formatting import Rule
 from openpyxl.styles import NamedStyle
 
 from vfl2csv_forms.excel.utilities import zeroBasedCell, EXCEL_COLUMN_NAMES
@@ -15,7 +16,7 @@ class FormulaColumn:
                  label: str,
                  column_arguments: list[Union[int, FormulaColumn]],
                  style: NamedStyle,
-                 conditional_formatting: list
+                 conditional_formatting: list[Rule]
                  ):
         """
         Create a formula column for the output Excel sheet.
@@ -35,7 +36,7 @@ class FormulaColumn:
         self.conditional_formatting_rules = conditional_formatting
         self.yielded_column = None
 
-    def insert(self, column: int, rows: list[int], ws):
+    def insert(self, column: int, rows: list[int], ws) -> int:
         """
         Insert the column into the worksheet.
         :param column: Column (0-based) to insert the formulas in
