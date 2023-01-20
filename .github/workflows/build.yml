@@ -1,4 +1,4 @@
-name: Build Ubuntu and Windows
+name: Build ubuntu-latest
 
 on:
   workflow_dispatch:
@@ -17,8 +17,12 @@ jobs:
     steps:
       - name: Check-out repository
         uses: actions/checkout@v3
+
+      - name: Install FUSE2 on Ubuntu
+        run: '[ ${{ matrix.os }} = "ubuntu-latest" ] && sudo apt-get -y install libfuse2'
         
-      - uses: actions/setup-python@v4
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
           architecture: 'x64'
