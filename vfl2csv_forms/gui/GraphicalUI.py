@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QHBoxLa
     QAbstractItemView, QHeaderView, QMessageBox, QFileDialog, QTableWidgetItem, QProgressBar
 
 from vfl2csv_forms import config
-from vfl2csv_forms.gui.InputHandler import InputHandler
+from vfl2csv_forms.InputHandler import InputHandler
 from vfl2csv_forms.gui.QHLine import QHLine
 
 logger = logging.getLogger(__name__)
