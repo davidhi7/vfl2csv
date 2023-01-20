@@ -1,0 +1,34 @@
+name: Build Ubuntu and Windows
+
+on:
+  workflow_dispatch:
+    
+jobs:
+  build:
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    
+    runs-on: ${{ matrix.os }}
+    
+    steps:
+      - name: Check-out repository
+        uses: actions/checkout@v3
+        
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          architecture: 'x64'
+          cache: 'pip'
+          cahce-dependency-path: |
+            requirements.txt
+
+      - name: Install Dependencies
+        run: pip install -r requirements.txt
+        
+      - name: Build Executable
+        uses: Nuitka/Nuitka-Action@v0.4
+        with:
+          script-name: vfl2csv_forms
+          standalone: true
+          enable-plugins: pyside6
