@@ -134,7 +134,7 @@ class GraphicalUI(QWidget):
 
         self.progress_bar.setMinimum(0)
         # one step each to write the df and then apply formatting and metadata
-        self.progress_bar.setMaximum(2 * len(self.input_handler))
+        self.progress_bar.setMaximum(len(self.input_handler))
         self.progress_bar.setValue(0)
         self.progress_bar.setVisible(True)
         self.manage_space()
