@@ -1,0 +1,8 @@
+Forstamt=5628 Bad Berka
+Revier=Buchfart
+Versuch=09702
+Parzelle=04
+Teilfläche=2416 a4
+Standort=Um-K2
+Höhenlage=400
+DataFrame=09702-04.csv
