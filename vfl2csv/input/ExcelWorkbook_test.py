@@ -3,8 +3,8 @@ import unittest
 
 import openpyxl
 
-from vfl2csv import testconfig
 from vfl2csv.input.ExcelWorkbook import ExcelWorkbook
+from vfl2csv_base import testconfig
 
 
 class ExcelWorkbookTest(unittest.TestCase):

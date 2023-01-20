@@ -167,7 +167,7 @@ class GraphicalUI(QWidget):
                           icon=QMessageBox.Icon.Critical
                           )
 
-    def notification(self, text: str, informative_text: str | None, detailed_text: str | None, icon: QMessageBox.Icon)\
+    def notification(self, text: str, informative_text: str | None, detailed_text: str | None, icon: QMessageBox.Icon) \
             -> None:
         msg_box = QMessageBox(self)
         msg_box.setIcon(icon or QMessageBox.Icon.NoIcon)

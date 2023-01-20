@@ -5,8 +5,8 @@ from typing import TypeAlias
 
 import pandas as pd
 
+from vfl2csv_base import column_scheme
 from vfl2csv_base.TrialSite import TrialSite
-from vfl2csv_forms import column_scheme
 from vfl2csv_forms.excel import styles
 from vfl2csv_forms.output.FormulaColumn import FormulaColumn
 from vfl2csv_forms.output.TrialSiteFormular import TrialSiteFormular

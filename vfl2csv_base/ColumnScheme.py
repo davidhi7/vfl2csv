@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 class ColumnScheme:
@@ -10,7 +13,12 @@ class ColumnScheme:
         self.measurements = ColumnSchemeSection(measurements)
 
     @staticmethod
-    def from_file(path: Path) -> ColumnScheme:
+    def from_file(path: Path, template: str = '') -> ColumnScheme:
+        if not path.is_file():
+            logger.info('Create new column scheme config' + str(path.absolute()))
+            path.parent.mkdir(exist_ok=True)
+            with open(path, 'w') as file:
+                file.write(template)
         with open(path, 'r') as file:
             scheme = json.load(file)
             return ColumnScheme(scheme['head'], scheme['measurements'])

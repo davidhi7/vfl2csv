@@ -1,8 +1,20 @@
 from pathlib import Path
 
 from vfl2csv_base import config_factory
-from vfl2csv_base.ColumnScheme import ColumnScheme
 
-config = config_factory.get_config(Path('config/config_vfl2csv.ini'))
-testconfig = config_factory.get_config(Path('tests/test-config.ini'))
-column_layout = ColumnScheme.from_file(Path('config/columns.json'))
+config = config_factory.get_config(Path('config/config_vfl2csv.ini'), """[Input]
+# TSV for tab delimited values or Excel for Excel files
+input_format = Excel
+input_file_extension = xlsx
+# expect python codec name (https://docs.python.org/3/library/codecs.html#standard-encodings)
+tsv_encoding = iso8859_15
+
+[Output]
+metadata_output_pattern = {revier}/{versuch}/{versuch}-{parzelle}_metadata.txt
+# csv ouptut pattern directory must be same or sub directory of metadata path
+csv_output_pattern = {revier}/{versuch}/{versuch}-{parzelle}.csv
+
+[Multiprocessing]
+enabled = true
+sheets_per_core = 32
+""")

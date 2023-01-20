@@ -6,8 +6,8 @@ from datetime import date
 import pandas as pd
 from pandas import MultiIndex
 
-from vfl2csv import testconfig
 from vfl2csv.output.TrialSiteConverter import TrialSiteConverter
+from vfl2csv_base import testconfig
 from vfl2csv_base.TrialSite import TrialSite
 
 

@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from typing import Optional
 
-from vfl2csv import column_layout
+from vfl2csv_base import column_scheme as column_layout
 from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_base.datatypes_mapping import pandas_datatypes_mapping as dtypes_mapping
 
