@@ -71,7 +71,6 @@ class TrialSiteFormular:
         self.conditional_formatting_rules.append((cell_range, rule))
 
     def create(self, workbook) -> None:
-        # workbook = load_workbook(self.output_path)
         worksheet = workbook[self.sheet_name]
         self.worksheet = worksheet
         self.write_metadata()

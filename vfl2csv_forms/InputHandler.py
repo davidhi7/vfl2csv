@@ -2,7 +2,7 @@ import logging
 from pathlib import Path
 from typing import Generator
 
-from openpyxl.reader.excel import load_workbook
+from openpyxl.workbook import Workbook
 from pandas import ExcelWriter
 
 from vfl2csv_base.TrialSite import TrialSite
@@ -69,14 +69,11 @@ class InputHandler:
 
         trial_site_forms = []
         with ExcelWriter(output_file, engine='openpyxl') as writer:
+            workbook: Workbook = writer.book
+            styles.register(workbook)
             for trial_site in self.trial_sites:
                 trial_site_form = convert(trial_site, output_file)
                 trial_site_forms.append(trial_site_form)
                 trial_site_form.init_worksheet(writer)
+                trial_site_form.create(workbook)
                 yield trial_site_form.sheet_name
-
-        workbook = load_workbook(output_file)
-        styles.register(workbook)
-        for trial_site_form in trial_site_forms:
-            trial_site_form.create(workbook)
-            yield trial_site_form.sheet_name
