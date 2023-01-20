@@ -1,0 +1,8 @@
+Forstamt=5628 Bad Berka
+Revier=Tiefborn
+Versuch=09703
+Parzelle=02
+Teilfläche=2524 a3
+Standort=Uf-K1
+Höhenlage=420
+DataFrame=09703-02.csv

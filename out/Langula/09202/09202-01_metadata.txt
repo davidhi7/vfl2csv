@@ -1,0 +1,8 @@
+Forstamt=5622 Mühlhausen
+Revier=Langula
+Versuch=09202
+Parzelle=01
+Teilfläche=536 a3
+Standort=Vff-R2
+Höhenlage=404
+DataFrame=09202-01.csv

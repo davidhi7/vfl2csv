@@ -1,0 +1,8 @@
+Forstamt=5637 Neuhaus
+Revier=Oelze
+Versuch=11201
+Parzelle=11
+Teilfläche=15 a12 mäßHdf
+Standort=Mff-M2
+Höhenlage=675
+DataFrame=11201-11.csv
