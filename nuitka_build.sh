@@ -1,1 +1,0 @@
-python -m nuitka --standalone --follow-imports --enable-plugin=pyside6 --lto=no vfl2csv_forms/__main__.py

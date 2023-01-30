@@ -7,7 +7,8 @@ __pycache__/
 
 # build dirs from pyinstaller
 dist/
-build/
+# allow this directory for build configurations / scripts
+!build/
 
 # build dirs from nuitka
 __main__.build
