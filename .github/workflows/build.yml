@@ -1,27 +1,24 @@
-name: Build ubuntu-latest
+name: Build all platforms
 
 on:
   workflow_dispatch:
   push:
     branches:
-      'main'
+      - 'gh-actions'
     
 jobs:
   build:
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest]
     
     runs-on: ${{ matrix.os }}
     
     steps:
       - name: Check-out repository
         uses: actions/checkout@v3
-
-      - name: Install FUSE2 on Ubuntu
-        run: '[ ${{ matrix.os }} = "ubuntu-latest" ] && sudo apt-get -y install libfuse2'
         
-      - name: Setup Python
+      - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
@@ -29,19 +26,21 @@ jobs:
           cache: 'pip'
           cache-dependency-path: |
             requirements.txt
+            requirements-build.txt
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: pip install -r requirements.txt
-        
-      - name: Build Executable
-        uses: Nuitka/Nuitka-Action@v0.4
-        with:
-          script-name: vfl2csv_forms
-          standalone: true
-          enable-plugins: pyside6
+
+      - name: Install build dependencies
+        run: pip install -r requirements-build.txt
+
+      - name: Build artifacts
+        run: >
+          python -m nuitka --standalone --assume-yes-for-downloads --disable-console --follow-imports
+          --enable-plugin=pyside6 --lto=no vfl2csv_forms
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ${{ runner.os }} Build
-          path: '**.dist/'
+          path: 'vfl2csv_forms.dist/'
