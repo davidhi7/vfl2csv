@@ -17,10 +17,6 @@ jobs:
     steps:
       - name: Check-out repository
         uses: actions/checkout@v3
-
-      - name: Install FUSE2 on Ubuntu
-        if: runner.os == 'Linux'
-        run: 'sudo apt-get -y install libfuse2'
         
       - name: Setup Python
         uses: actions/setup-python@v4
@@ -30,22 +26,30 @@ jobs:
           cache: 'pip'
           cache-dependency-path: |
             requirements.txt
+            requirements-build.txt
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: pip install -r requirements.txt
-        
-      - name: Build executable
-        uses: Nuitka/Nuitka-Action@v0.4
-        with:
-          script-name: vfl2csv_forms
-          standalone: true
-          onefile: false
-          enable-plugins: pyside6
-          enable-console: false
-          output-dir: 'build/'
+
+      - name: Install build dependencies
+        run: pip install -r requirements-build.txt
+
+      - name: Build artifacts
+        run: python -m nuitka --standalone --follow-imports --enable-plugin=pyside6 --lto=no vfl2csv_forms
+
+# nuitka actions do not support lto=no which massively boosts compile time
+#      - name: Build executables
+#        uses: Nuitka/Nuitka-Action@v0.4
+#        with:
+#          script-name: vfl2csv_forms
+#          standalone: true
+#          onefile: false
+#          enable-plugins: pyside6
+#          enable-console: false
+#          output-dir: 'build/'
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ${{ runner.os }} Build
-          path: 'build/'
+          path: 'vfl2csv_forms.dist/'
