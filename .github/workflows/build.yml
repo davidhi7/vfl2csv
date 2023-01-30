@@ -18,7 +18,7 @@ jobs:
       - name: Check-out repository
         uses: actions/checkout@v3
         
-      - name: Setup Python
+      - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
@@ -35,18 +35,7 @@ jobs:
         run: pip install -r requirements-build.txt
 
       - name: Build artifacts
-        run: python -m nuitka --standalone --follow-imports --enable-plugin=pyside6 --lto=no vfl2csv_forms
-
-# nuitka actions do not support lto=no which massively boosts compile time
-#      - name: Build executables
-#        uses: Nuitka/Nuitka-Action@v0.4
-#        with:
-#          script-name: vfl2csv_forms
-#          standalone: true
-#          onefile: false
-#          enable-plugins: pyside6
-#          enable-console: false
-#          output-dir: 'build/'
+        run: python -m nuitka --standalone --assume-yes-for-downloads --follow-imports --enable-plugin=pyside6 --lto=no vfl2csv_forms
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
