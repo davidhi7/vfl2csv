@@ -5,7 +5,7 @@ from typing import Union
 from openpyxl.formatting import Rule
 from openpyxl.styles import NamedStyle
 
-from vfl2csv_forms.excel.utilities import zeroBasedCell, EXCEL_COLUMN_NAMES
+from vfl2csv_forms.excel.utilities import zero_based_cell, EXCEL_COLUMN_NAMES
 
 
 class FormulaColumn:
@@ -47,7 +47,7 @@ class FormulaColumn:
         """
         # number of columns to shift the parameter 'column' after inserting other columns recursively
         column_shift = 0
-        zeroBasedCell(ws, rows[0], column).value = self.label
+        zero_based_cell(ws, rows[0], column).value = self.label
         #
         column_argument_letters = []
         for column_arg in self.column_arguments:
@@ -71,9 +71,9 @@ class FormulaColumn:
                 column_enumeration = ', '.join(f'{letter}{row + 1}' for letter in column_argument_letters)
                 # wrap the formula into IFERROR to prevent ugly error codes
                 formula = f'=IFERROR({self.function}({column_enumeration}), "")'
-            zeroBasedCell(ws, row, column).value = formula
-            # zeroBasedCell(ws, row, column).value = f'={formula}'
-            zeroBasedCell(ws, row, column).style = self.style.name
+            zero_based_cell(ws, row, column).value = formula
+            # zero_based_cell(ws, row, column).value = f'={formula}'
+            zero_based_cell(ws, row, column).style = self.style.name
         column_letter = EXCEL_COLUMN_NAMES[column]
         for rule in self.conditional_formatting_rules:
             ws.conditional_formatting.add(

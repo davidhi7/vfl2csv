@@ -12,7 +12,7 @@ from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_forms import config
 from vfl2csv_forms.excel import styles
 from vfl2csv_forms.excel.utilities import EXCEL_COLUMN_NAMES
-from vfl2csv_forms.excel.utilities import zeroBasedCell
+from vfl2csv_forms.excel.utilities import zero_based_cell
 from vfl2csv_forms.output.FormulaColumn import FormulaColumn
 
 dtypes_styles_mapping = {
@@ -120,21 +120,21 @@ class TrialSiteFormular:
 
         for column_index in range(self.first_empty_column):
             # header column
-            zeroBasedCell(self.worksheet, self.table_head_row, column_index).style = styles.table_head.name
+            zero_based_cell(self.worksheet, self.table_head_row, column_index).style = styles.table_head.name
             if len(self.df.columns) > column_index:
                 style = dtypes_styles_mapping.get(
                     self.df.dtypes[column_index].name,
                     styles.table_body_text
                 ).name
                 for row in self.row_span[1:]:
-                    zeroBasedCell(self.worksheet, row, column_index).style = style
+                    zero_based_cell(self.worksheet, row, column_index).style = style
 
         for key, rule in self.conditional_formatting_rules:
             self.worksheet.conditional_formatting.add(key, rule)
 
     def adjust_column_width(self) -> None:
         for column in range(self.first_empty_column):
-            table_head_cell = zeroBasedCell(self.worksheet, self.table_head_row, column)
+            table_head_cell = zero_based_cell(self.worksheet, self.table_head_row, column)
             # factor 1.5 is an arbitrary value that fits quite nicely
             if table_head_cell.value is not None:
                 self.worksheet.column_dimensions[get_column_letter(column + 1)].width = 1.5 * len(table_head_cell.value)
