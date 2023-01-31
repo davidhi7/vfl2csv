@@ -3,10 +3,9 @@ import sys
 from pathlib import Path
 
 if 'unittest' in sys.modules:
-    logging.basicConfig(format='%(levelname)s %(name)s: %(message)s')
+    logging.basicConfig(format='%(levelname)s %(name)s: %(message)s', level=logging.WARNING)
 else:
-    logging.basicConfig(format='%(levelname)s %(name)s: %(message)s')
-    logging.disable(logging.WARNING)
+    logging.basicConfig(format='%(levelname)s %(name)s: %(message)s', level=logging.INFO)
 
 from vfl2csv_base.ColumnScheme import ColumnScheme
 from vfl2csv_base.config_factory import get_config
