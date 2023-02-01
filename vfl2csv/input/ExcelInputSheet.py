@@ -14,7 +14,7 @@ class ExcelInputSheet(InputFile):
         Create a new Excel output file object.
         This class acts as abstraction for parsing Excel output files and acts as the interface between Excel and the
         TrialSite class, which represents measurement and metadata in a common format.
-        ;param workbook: ExcelWorkbook instance
+        :param workbook: ExcelWorkbook instance
         :param sheet_name: Name of the sheet containing all trial site data
         """
         self.trial_site = None
