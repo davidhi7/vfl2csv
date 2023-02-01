@@ -1,5 +1,5 @@
-from argparse import ArgumentParser
 import pathlib
+from argparse import ArgumentParser
 
 parser = ArgumentParser(
     prog='vfl2csv',

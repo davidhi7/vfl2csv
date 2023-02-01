@@ -56,12 +56,12 @@ def trial_site_pipeline(
         lock: RLock,
         process_index: int
 ) -> dict[str, int]:
-    logger = logging.getLogger(f'process {process_index}')
+    process_logger = logging.getLogger(f'process {process_index}')
     errors = list()
     for input_sheet in input_batch:
         # noinspection PyBroadException
         try:
-            logger.info(f'Converting input {str(input_sheet)}')
+            process_logger.info(f'Converting input {str(input_sheet)}')
             input_sheet.parse()
             trial_site = input_sheet.get_trial_site()
             converter = TrialSiteConverter(trial_site)
@@ -83,13 +83,14 @@ def trial_site_pipeline(
                     metadata_output_file.touch(exist_ok=False)
                 except FileExistsError as e:
                     raise Exception(
-                        f'Process {process_index}: Corresponding output file(s) for trial site {input_sheet} does already exist!') from e
+                        f'Process {process_index}: Corresponding output file(s) for trial site {input_sheet} does '
+                        f'already exist!') from e
 
             converter.write_data(data_output_file)
             converter.write_metadata(metadata_output_file)
         except Exception as e:
-            traceback.print_exc();
-            logger.warning(f'Exception in process {process_index}: {str(e)}')
+            traceback.print_exc()
+            process_logger.warning(f'Exception in process {process_index}: {str(e)}')
             errors.append(e)
     return {
         'total_count': len(input_batch),

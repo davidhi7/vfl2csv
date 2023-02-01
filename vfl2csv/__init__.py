@@ -11,7 +11,7 @@ tsv_encoding = iso8859_15
 
 [Output]
 metadata_output_pattern = {revier}/{versuch}/{versuch}-{parzelle}_metadata.txt
-# csv ouptut pattern directory must be same or sub directory of metadata path
+# csv output pattern directory must be same or sub directory of metadata path
 csv_output_pattern = {revier}/{versuch}/{versuch}-{parzelle}.csv
 
 [Multiprocessing]

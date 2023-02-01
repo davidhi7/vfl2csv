@@ -5,17 +5,17 @@ import pandas as pd
 
 from vfl2csv.input.ExcelInputSheet import ExcelInputSheet
 from vfl2csv.input.ExcelWorkbook import ExcelWorkbook
-from vfl2csv_base import testconfig
+from vfl2csv_base import test_config
 
 
 class ExcelInputSheetTest(unittest.TestCase):
 
     def setUp(self) -> None:
-        excel_workbook = ExcelWorkbook(Path(testconfig['Input'].getpath('excel_sample_input_file')))
+        excel_workbook = ExcelWorkbook(Path(test_config['Input'].getpath('excel_sample_input_file')))
         self.sample_instance = ExcelInputSheet(excel_workbook, '09703_P2')
 
     def test_iterate_files(self):
-        sheets = ExcelInputSheet.iterate_files(testconfig['Input'].getpath('excel_sample_input_dir').glob('*.xlsx'))
+        sheets = ExcelInputSheet.iterate_files(test_config['Input'].getpath('excel_sample_input_dir').glob('*.xlsx'))
         self.assertEqual(len(sheets), 17)
 
     def test_parse_dataframe(self):

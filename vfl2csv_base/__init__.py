@@ -10,7 +10,7 @@ else:
 from vfl2csv_base.ColumnScheme import ColumnScheme
 from vfl2csv_base.config_factory import get_config
 
-testconfig = get_config(Path('tests/test-config.ini'))
+test_config = get_config(Path('tests/test-config.ini'))
 column_scheme = ColumnScheme.from_file(Path('config/columns.json'), """{
   "head": [
     {

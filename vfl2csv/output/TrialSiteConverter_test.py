@@ -7,13 +7,13 @@ import pandas as pd
 from pandas import MultiIndex
 
 from vfl2csv.output.TrialSiteConverter import TrialSiteConverter
-from vfl2csv_base import testconfig
+from vfl2csv_base import test_config
 from vfl2csv_base.TrialSite import TrialSite
 
 
 # noinspection PyTypeChecker
 class TrialSiteConverterTest(unittest.TestCase):
-    tmp_dir = testconfig['Output'].getpath('temp_dir')
+    tmp_dir = test_config['Output'].getpath('temp_dir')
 
     sample_multiIndex = MultiIndex.from_tuples([
         ('Aufnahme', 'Wert', 'Einheit', 'Bst.-E.'),
