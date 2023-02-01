@@ -34,12 +34,10 @@ class GraphicalUI(QWidget):
         single_file_input.clicked.connect(self.single_file_input)
         directory_input = QPushButton('Verzeichnis auswählen')
         directory_input.clicked.connect(self.directory_input)
-        input_separator = QLabel('oder')
-        input_separator.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         button_layout = QHBoxLayout()
         button_layout.addWidget(single_file_input)
-        button_layout.addWidget(input_separator)
+        button_layout.addWidget(QLabel(text='oder', alignment=Qt.AlignmentFlag.AlignCenter))
         button_layout.addWidget(directory_input)
 
         self.status_label = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
@@ -67,46 +65,42 @@ class GraphicalUI(QWidget):
         self.layout().addWidget(self.progress_bar)
 
         self.input_handler = InputHandler()
-        self.update_input_status(skip_window_move=True)
+        self.update_input_status(skip_window_reposition=True)
 
     @Slot()
     def single_file_input(self) -> None:
-        files_input = QFileDialog.getOpenFileNames(
+        files_input: tuple[list[Path], str] = QFileDialog.getOpenFileNames(
             parent=self,
             caption='Metadaten-Datei auswählen',
             filter=f'Metadaten ({config["Input"].get("metadata_search_pattern")});;Alle Dateien (*)'
         )
-        if not files_input[0]:
+        # the first value of the tuple is a list of selected file names. This list is empty, if the dialog is cancelled
+        if len(files_input[0]) == 0:
             return
 
-        self.input_handler.clear()
         self.load_input(files_input[0])
 
     @Slot()
     def directory_input(self) -> None:
-        directory_input = QFileDialog.getExistingDirectory(
+        directory_input: str = QFileDialog.getExistingDirectory(
             parent=self,
             caption='Metadaten-Verzeichnis auswählen',
             options=QFileDialog.ShowDirsOnly
         )
-        # QFileDialog.getExistingDirectory returns only the selected path, no other nested values
-        if not directory_input:
+        # only the selected path is returned, nothing else
+        if directory_input == '':
             return
 
-        self.input_handler.clear()
         self.load_input(directory_input)
 
     def load_input(self, input_paths: str | Path | list[str | Path]) -> None:
+        self.input_handler.clear()
         try:
             self.input_handler.load_input(input_paths)
             if len(self.input_handler) == 0:
                 self.notify_warning('Keine Versuchsflächen gefunden!')
             else:
                 self.input_handler.sort()
-        except FileNotFoundError as err:
-            logger.error(err)
-            traceback.print_exc()
-            self.notify_error('Datei ', err, traceback.format_exc())
         except Exception as err:
             logger.error(err)
             traceback.print_exc()
@@ -118,31 +112,31 @@ class GraphicalUI(QWidget):
     @Slot()
     def create(self) -> None:
         if len(self.input_handler) == 0:
-            self.notify_warning('Keine Versuchsflächen ausgewählt!')
+            self.notify_warning('Es sind keine Versuchsflächen ausgewählt!')
             return
-        output_path = QFileDialog.getSaveFileName(
+        output_file = QFileDialog.getSaveFileName(
             parent=self,
             caption='Dateispeicherort',
             filter='Excel-Datei (*.xlsx)'
         )[0]
 
         # empty path is returned if the dialog is cancelled
-        if not output_path:
+        if output_file == '':
             return
 
-        if not output_path.endswith('.xlsx'):
-            output_path += '.xlsx'
+        if not output_file.endswith('.xlsx'):
+            output_file += '.xlsx'
 
         self.progress_bar.setMinimum(0)
-        # one step each to write the df and then apply formatting and metadata
+        # one step for each trial site
         self.progress_bar.setMaximum(len(self.input_handler))
         self.progress_bar.setValue(0)
         self.progress_bar.setVisible(True)
         self.manage_space()
 
         try:
-            # allow overriding (exit_ok=True) because QFileDialog already asks whether to allow
-            for _ in self.input_handler.create_all(Path(output_path), exist_ok=True):
+            # allow overriding (exit_ok=True) because QFileDialog already asks the user whether to allow it
+            for _ in self.input_handler.create_all(Path(output_file), exist_ok=True):
                 self.progress_bar.setValue(self.progress_bar.value() + 1)
             self.notify_success('Formular erstellt')
         except Exception as err:
@@ -153,7 +147,6 @@ class GraphicalUI(QWidget):
             self.progress_bar.setVisible(False)
             self.input_handler.clear()
             self.update_input_status()
-            self.manage_space()
 
     def notify_success(self, message: str) -> None:
         self.notification(message, None, None, icon=QMessageBox.Icon.Information)
@@ -179,7 +172,7 @@ class GraphicalUI(QWidget):
             msg_box.setDetailedText(detailed_text)
         msg_box.exec()
 
-    def update_input_status(self, skip_window_move=False) -> None:
+    def update_input_status(self, skip_window_reposition=False) -> None:
         trial_site_count = len(self.input_handler)
         if trial_site_count == 0:
             self.status_label.setText('Es sind keine Versuchsflächen ausgewählt.')
@@ -198,7 +191,7 @@ class GraphicalUI(QWidget):
                 widget1.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.status_table.setItem(row, 0, widget0)
                 self.status_table.setItem(row, 1, widget1)
-        self.manage_space(skip_window_move=skip_window_move)
+        self.manage_space(skip_window_move=skip_window_reposition)
 
     def get_qtable_widget_size(self) -> QSize:
         """
