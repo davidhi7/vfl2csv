@@ -13,6 +13,7 @@ from vfl2csv_forms.gui.QHLine import QHLine
 logger = logging.getLogger(__name__)
 
 
+# noinspection PyUnresolvedReferences
 class GraphicalUI(QWidget):
     require_centre = Signal()
 
@@ -204,9 +205,10 @@ class GraphicalUI(QWidget):
         Shamelessly stolen from https://stackoverflow.com/a/41543029
         """
         self.status_table.resizeRowsToContents()
-        width = self.status_table.verticalHeader().width() + 4  # +4 seems to be needed
+        width = self.status_table.verticalHeader().width() + 4
+        # +4 seems to be needed
         for i in range(self.status_table.columnCount()):
-            width += self.status_table.columnWidth(i)  # seems to include gridline (on my machine)
+            width += self.status_table.columnWidth(i)
         height = self.status_table.horizontalHeader().height() + 4
         # limit the shown rows to 20
         for i in range(min((self.status_table.rowCount()), 20)):

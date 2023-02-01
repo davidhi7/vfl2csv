@@ -36,36 +36,6 @@ class TrialSiteConverterTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.tmp_dir.mkdir(parents=True, exist_ok=True)
-        column_layout = column_layout = {
-            "head": [
-                {
-                    "override_name": "Bestandeseinheit",
-                    "type": "uint16"
-                },
-                {
-                    "override_name": "Baumart",
-                    "type": "string"
-                },
-                {
-                    "override_name": "Baumnummer",
-                    "type": "uint16"
-                }
-            ],
-            "measurements": [
-                {
-                    "override_name": "D",
-                    "type": "float64"
-                },
-                {
-                    "override_name": "Aus",
-                    "type": "uint8"
-                },
-                {
-                    "override_name": "H",
-                    "type": "float64"
-                }
-            ]
-        }
 
     @classmethod
     def tearDownClass(cls) -> None:

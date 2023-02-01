@@ -8,6 +8,7 @@ from vfl2csv_base.ColumnScheme import ColumnScheme
 from vfl2csv_base.TrialSite import TrialSite
 
 
+# noinspection SpellCheckingInspection
 class TrialSiteTest(unittest.TestCase):
     sample_metadata = {
         "Forstamt": "5628   Bad Berka",

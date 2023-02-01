@@ -12,7 +12,8 @@ class TsvInputFile(InputFile):
     def __init__(self, file_path: Path):
         """
         Create a new TSV output file object.
-        This class acts as abstraction for parsing TSV (tab-separated values) output files and acts as the interface between TSV and the
+        This class acts as abstraction for parsing TSV (tab-separated values) output files and acts as the interface
+        between TSV and the
         TrialSite class, which represents measurement and metadata in a common format.
         :param file_path: Path object leading to the output file
         """

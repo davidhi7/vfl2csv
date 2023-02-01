@@ -45,6 +45,7 @@ class TrialSiteFormular:
         self.add_comment_column()
         self.first_empty_column = len(self.df.columns) + 1
 
+    # noinspection SpellCheckingInspection
     def add_comment_column(self) -> None:
         # add two new columns:
         # 1. "Aus" for trees that were removed ore are supposed to removed from the forest for various reasons

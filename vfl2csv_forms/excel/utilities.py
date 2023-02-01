@@ -1,3 +1,4 @@
+# noinspection SpellCheckingInspection
 EXCEL_COLUMN_NAMES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 

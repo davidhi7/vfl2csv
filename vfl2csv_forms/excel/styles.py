@@ -19,6 +19,7 @@ table_body_integer = NamedStyle(name='table-body-integer', font=Font(name='Calib
 table_body_rational = NamedStyle(name='table-body-rational', font=Font(name='Calibri', size=12), number_format='0.0')
 
 
+# noinspection SpellCheckingInspection,PyDefaultArgument
 def full_conditional_formatting_list(__mutable={'count': 1}) -> list[Rule]:
     # __mutable['count'] counts the calls to this function, incrementing by one after every call.
     # This is required so returned conditional formatting rules have different priorities all the time, while still
