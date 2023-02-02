@@ -62,4 +62,4 @@ class InputHandler(QObject):
     def convert(self, output_file: Path):
         worker = ConversionWorker(self.trial_sites, output_file)
         QThreadPool.globalInstance().start(worker)
-        return worker.state.progress, worker.state.finished
+        return worker.state.progress, worker.state.finished, worker.state.error

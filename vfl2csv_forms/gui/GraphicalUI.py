@@ -1,6 +1,7 @@
 import logging
 import traceback
 from pathlib import Path
+from typing import NoReturn
 
 from PySide6.QtCore import Qt, Slot, QSize, Signal
 from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QTableWidget, \
@@ -13,7 +14,6 @@ from vfl2csv_forms.gui.QHLine import QHLine
 logger = logging.getLogger(__name__)
 
 
-# noinspection PyUnresolvedReferences
 class GraphicalUI(QWidget):
     require_centre = Signal()
 
@@ -131,13 +131,15 @@ class GraphicalUI(QWidget):
         self.prepare_conversion()
 
         try:
-            progress, finished = self.input_handler.convert(output_file)
+            progress, finished, error = self.input_handler.convert(output_file)
             progress.connect(self.increment_progress_bar)
             finished.connect(self.finish_conversion)
+            error.connect(self.raise__)
         except Exception as err:
             logger.error(err)
             traceback.print_exc()
             self.notify_error('Fehler während des Speichern der Dateien', err, traceback.format_exc())
+            self.finish_conversion()
 
     def prepare_conversion(self):
         self.progress_bar.setMinimum(0)
@@ -153,11 +155,20 @@ class GraphicalUI(QWidget):
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
     @Slot()
-    def finish_conversion(self):
-        self.notify_success('Formular erstellt')
+    def finish_conversion(self, success: bool = True):
+        if success:
+            self.notify_success('Formular erstellt')
         self.progress_bar.setVisible(False)
         self.manage_space()
         self.run_button.setDisabled(False)
+
+    @Slot(Exception)
+    def raise__(self, exc: Exception) -> NoReturn:
+        """
+        Little utility to raise exceptions inside a lambda.
+        Note that there is a function called `raise_` in the QWidget class, so this function uses two underscores.
+        """
+        raise exc
 
     def notify_success(self, message: str) -> None:
         self.notification(message, None, None, icon=QMessageBox.Icon.Information)
