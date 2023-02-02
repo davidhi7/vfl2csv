@@ -7,7 +7,7 @@ from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QHBoxLa
     QAbstractItemView, QHeaderView, QMessageBox, QFileDialog, QTableWidgetItem, QProgressBar
 
 from vfl2csv_forms import config
-from vfl2csv_forms.InputHandler import InputHandler
+from vfl2csv_forms.gui.InputHandler import InputHandler
 from vfl2csv_forms.gui.QHLine import QHLine
 
 logger = logging.getLogger(__name__)
@@ -48,9 +48,9 @@ class GraphicalUI(QWidget):
         self.status_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.status_table.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
-        run_button = QPushButton('Formular erzeugen')
-        run_button.clicked.connect(self.create)
-        run_button.setMinimumHeight(50)
+        self.run_button = QPushButton('Formular erzeugen')
+        self.run_button.clicked.connect(self.create)
+        self.run_button.setMinimumHeight(50)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
@@ -61,7 +61,7 @@ class GraphicalUI(QWidget):
         self.layout().addWidget(self.status_label)
         self.layout().addWidget(self.status_table)
         self.layout().addWidget(QHLine())
-        self.layout().addWidget(run_button)
+        self.layout().addWidget(self.run_button)
         self.layout().addWidget(self.progress_bar)
 
         self.input_handler = InputHandler()
@@ -114,39 +114,50 @@ class GraphicalUI(QWidget):
         if len(self.input_handler) == 0:
             self.notify_warning('Es sind keine Versuchsflächen ausgewählt!')
             return
-        output_file = QFileDialog.getSaveFileName(
+        output_file_str = QFileDialog.getSaveFileName(
             parent=self,
             caption='Dateispeicherort',
             filter='Excel-Datei (*.xlsx)'
         )[0]
 
         # empty path is returned if the dialog is cancelled
-        if output_file == '':
+        if output_file_str == '':
             return
 
-        if not output_file.endswith('.xlsx'):
-            output_file += '.xlsx'
+        if not output_file_str.endswith('.xlsx'):
+            output_file_str += '.xlsx'
 
+        output_file = Path(output_file_str)
+        self.prepare_conversion()
+
+        try:
+            progress, finished = self.input_handler.convert(output_file)
+            progress.connect(self.increment_progress_bar)
+            finished.connect(self.finish_conversion)
+        except Exception as err:
+            logger.error(err)
+            traceback.print_exc()
+            self.notify_error('Fehler während des Speichern der Dateien', err, traceback.format_exc())
+
+    def prepare_conversion(self):
         self.progress_bar.setMinimum(0)
         # one step for each trial site
         self.progress_bar.setMaximum(len(self.input_handler))
         self.progress_bar.setValue(0)
         self.progress_bar.setVisible(True)
         self.manage_space()
+        self.run_button.setDisabled(True)
 
-        try:
-            # allow overriding (exit_ok=True) because QFileDialog already asks the user whether to allow it
-            for _ in self.input_handler.create_all(Path(output_file), exist_ok=True):
-                self.progress_bar.setValue(self.progress_bar.value() + 1)
-            self.notify_success('Formular erstellt')
-        except Exception as err:
-            logger.error(err)
-            traceback.print_exc()
-            self.notify_error('Fehler während des Speichern der Dateien', err, traceback.format_exc())
-        finally:
-            self.progress_bar.setVisible(False)
-            self.input_handler.clear()
-            self.update_input_status()
+    @Slot(str)
+    def increment_progress_bar(self):
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+    @Slot()
+    def finish_conversion(self):
+        self.notify_success('Formular erstellt')
+        self.progress_bar.setVisible(False)
+        self.manage_space()
+        self.run_button.setDisabled(False)
 
     def notify_success(self, message: str) -> None:
         self.notification(message, None, None, icon=QMessageBox.Icon.Information)
