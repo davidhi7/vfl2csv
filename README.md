@@ -11,7 +11,6 @@ Two Utilities developed for TU Dresden Chair of Forest Growth and Woody Biomass 
 * `pandas`
 * `OpenPyXL`
 * `PySide6`
-* `PyInstaller` (for building)
 
 ```bash
 python3 -m pip install -r requirements.txt
