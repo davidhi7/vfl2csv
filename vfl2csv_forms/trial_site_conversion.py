@@ -18,7 +18,7 @@ ExpandedColumnLabel: TypeAlias = tuple[int, str]
 
 def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
     trial_site.verify_column_integrity(column_scheme)
-    df, metadata = trial_site.df, trial_site.metadata
+    df, metadata = trial_site.df.copy(), trial_site.metadata
     # replace string labels with tuples of year and type of the value for easier computations
     df.columns = TrialSite.expand_column_labels(df.columns)
 
