@@ -121,21 +121,21 @@ class TrialSiteFormular:
 
         for column_index in range(self.first_empty_column):
             # header column
-            zero_based_cell(self.worksheet, self.table_head_row, column_index).style = styles.table_head.name
+            zero_based_cell(self.worksheet, column_index, self.table_head_row).style = styles.table_head.name
             if len(self.df.columns) > column_index:
                 style = dtypes_styles_mapping.get(
                     self.df.dtypes[column_index].name,
                     styles.table_body_text
                 ).name
                 for row in self.row_span[1:]:
-                    zero_based_cell(self.worksheet, row, column_index).style = style
+                    zero_based_cell(self.worksheet, column_index, row).style = style
 
         for key, rule in self.conditional_formatting_rules:
             self.worksheet.conditional_formatting.add(key, rule)
 
     def adjust_column_width(self) -> None:
         for column in range(self.first_empty_column):
-            table_head_cell = zero_based_cell(self.worksheet, self.table_head_row, column)
+            table_head_cell = zero_based_cell(self.worksheet, column, self.table_head_row)
             # factor 1.5 is an arbitrary value that fits quite nicely
             if table_head_cell.value is not None:
                 self.worksheet.column_dimensions[get_column_letter(column + 1)].width = 1.5 * len(table_head_cell.value)
