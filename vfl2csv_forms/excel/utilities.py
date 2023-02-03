@@ -2,7 +2,7 @@
 EXCEL_COLUMN_NAMES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 
-def zero_based_cell(ws, row, column):
+def zero_based_cell(ws, column, row):
     return ws.cell(row=row + 1, column=column + 1)
 
 
