@@ -1,5 +1,5 @@
 from openpyxl.formatting.rule import CellIsRule, Rule, ColorScale, FormatObject
-from openpyxl.styles import NamedStyle, Font, Alignment, Color
+from openpyxl.styles import NamedStyle, Font, Alignment, Color, Border, Side
 from openpyxl.workbook import Workbook
 
 metadata_keys = NamedStyle(name='metadata-keys',
@@ -11,7 +11,8 @@ metadata_values = NamedStyle(name='metadata-values', font=Font(name='Calibri', s
 
 table_head = NamedStyle(name='table-head',
                         font=Font(bold=True, name='Calibri', size=12),
-                        alignment=Alignment(horizontal='center')
+                        alignment=Alignment(horizontal='center', vertical='center'),
+                        border=Border(bottom=Side(style='thin'))
                         )
 
 table_body_text = NamedStyle(name='table-body-text', font=Font(name='Calibri', size=12))
