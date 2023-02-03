@@ -11,7 +11,7 @@ from pandas import ExcelWriter
 from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_forms import config
 from vfl2csv_forms.excel import styles
-from vfl2csv_forms.excel.utilities import EXCEL_COLUMN_NAMES
+from vfl2csv_forms.excel.utilities import EXCEL_COLUMN_NAMES, zero_based_cell_name
 from vfl2csv_forms.excel.utilities import zero_based_cell
 from vfl2csv_forms.output.FormulaColumn import FormulaColumn
 
@@ -132,6 +132,10 @@ class TrialSiteFormular:
 
         for key, rule in self.conditional_formatting_rules:
             self.worksheet.conditional_formatting.add(key, rule)
+
+        # freeze the header rows and no columns
+        # cell is -1 to reflect that no column should be frozen
+        self.worksheet.freeze_panes = zero_based_cell_name(-1, self.table_head_row + 1)
 
     def adjust_column_width(self) -> None:
         for column in range(self.first_empty_column):
