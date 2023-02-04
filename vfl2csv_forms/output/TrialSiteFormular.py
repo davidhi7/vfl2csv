@@ -5,13 +5,13 @@ import pandas as pd
 from openpyxl.formatting import Rule
 from openpyxl.styles import PatternFill
 from openpyxl.styles.differential import DifferentialStyle
-from openpyxl.utils import get_column_letter, column_index_from_string
+from openpyxl.utils import get_column_letter
 from pandas import ExcelWriter
 
 from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_forms import config
 from vfl2csv_forms.excel import styles
-from vfl2csv_forms.excel.utilities import EXCEL_COLUMN_NAMES, zero_based_cell_name
+from vfl2csv_forms.excel.utilities import EXCEL_COLUMN_NAMES, zero_based_cell_name, zero_based_cell_range_name
 from vfl2csv_forms.excel.utilities import zero_based_cell
 from vfl2csv_forms.output.FormulaColumn import FormulaColumn
 
@@ -94,10 +94,9 @@ class TrialSiteFormular:
 
     def write_metadata(self) -> None:
         # merge two horizontally adjacent cells each
-        for column in ('A', 'C', 'F', 'H'):
-            letters = (column, get_column_letter(column_index_from_string(column) + 1))
-            for row in range(1, 5):
-                self.worksheet.merge_cells(f'{letters[0]}{row}:{letters[1]}{row}')
+        for first_column in (0, 2, 5, 7):
+            for row in range(0, 4):
+                self.worksheet.merge_cells(zero_based_cell_range_name(first_column, row, first_column + 1, row))
 
         # write the data
         for index, key in enumerate(('Versuch', 'Parzelle', 'Forstamt', 'Revier')):
@@ -134,8 +133,7 @@ class TrialSiteFormular:
             self.worksheet.conditional_formatting.add(key, rule)
 
         # freeze the header rows and no columns
-        # cell is -1 to reflect that no column should be frozen
-        self.worksheet.freeze_panes = zero_based_cell_name(-1, self.table_head_row + 1)
+        self.worksheet.freeze_panes = zero_based_cell_name(0, self.table_head_row + 1)
 
     def adjust_column_width(self) -> None:
         for column in range(self.first_empty_column):
