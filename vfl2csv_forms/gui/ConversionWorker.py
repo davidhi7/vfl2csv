@@ -32,11 +32,11 @@ class ConversionWorker(QRunnable):
 
     @Slot()
     def run(self) -> None:
-        try:
-            self.output_file.touch(exist_ok=True)
+        self.output_file.touch(exist_ok=True)
 
-            trial_site_forms = []
-            with ExcelWriter(self.output_file, engine='openpyxl') as writer:
+        trial_site_forms = []
+        with ExcelWriter(self.output_file, engine='openpyxl') as writer:
+            try:
                 workbook = writer.book
                 styles.register(workbook)
                 for trial_site in self.trial_sites:
@@ -45,8 +45,8 @@ class ConversionWorker(QRunnable):
                     trial_site_form.init_worksheet(writer)
                     trial_site_form.create(workbook)
                     self.state.progress.emit(str(trial_site))
-            self.state.finished.emit()
-        except Exception as err:
-            logger.error(err)
-            logger.error(traceback.format_exc())
-            self.state.error.emit(err)
+            except Exception as err:
+                logger.error(err)
+                logger.error(traceback.format_exc())
+                self.state.error.emit(err)
+        self.state.finished.emit()

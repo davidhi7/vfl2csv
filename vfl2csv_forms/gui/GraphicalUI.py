@@ -1,7 +1,7 @@
 import logging
 import traceback
+from functools import wraps
 from pathlib import Path
-from typing import NoReturn
 
 from PySide6.QtCore import Qt, Slot, QSize, Signal
 from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QTableWidget, \
@@ -67,6 +67,28 @@ class GraphicalUI(QWidget):
         self.input_handler = InputHandler()
         self.update_input_status(skip_window_reposition=True)
 
+    def ExceptionHandlingSlot(*args):
+        """
+        Wrap the PySide6 `Slot` decorator to include custom exception handling.
+        :param args: Arguments to be passed to the actual Slot decorator
+        :return:
+        """
+        if len(args) == 0:
+            args = []
+
+        @Slot(*args)
+        def slotdecorator(func):
+            @wraps(func)
+            def wrapper(self, *args):
+                try:
+                    func(*args)
+                except Exception as exc:
+                    self.handle_exception(exc)
+
+            return wrapper
+
+        return slotdecorator
+
     @Slot()
     def single_file_input(self) -> None:
         files_input: tuple[list[Path], str] = QFileDialog.getOpenFileNames(
@@ -102,10 +124,7 @@ class GraphicalUI(QWidget):
             else:
                 self.input_handler.sort()
         except Exception as err:
-            logger.error(err)
-            traceback.print_exc()
-            self.notify_error('Fehler während des Einlesen der Dateien', err, traceback.format_exc())
-            self.input_handler.clear()
+            self.handle_exception(err)
         finally:
             self.update_input_status()
 
@@ -134,12 +153,9 @@ class GraphicalUI(QWidget):
             progress, finished, error = self.input_handler.convert(output_file)
             progress.connect(self.increment_progress_bar)
             finished.connect(self.finish_conversion)
-            error.connect(self.raise__)
+            error.connect(self.handle_exception)
         except Exception as err:
-            logger.error(err)
-            traceback.print_exc()
-            self.notify_error('Fehler während des Speichern der Dateien', err, traceback.format_exc())
-            self.finish_conversion()
+            self.handle_exception(err)
 
     def prepare_conversion(self):
         self.progress_bar.setMinimum(0)
@@ -161,14 +177,6 @@ class GraphicalUI(QWidget):
         self.progress_bar.setVisible(False)
         self.manage_space()
         self.run_button.setDisabled(False)
-
-    @Slot(Exception)
-    def raise__(self, exc: Exception) -> NoReturn:
-        """
-        Little utility to raise exceptions inside a lambda.
-        Note that there is a function called `raise_` in the QWidget class, so this function uses two underscores.
-        """
-        raise exc
 
     def notify_success(self, message: str) -> None:
         self.notification(message, None, None, icon=QMessageBox.Icon.Information)
@@ -250,3 +258,10 @@ class GraphicalUI(QWidget):
         new_geometry = self.frameGeometry()
         new_geometry.moveCenter(old_geometry.center())
         self.move(new_geometry.topLeft())
+
+    @Slot(Exception)
+    def handle_exception(self, exc: Exception):
+        logger.error(exc)
+        traceback.print_exc()
+        self.notify_error('Fehler während des Speichern der Dateien', exc, traceback.format_exc())
+        self.finish_conversion()
