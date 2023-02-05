@@ -61,6 +61,7 @@ class TrialSite:
         # verify body columns
         # count of expected individual records with n columns each
         if measurements_type_count > 0:
+            # noinspection PyTypeChecker
             measurement_count = (len(df.columns) - head_column_count) // measurements_type_count
             for measurement_index in range(measurement_count):
                 for attribute_index in range(measurements_type_count):

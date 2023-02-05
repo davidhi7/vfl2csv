@@ -1,5 +1,6 @@
 import logging
 import traceback
+from functools import wraps
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Slot, QSize, Signal
@@ -7,7 +8,7 @@ from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QHBoxLa
     QAbstractItemView, QHeaderView, QMessageBox, QFileDialog, QTableWidgetItem, QProgressBar
 
 from vfl2csv_forms import config
-from vfl2csv_forms.InputHandler import InputHandler
+from vfl2csv_forms.gui.InputHandler import InputHandler
 from vfl2csv_forms.gui.QHLine import QHLine
 
 logger = logging.getLogger(__name__)
@@ -33,12 +34,10 @@ class GraphicalUI(QWidget):
         single_file_input.clicked.connect(self.single_file_input)
         directory_input = QPushButton('Verzeichnis auswählen')
         directory_input.clicked.connect(self.directory_input)
-        input_separator = QLabel('oder')
-        input_separator.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         button_layout = QHBoxLayout()
         button_layout.addWidget(single_file_input)
-        button_layout.addWidget(input_separator)
+        button_layout.addWidget(QLabel(text='oder', alignment=Qt.AlignmentFlag.AlignCenter))
         button_layout.addWidget(directory_input)
 
         self.status_label = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
@@ -49,9 +48,9 @@ class GraphicalUI(QWidget):
         self.status_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.status_table.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
-        run_button = QPushButton('Formular erzeugen')
-        run_button.clicked.connect(self.create)
-        run_button.setMinimumHeight(50)
+        self.run_button = QPushButton('Formular erzeugen')
+        self.run_button.clicked.connect(self.create)
+        self.run_button.setMinimumHeight(50)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
@@ -62,97 +61,122 @@ class GraphicalUI(QWidget):
         self.layout().addWidget(self.status_label)
         self.layout().addWidget(self.status_table)
         self.layout().addWidget(QHLine())
-        self.layout().addWidget(run_button)
+        self.layout().addWidget(self.run_button)
         self.layout().addWidget(self.progress_bar)
 
         self.input_handler = InputHandler()
-        self.update_input_status(skip_window_move=True)
+        self.update_input_status(skip_window_reposition=True)
+
+    def ExceptionHandlingSlot(*args):
+        """
+        Wrap the PySide6 `Slot` decorator to include custom exception handling.
+        :param args: Arguments to be passed to the actual Slot decorator
+        :return:
+        """
+        if len(args) == 0:
+            args = []
+
+        @Slot(*args)
+        def slotdecorator(func):
+            @wraps(func)
+            def wrapper(self, *args):
+                try:
+                    func(*args)
+                except Exception as exc:
+                    self.handle_exception(exc)
+
+            return wrapper
+
+        return slotdecorator
 
     @Slot()
     def single_file_input(self) -> None:
-        files_input = QFileDialog.getOpenFileNames(
+        files_input: tuple[list[Path], str] = QFileDialog.getOpenFileNames(
             parent=self,
             caption='Metadaten-Datei auswählen',
             filter=f'Metadaten ({config["Input"].get("metadata_search_pattern")});;Alle Dateien (*)'
         )
-        if not files_input[0]:
+        # the first value of the tuple is a list of selected file names. This list is empty, if the dialog is cancelled
+        if len(files_input[0]) == 0:
             return
 
-        self.input_handler.clear()
         self.load_input(files_input[0])
 
     @Slot()
     def directory_input(self) -> None:
-        directory_input = QFileDialog.getExistingDirectory(
+        directory_input: str = QFileDialog.getExistingDirectory(
             parent=self,
             caption='Metadaten-Verzeichnis auswählen',
             options=QFileDialog.ShowDirsOnly
         )
-        # QFileDialog.getExistingDirectory returns only the selected path, no other nested values
-        if not directory_input:
+        # only the selected path is returned, nothing else
+        if directory_input == '':
             return
 
-        self.input_handler.clear()
         self.load_input(directory_input)
 
     def load_input(self, input_paths: str | Path | list[str | Path]) -> None:
+        self.input_handler.clear()
         try:
             self.input_handler.load_input(input_paths)
             if len(self.input_handler) == 0:
                 self.notify_warning('Keine Versuchsflächen gefunden!')
             else:
                 self.input_handler.sort()
-        except FileNotFoundError as err:
-            logger.error(err)
-            traceback.print_exc()
-            self.notify_error('Datei ', err, traceback.format_exc())
         except Exception as err:
-            logger.error(err)
-            traceback.print_exc()
-            self.notify_error('Fehler während des Einlesen der Dateien', err, traceback.format_exc())
-            self.input_handler.clear()
+            self.handle_exception(err)
         finally:
             self.update_input_status()
 
     @Slot()
     def create(self) -> None:
         if len(self.input_handler) == 0:
-            self.notify_warning('Keine Versuchsflächen ausgewählt!')
+            self.notify_warning('Es sind keine Versuchsflächen ausgewählt!')
             return
-        output_path = QFileDialog.getSaveFileName(
+        output_file_str = QFileDialog.getSaveFileName(
             parent=self,
             caption='Dateispeicherort',
             filter='Excel-Datei (*.xlsx)'
         )[0]
 
         # empty path is returned if the dialog is cancelled
-        if not output_path:
+        if output_file_str == '':
             return
 
-        if not output_path.endswith('.xlsx'):
-            output_path += '.xlsx'
+        if not output_file_str.endswith('.xlsx'):
+            output_file_str += '.xlsx'
 
+        output_file = Path(output_file_str)
+        self.prepare_conversion()
+
+        try:
+            progress, finished, error = self.input_handler.convert(output_file)
+            progress.connect(self.increment_progress_bar)
+            finished.connect(self.finish_conversion)
+            error.connect(self.handle_exception)
+        except Exception as err:
+            self.handle_exception(err)
+
+    def prepare_conversion(self):
         self.progress_bar.setMinimum(0)
-        # one step each to write the df and then apply formatting and metadata
+        # one step for each trial site
         self.progress_bar.setMaximum(len(self.input_handler))
         self.progress_bar.setValue(0)
         self.progress_bar.setVisible(True)
         self.manage_space()
+        self.run_button.setDisabled(True)
 
-        try:
-            # allow overriding (exit_ok=True) because QFileDialog already asks whether to allow
-            for _ in self.input_handler.create_all(Path(output_path), exist_ok=True):
-                self.progress_bar.setValue(self.progress_bar.value() + 1)
+    @Slot(str)
+    def increment_progress_bar(self):
+        self.progress_bar.setValue(self.progress_bar.value() + 1)
+
+    @Slot()
+    def finish_conversion(self, success: bool = True):
+        if success:
             self.notify_success('Formular erstellt')
-        except Exception as err:
-            logger.error(err)
-            traceback.print_exc()
-            self.notify_error('Fehler während des Speichern der Dateien', err, traceback.format_exc())
-        finally:
-            self.progress_bar.setVisible(False)
-            self.input_handler.clear()
-            self.update_input_status()
-            self.manage_space()
+        self.progress_bar.setVisible(False)
+        self.manage_space()
+        self.run_button.setDisabled(False)
 
     def notify_success(self, message: str) -> None:
         self.notification(message, None, None, icon=QMessageBox.Icon.Information)
@@ -178,7 +202,7 @@ class GraphicalUI(QWidget):
             msg_box.setDetailedText(detailed_text)
         msg_box.exec()
 
-    def update_input_status(self, skip_window_move=False) -> None:
+    def update_input_status(self, skip_window_reposition=False) -> None:
         trial_site_count = len(self.input_handler)
         if trial_site_count == 0:
             self.status_label.setText('Es sind keine Versuchsflächen ausgewählt.')
@@ -197,16 +221,17 @@ class GraphicalUI(QWidget):
                 widget1.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                 self.status_table.setItem(row, 0, widget0)
                 self.status_table.setItem(row, 1, widget1)
-        self.manage_space(skip_window_move=skip_window_move)
+        self.manage_space(skip_window_move=skip_window_reposition)
 
     def get_qtable_widget_size(self) -> QSize:
         """
         Shamelessly stolen from https://stackoverflow.com/a/41543029
         """
         self.status_table.resizeRowsToContents()
-        width = self.status_table.verticalHeader().width() + 4  # +4 seems to be needed
+        width = self.status_table.verticalHeader().width() + 4
+        # +4 seems to be needed
         for i in range(self.status_table.columnCount()):
-            width += self.status_table.columnWidth(i)  # seems to include gridline (on my machine)
+            width += self.status_table.columnWidth(i)
         height = self.status_table.horizontalHeader().height() + 4
         # limit the shown rows to 20
         for i in range(min((self.status_table.rowCount()), 20)):
@@ -233,3 +258,10 @@ class GraphicalUI(QWidget):
         new_geometry = self.frameGeometry()
         new_geometry.moveCenter(old_geometry.center())
         self.move(new_geometry.topLeft())
+
+    @Slot(Exception)
+    def handle_exception(self, exc: Exception):
+        logger.error(exc)
+        traceback.print_exc()
+        self.notify_error('Fehler während des Speichern der Dateien', exc, traceback.format_exc())
+        self.finish_conversion()

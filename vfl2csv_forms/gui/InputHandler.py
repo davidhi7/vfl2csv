@@ -1,22 +1,20 @@
 import logging
 from pathlib import Path
-from typing import Generator
 
-from openpyxl.workbook import Workbook
-from pandas import ExcelWriter
+from PySide6.QtCore import QObject, QThreadPool
 
 from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_base.errors.FileParsingError import FileParsingError
 from vfl2csv_forms import config
-from vfl2csv_forms.excel import styles
-from vfl2csv_forms.trial_site_conversion import convert
+from vfl2csv_forms.gui.ConversionWorker import ConversionWorker
 
 logger = logging.getLogger(__name__)
 
 
-class InputHandler:
+class InputHandler(QObject):
 
     def __init__(self):
+        super().__init__()
         self.trial_sites = []
 
     def load_input(self, input_paths: str | Path | list[str | Path]) -> None:
@@ -44,10 +42,10 @@ class InputHandler:
                 raise ValueError(f'Error during reading file {input_paths}') from err
 
     def sort(self) -> None:
-        self.trial_sites = sorted(self.trial_sites, key=self.decorate_trial_site)
+        self.trial_sites = sorted(self.trial_sites, key=self.sort_decorate_trial_site)
 
     @staticmethod
-    def decorate_trial_site(trial_site: TrialSite) -> tuple[str, int]:
+    def sort_decorate_trial_site(trial_site: TrialSite) -> tuple[str, int]:
         trial = trial_site.metadata['Versuch'] or ''
         try:
             plot = int(trial_site.metadata['Parzelle'])
@@ -61,19 +59,7 @@ class InputHandler:
     def __len__(self) -> int:
         return len(self.trial_sites)
 
-    def create_all(self, output_file: Path, exist_ok=False) -> Generator[str, None, None]:
-        try:
-            output_file.touch(exist_ok=exist_ok)
-        except Exception as err:
-            raise ValueError(f'Provided output file {output_file} cannot be created') from err
-
-        trial_site_forms = []
-        with ExcelWriter(output_file, engine='openpyxl') as writer:
-            workbook: Workbook = writer.book
-            styles.register(workbook)
-            for trial_site in self.trial_sites:
-                trial_site_form = convert(trial_site, output_file)
-                trial_site_forms.append(trial_site_form)
-                trial_site_form.init_worksheet(writer)
-                trial_site_form.create(workbook)
-                yield trial_site_form.sheet_name
+    def convert(self, output_file: Path):
+        worker = ConversionWorker(self.trial_sites, output_file)
+        QThreadPool.globalInstance().start(worker)
+        return worker.state.progress, worker.state.finished, worker.state.error

@@ -18,28 +18,33 @@ CONFIG_ALLOWED_INPUT_FORMATS = ('TSV', 'Excel')
 logger = logging.getLogger(__name__)
 
 
-def validate(argv: list[str]) -> None:
-    if config["Input"]["input_format"] not in CONFIG_ALLOWED_INPUT_FORMATS:
-        raise ValueError(
-            f'{config["Input"]["input_format"]} is not a valid output format. Allowed formats are {", ".join(CONFIG_ALLOWED_INPUT_FORMATS)}!')
-    if len(argv) < 3:
-        raise ValueError(
-            'Invalid number of arguments provided. Input file or directory and output directory are required!')
-    if not Path(argv[1]).exists():
-        raise ValueError(f'{str(argv[1])} must be a file or folder!')
-    return
+def find_input_sheets(input_path: list[Path] | Path) -> tuple[list[Path], list[InputFile]]:
+    # if `input_path` is a list, find recursively
+    if not isinstance(input_path, Path):
+        accumulated_input_files = []
+        accumulated_input_trial_sites = []
 
+        for path in input_path:
+            input_files, input_trial_sites = find_input_sheets(path)
+            accumulated_input_files.extend(input_files)
+            accumulated_input_trial_sites.extend(input_trial_sites)
+        return accumulated_input_files, accumulated_input_trial_sites
 
-def find_input_sheets(input_path: Path) -> tuple[list[Path], list[InputFile]]:
     if input_path.is_file():
         input_files = (input_path,)
     else:
-        input_files = list(input_path.glob(f'*.{config["Input"]["input_file_extension"]}'))
+        input_file_extension = config['Input']['input_file_extension']
+        if config['Input'].getboolean('directory_search_recursively', False):
+            input_files = list(input_path.rglob(f'*.{input_file_extension}'))
+        else:
+            input_files = list(input_path.glob(f'*.{input_file_extension}'))
 
-    if config["Input"]["input_format"] == 'Excel':
+    if config['Input']['input_format'] == 'Excel':
         input_trial_sites = ExcelInputSheet.iterate_files(input_files)
-    else:
+    elif config['Input']['input_format'] == 'TSV':
         input_trial_sites = TsvInputFile.iterate_files(input_files)
+    else:
+        raise ValueError(f'Input format {config["Input"]["input_format"]} is neither "Excel" nor "TSV"')
 
     return input_files, input_trial_sites
 
@@ -51,12 +56,12 @@ def trial_site_pipeline(
         lock: RLock,
         process_index: int
 ) -> dict[str, int]:
-    logger = logging.getLogger(f'process {process_index}')
+    process_logger = logging.getLogger(f'process {process_index}')
     errors = list()
     for input_sheet in input_batch:
         # noinspection PyBroadException
         try:
-            logger.info(f'Converting input {str(input_sheet)}')
+            process_logger.info(f'Converting input {str(input_sheet)}')
             input_sheet.parse()
             trial_site = input_sheet.get_trial_site()
             converter = TrialSiteConverter(trial_site)
@@ -78,13 +83,14 @@ def trial_site_pipeline(
                     metadata_output_file.touch(exist_ok=False)
                 except FileExistsError as e:
                     raise Exception(
-                        f'Process {process_index}: Corresponding output file(s) for trial site {input_sheet} does already exist!') from e
+                        f'Process {process_index}: Corresponding output file(s) for trial site {input_sheet} does '
+                        f'already exist!') from e
 
             converter.write_data(data_output_file)
             converter.write_metadata(metadata_output_file)
         except Exception as e:
-            traceback.print_exc();
-            logger.warning(f'Exception in process {process_index}: {str(e)}')
+            traceback.print_exc()
+            process_logger.warning(f'Exception in process {process_index}: {str(e)}')
             errors.append(e)
     return {
         'total_count': len(input_batch),
@@ -92,14 +98,7 @@ def trial_site_pipeline(
     }
 
 
-def run(argv) -> NoReturn:
-    try:
-        validate(argv)
-    except ValueError as e:
-        logger.error('Validation failed: ' + str(e))
-        exit(1)
-    input_path = Path(argv[1])
-    output_dir = Path(argv[2])
+def run(output_dir: Path, input_path: list[Path]) -> NoReturn:
     input_files, input_trial_sites = find_input_sheets(input_path)
     logger.info(
         f'Found {len(input_trial_sites)} trial sites in {len(input_files)} {config["Input"]["input_format"]} files')

@@ -77,7 +77,7 @@ class TrialSiteConverter:
         See comments of #parse_data for more explanations
         :param hierarchy: Tuple consisting of four values
         :param override_name: If not None, use this as measurement name prefix instead of the prefix provided in the
-        column hiearchy.
+        column hierarchy.
         :return: simplified label matching the requirements
 
         Not to confuse with `vfl2csv_base.Trialsite#compress_column_labels`, which only takes a tuple of two values as

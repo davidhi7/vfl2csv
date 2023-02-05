@@ -1,4 +1,4 @@
-# This is no longer nececssary as of python 3.11, but on writing this I used python 3.10
+# This is no longer necessary as of python 3.11, but on writing this I used python 3.10
 from __future__ import annotations
 
 from abc import ABC, abstractmethod

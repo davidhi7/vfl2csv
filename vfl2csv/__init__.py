@@ -8,10 +8,11 @@ input_format = Excel
 input_file_extension = xlsx
 # expect python codec name (https://docs.python.org/3/library/codecs.html#standard-encodings)
 tsv_encoding = iso8859_15
+directory_search_recursively = true
 
 [Output]
 metadata_output_pattern = {revier}/{versuch}/{versuch}-{parzelle}_metadata.txt
-# csv ouptut pattern directory must be same or sub directory of metadata path
+# csv output pattern directory must be same or sub directory of metadata path
 csv_output_pattern = {revier}/{versuch}/{versuch}-{parzelle}.csv
 
 [Multiprocessing]

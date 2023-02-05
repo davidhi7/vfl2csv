@@ -3,11 +3,12 @@ from pathlib import Path
 
 import pandas as pd
 
-from vfl2csv_base import testconfig
+from vfl2csv_base import test_config
 from vfl2csv_base.ColumnScheme import ColumnScheme
 from vfl2csv_base.TrialSite import TrialSite
 
 
+# noinspection SpellCheckingInspection
 class TrialSiteTest(unittest.TestCase):
     sample_metadata = {
         "Forstamt": "5628   Bad Berka",
@@ -121,8 +122,8 @@ class TrialSiteTest(unittest.TestCase):
         )
 
     def test_fromMetaDataFile(self) -> None:
-        trial_site = TrialSite.from_metadata_file(Path(testconfig['Input']['metadata_sample_output_file']))
-        expected_df = pd.read_csv(testconfig['Input']['csv_sample_output_file'])
+        trial_site = TrialSite.from_metadata_file(Path(test_config['Input']['metadata_sample_output_file']))
+        expected_df = pd.read_csv(test_config['Input']['csv_sample_output_file'])
         self.assertTrue(trial_site.df.equals(expected_df))
         self.assertDictEqual(trial_site.metadata, {
             'Forstamt': '44 Schönheide',
