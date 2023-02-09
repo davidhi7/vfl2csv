@@ -1,0 +1,34 @@
+{
+  "head": [
+    {
+      "override_name": "Bestandeseinheit",
+      "form_include": false,
+      "type": "uint16"
+    },
+    {
+      "override_name": "Baumart",
+      "type": "string"
+    },
+    {
+      "override_name": "Baumnummer",
+      "type": "uint32"
+    }
+  ],
+  "measurements": [
+    {
+      "override_name": "D",
+      "new_columns_count": 2,
+      "add_difference": true,
+      "type": "float64"
+    },
+    {
+      "override_name": "Aus",
+      "form_include": false,
+      "type": "uint8"
+    },
+    {
+      "override_name": "H",
+      "type": "float64"
+    }
+  ]
+}

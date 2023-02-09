@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from typing import Optional
 
-from vfl2csv_base import column_scheme
+from vfl2csv_base import ColumnScheme
 from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_base.datatypes_mapping import pandas_datatypes_mapping as dtypes_mapping
 
@@ -11,8 +11,9 @@ HierarchicalColumnLabel = tuple[datetime.date | datetime.datetime | str, str, st
 
 
 class TrialSiteConverter:
-    def __init__(self, trial_site: TrialSite):
+    def __init__(self, trial_site: TrialSite, column_scheme: ColumnScheme):
         self.trial_site = trial_site
+        self.column_scheme = column_scheme
 
     def refactor_dataframe(self) -> None:
         """
@@ -38,9 +39,9 @@ class TrialSiteConverter:
         The entire column specification as well as the corresponding data types are declared in the 
         config/columns.json file.'''
         # count of expected columns containing tree data
-        head_column_count = len(column_scheme.head)
+        head_column_count = len(self.column_scheme.head)
         # count of expected measurement fields (different types of values)
-        measurement_fields_count = len(column_scheme.measurements)
+        measurement_fields_count = len(self.column_scheme.measurements)
 
         column_count = len(self.trial_site.df.columns)
         # count of all columns containing measurements
@@ -56,7 +57,7 @@ class TrialSiteConverter:
         new_column_names = list()
         # first, iterate head columns
         for i, column in enumerate(self.trial_site.df.columns[0:head_column_count]):
-            head_column_template = column_scheme.head[i]
+            head_column_template = self.column_scheme.head[i]
             # rename columns
             new_column_names.append(head_column_template['override_name'])
             # reassign datatype
@@ -69,7 +70,7 @@ class TrialSiteConverter:
             # iterate all columns of the next measurement
             for i, column_hierarchy in enumerate(
                     self.trial_site.df.columns[column_shift:column_shift + measurement_fields_count]):
-                measurement_column_template = column_scheme.measurements[i]
+                measurement_column_template = self.column_scheme.measurements[i]
                 # rename column
                 new_column_names.append(
                     self.simplify_measurement_column_labels(column_hierarchy,

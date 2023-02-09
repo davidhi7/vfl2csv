@@ -13,6 +13,7 @@ from vfl2csv.input.ExcelInputSheet import ExcelInputSheet
 from vfl2csv.input.InputFile import InputFile
 from vfl2csv.input.TsvInputFile import TsvInputFile
 from vfl2csv.output.TrialSiteConverter import TrialSiteConverter
+from vfl2csv_base import ColumnScheme
 
 CONFIG_ALLOWED_INPUT_FORMATS = ('TSV', 'Excel')
 logger = logging.getLogger(__name__)
@@ -54,6 +55,7 @@ def trial_site_pipeline(
         output_data_pattern: Path,
         output_metadata_pattern: Path,
         lock: RLock,
+        column_scheme: ColumnScheme,
         process_index: int
 ) -> dict[str, int]:
     process_logger = logging.getLogger(f'process {process_index}')
@@ -64,7 +66,7 @@ def trial_site_pipeline(
             process_logger.info(f'Converting input {str(input_sheet)}')
             input_sheet.parse()
             trial_site = input_sheet.get_trial_site()
-            converter = TrialSiteConverter(trial_site)
+            converter = TrialSiteConverter(trial_site, column_scheme)
             converter.refactor_dataframe()
             converter.refactor_metadata()
 
@@ -98,7 +100,7 @@ def trial_site_pipeline(
     }
 
 
-def run(output_dir: Path, input_path: list[Path]) -> NoReturn:
+def run(output_dir: Path, input_path: list[Path], column_scheme: ColumnScheme) -> NoReturn:
     input_files, input_trial_sites = find_input_sheets(input_path)
     logger.info(
         f'Found {len(input_trial_sites)} trial sites in {len(input_files)} {config["Input"]["input_format"]} files')
@@ -120,6 +122,7 @@ def run(output_dir: Path, input_path: list[Path]) -> NoReturn:
                     process_count * [output_data_file],
                     process_count * [output_metadata_file],
                     process_count * [lock],
+                    process_count * [column_scheme],
                     range(process_count)
                 )
                 result = pool.starmap(trial_site_pipeline, process_args)
@@ -129,8 +132,13 @@ def run(output_dir: Path, input_path: list[Path]) -> NoReturn:
     else:
         # allow disabling multiprocessing for easier debugging and optimized performance when working with little data
         logger.info('Multiprocessing is disabled')
-        summarised_result = trial_site_pipeline(input_trial_sites, output_data_file, output_metadata_file, lock=RLock(),
-                                                process_index=0)
+        summarised_result = trial_site_pipeline(input_trial_sites,
+                                                output_data_file,
+                                                output_metadata_file,
+                                                RLock(),
+                                                column_scheme,
+                                                process_index=0
+                                                )
 
     logger.info(
         f'Converted {summarised_result["total_count"]} trial sites, {summarised_result["errors"]} errors occurred.')
