@@ -5,6 +5,7 @@ from pathlib import Path
 
 from vfl2csv import config
 from vfl2csv.batch_converter import find_input_sheets
+from vfl2csv.input.ExcelInputSheet import ExcelInputSheet
 from vfl2csv_base import test_config
 
 
@@ -14,15 +15,26 @@ class BatchConverterTest(unittest.TestCase):
         config.set('Input', 'input_format', 'Excel')
         config.set('Input', 'input_file_extension', 'xlsx')
         input_files, input_trial_sheets = find_input_sheets(test_config['Input'].getpath('excel_sample_input_file'))
+        input_trial_sheets: list[ExcelInputSheet]
         self.assertEqual(len(input_files), 1)
         self.assertEqual(len(input_trial_sheets), 10)
+        self.assertCountEqual([sheet.sheet_name for sheet in input_trial_sheets], [
+            '09703_P2', '09703_P3', '11201_P11', '11201_P12', '11201_P13', '11201_P14', '11201_P21', '11201_P22',
+            '11201_P23', '11201_P24'
+        ])
 
     def test_find_input_sheets_excel_dir(self):
         config.set('Input', 'input_format', 'Excel')
         config.set('Input', 'input_file_extension', 'xlsx')
         input_files, input_trial_sheets = find_input_sheets(test_config['Input'].getpath('excel_sample_input_dir'))
+        input_trial_sheets: list[ExcelInputSheet]
         self.assertEqual(len(input_files), 2)
         self.assertEqual(len(input_trial_sheets), 17)
+        self.assertCountEqual([sheet.sheet_name for sheet in input_trial_sheets], [
+            '09703_P2', '09703_P3', '11201_P11', '11201_P12', '11201_P13', '11201_P14', '11201_P21', '11201_P22',
+            '11201_P23', '11201_P24', '09201_518a2', '09202_536a3', '09702_P1', '09702_P2', '09702_P3', '09702_P4',
+            '09703_P1'
+        ])
 
     def test_find_input_sheets_tsv_file(self):
         config.set('Input', 'input_format', 'TSV')
@@ -62,6 +74,10 @@ class BatchConverterTest(unittest.TestCase):
             input_files, input_trial_sheets = find_input_sheets(Path(tmp))
             self.assertEqual(len(input_files), 0)
             self.assertEqual(len(input_trial_sheets), 0)
+
+    def test_findInputSheets_input_format_validation(self):
+        config.set('Input', 'input_format', 'illegal value')
+        self.assertRaises(ValueError, find_input_sheets, Path('/this/path/does/not/exist'))
 
 
 if __name__ == '__main__':
