@@ -68,7 +68,7 @@ def trial_site_pipeline(
             trial_site = input_sheet.get_trial_site()
             converter = TrialSiteConverter(trial_site, column_scheme)
             converter.refactor_dataframe()
-            converter.refactor_metadata()
+            converter.trim_metadata()
 
             data_output_file = trial_site.replace_metadata_keys(output_data_pattern)
             metadata_output_file = trial_site.replace_metadata_keys(output_metadata_pattern)

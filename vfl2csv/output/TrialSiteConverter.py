@@ -19,6 +19,8 @@ class TrialSiteConverter:
         """
         Refactor the dataframe. Transfer the output format into the required output format by renaming and rearranging
         columns as well as modifying the data types of the dataframe.
+        Before doing so, it is verified that the input data matches the column counts provided in the ColumnScheme
+        instance.
         """
         '''
         In the default configuration, the first three columns contain the tree population (Bestandeseinheit), tree
@@ -56,33 +58,33 @@ class TrialSiteConverter:
         # new column names are assigned later
         new_column_names = list()
         # first, iterate head columns
-        for i, column in enumerate(self.trial_site.df.columns[0:head_column_count]):
-            head_column_template = self.column_scheme.head[i]
+        for template, column in zip(self.column_scheme.head, self.trial_site.df.columns[0:head_column_count]):
             # rename columns
-            new_column_names.append(head_column_template['override_name'])
+            new_column_names.append(template['override_name'])
             # reassign datatype
-            self.trial_site.df[column] = self.trial_site.df[column].astype(dtypes_mapping[head_column_template['type']])
+            self.trial_site.df[column] = self.trial_site.df[column].astype(dtypes_mapping[template['type']])
 
         # iterate all measurements
         for measurement_index in range(measurement_count):
             # number of columns already refactored
             column_shift = head_column_count + measurement_index * measurement_fields_count
             # iterate all columns of the next measurement
-            for i, column_hierarchy in enumerate(
-                    self.trial_site.df.columns[column_shift:column_shift + measurement_fields_count]):
-                measurement_column_template = self.column_scheme.measurements[i]
+            for template, column_hierarchy in zip(
+                self.column_scheme.measurements,
+                self.trial_site.df.columns[column_shift:column_shift + measurement_fields_count]
+            ):
                 # rename column
                 new_column_names.append(
                     self.simplify_measurement_column_labels(column_hierarchy,
-                                                            measurement_column_template['override_name'])
+                                                            template['override_name'])
                 )
                 # reassign datatype
                 self.trial_site.df[column_hierarchy] = self.trial_site.df[column_hierarchy].astype(
-                    dtypes_mapping[measurement_column_template['type']]
+                    dtypes_mapping[template['type']]
                 )
         self.trial_site.df.columns = new_column_names
 
-    def refactor_metadata(self) -> None:
+    def trim_metadata(self) -> None:
         """
         Replace double whitespaces in metadata keys with simple spaces.
         :return:
