@@ -41,20 +41,26 @@ The general format is:
 ```json
 {
   "head": [
-    <column1>,
-    <column2>,
-    ...
+    {
+      
+    },
+    {
+      
+    }
   ],
   "measurements": [
-    <column3>,
-    <column4>,
-    ...
+    {
+      
+    },
+    {
+      
+    }
   ]
 }
 ```
 
-where `<column1>` and `<column2>` are placeholders for head columns that list tree identifications and metadata.
-`<column3>` and `<column4>` represent measurement columns.
+where the empty objects in `head` are placeholders for head columns that list tree identifications and metadata.
+the empty objects in `mneasurements` are placeholders representing measurement columns.
 Incrementally, new measurements are recorded and all individual measurement columns must be added in the defined order
 to the CSV file.
 Each column is described by a JSON object containing the following required and optional key-value-pairs:
