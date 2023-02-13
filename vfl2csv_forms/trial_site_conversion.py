@@ -33,7 +33,13 @@ def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
     for column in column_scheme.head:
         if not column.get('form_include', True):
             continue
-        included_head_columns.append((-1, column['override_name'],))
+        column_name = column['override_name']
+        # allow to manually set the display name for the form
+        if 'display_name' in column:
+            display_name = column.get('display_name')
+            df = df.rename(columns={(-1, column_name): (-1, display_name)})
+            column_name = display_name
+        included_head_columns.append((-1, column_name,))
     for column in column_scheme.measurements:
         if not column.get('form_include', True):
             continue
