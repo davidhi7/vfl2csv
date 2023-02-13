@@ -13,5 +13,5 @@ def get_config(config_path: Path, template: str = '') -> ConfigParser:
         with open(config_path, 'w') as file:
             file.write(template)
     config = configparser.ConfigParser(converters={'path': Path})
-    config.read(config_path)
+    config.read(config_path, encoding='utf-8')
     return config
