@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Iterable
 
 import pandas as pd
+from openpyxl.cell import Cell
 from openpyxl.formatting import Rule
 from openpyxl.styles import PatternFill
 from openpyxl.styles.differential import DifferentialStyle
@@ -12,7 +13,7 @@ from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_forms import config
 from vfl2csv_forms.excel import styles
 from vfl2csv_forms.excel.utilities import EXCEL_COLUMN_NAMES, zero_based_cell_name, zero_based_cell_range_name, \
-    zero_based_cell_range
+    zero_based_cell_range, get_character_count
 from vfl2csv_forms.excel.utilities import zero_based_cell
 from vfl2csv_forms.output.FormulaColumn import FormulaColumn
 
@@ -147,7 +148,19 @@ class TrialSiteFormular:
 
     def adjust_column_width(self) -> None:
         for column in range(self.first_empty_column):
-            table_head_cell = zero_based_cell(self.worksheet, column, self.table_head_row)
-            # factor 1.5 is an arbitrary value that fits quite nicely
-            if table_head_cell.value is not None:
-                self.worksheet.column_dimensions[get_column_letter(column + 1)].width = 1.5 * len(table_head_cell.value)
+            column_content: list[list[Cell]] = zero_based_cell_range(self.worksheet, column, self.row_span[0], column,
+                                                                     self.row_span[-1])
+            max_length = 0
+            if column_content[0][0].value is None:
+                continue
+            first_content_value: str = column_content[1][0].value
+            if isinstance(first_content_value, str) and first_content_value.startswith('='):
+                # raw formulaes are not displayed, so we should not take them into account
+                max_length = get_character_count(column_content[0][0].value, decimal_digits=1)
+            else:
+                for row in column_content:
+                    max_length = max(max_length, get_character_count(row[0].value, decimal_digits=1))
+
+            # adding one and multiplying by 1.3 fits well
+            column_width = 1.3 * (max_length + 1)
+            self.worksheet.column_dimensions[get_column_letter(column + 1)].width = column_width
