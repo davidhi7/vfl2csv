@@ -41,7 +41,7 @@ class TsvInputFileTest(unittest.TestCase):
         })
 
     def test_str(self):
-        self.assertEqual(str(self.sample_instance), str(Path('res/sample-data/tab-delimited/1460701.txt')))
+        self.assertEqual(str(self.sample_instance), str(test_config['Input'].getpath('tsv_sample_input_file')))
 
 
 if __name__ == '__main__':
