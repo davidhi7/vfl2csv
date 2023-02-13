@@ -156,6 +156,7 @@ class GraphicalUI(QWidget):
         progress.connect(self.increment_progress_bar)
         finished.connect(self.finish_conversion)
         error.connect(partial(self.handle_exception, title='Fehler beim Erstellen der Datei'))
+        error.connect(lambda exc: self.finish_conversion(success=False))
 
     def prepare_conversion(self):
         self.progress_bar.setMinimum(0)
