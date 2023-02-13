@@ -10,7 +10,7 @@ from vfl2csv_base import test_config
 class TsvInputFileTest(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.sample_instance = TsvInputFile(Path(test_config['Input'].getpath('tsv_sample_input_file')))
+        self.sample_instance = TsvInputFile(test_config['Input'].getpath('tsv_sample_input_file'))
 
     def test_iterate_files(self):
         sheets = TsvInputFile.iterate_files(test_config['Input'].getpath('tsv_sample_input_dir').glob('*.txt'))

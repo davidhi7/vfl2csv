@@ -11,7 +11,7 @@ from vfl2csv_base import test_config
 class ExcelInputSheetTest(unittest.TestCase):
 
     def setUp(self) -> None:
-        excel_workbook = ExcelWorkbook(Path(test_config['Input'].getpath('excel_sample_input_file')))
+        excel_workbook = ExcelWorkbook(test_config['Input'].getpath('excel_sample_input_file'))
         self.sample_instance = ExcelInputSheet(excel_workbook, '09703_P2')
 
     def test_iterate_files(self):
