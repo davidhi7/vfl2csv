@@ -1,8 +1,0 @@
-Forstamt=44 Schönheide
-Revier=Hundshübel
-Versuch=14607
-Parzelle=02
-Teilfläche=112 a2
-Standort=Mf-Z3
-Höhenlage=680
-DataFrame=14607-02.csv
