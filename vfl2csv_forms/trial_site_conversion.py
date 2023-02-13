@@ -71,14 +71,14 @@ def insert_new_columns(df: pd.DataFrame, new_year: int, old_columns: list[Expand
     formula_columns = []
     for old_column in old_columns:
         column_name = old_column[1]
-        column_scheme = column_scheme.measurements.by_name[column_name]
+        template = column_scheme.measurements.by_name[column_name]
         # index of the old column in df
         column_index = df.columns.get_loc(old_column)
         # datatype of the old column, will also be the datatype of the new column
         column_datatype = df[old_column].dtype
         # allow for multiple output values, e.g. two diameter measurements
-        if column_scheme.get('new_columns_count', 1) > 1:
-            columns_count = column_scheme['new_columns_count']
+        if template.get('new_columns_count', 1) > 1:
+            columns_count = template['new_columns_count']
             # iterate in a declining manner so that the new column with the highest index is shifted the farthest away
             # from the index
             for i in range(columns_count, 0, -1):
@@ -89,13 +89,13 @@ def insert_new_columns(df: pd.DataFrame, new_year: int, old_columns: list[Expand
                                            list(range(column_index + 1, column_index + 1 + columns_count)),
                                            styles.table_body_rational, [])
             formula_columns.append(formula_column)
-            if column_scheme.get('add_difference', False):
+            if template.get('add_difference', False):
                 formula_columns.append(
                     FormulaColumn(True, '-', f'Diff {column_name}', [formula_column, column_index],
                                   styles.table_body_rational, styles.full_conditional_formatting_list()))
         else:
             df.insert(column_index + 1, (new_year, column_name), pd.Series(dtype=column_datatype))
-            if column_scheme.get('add_difference', False):
+            if template.get('add_difference', False):
                 formula_columns.append(
                     FormulaColumn(True, '-', f'Diff {column_name}_{new_year}', [column_index + 1, column_index],
                                   styles.table_body_rational, styles.full_conditional_formatting_list()))
