@@ -106,12 +106,15 @@ class TrialSite:
         if not metadata_path.is_file():
             raise FileNotFoundError(f'{metadata_path} is not a valid file')
         metadata = dict()
-        with open(metadata_path, 'r', encoding='utf-8') as file:
-            for line in file.readlines():
-                # use maxsplit to avoid removing equality symbols in the value
-                key, value = line.split('=', maxsplit=1)
-                # remove trailing newline in value
-                metadata[key] = value.rstrip()
+        try:
+            with open(metadata_path, 'r', encoding='utf-8') as file:
+                for line in file.readlines():
+                    # use maxsplit to avoid removing equality symbols in the value
+                    key, value = line.split('=', maxsplit=1)
+                    # remove trailing newline in value
+                    metadata[key] = value.rstrip()
+        except UnicodeDecodeError as err:
+            raise FileParsingError(metadata_path) from err
 
         df_path = metadata_path.parent / Path(metadata['DataFrame'])
         if not df_path.is_file():

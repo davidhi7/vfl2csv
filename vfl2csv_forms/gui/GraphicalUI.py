@@ -1,12 +1,13 @@
 import logging
 import traceback
-from functools import wraps
+from functools import wraps, partial
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Slot, QSize, Signal
 from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QTableWidget, \
     QAbstractItemView, QHeaderView, QMessageBox, QFileDialog, QTableWidgetItem, QProgressBar
 
+from vfl2csv_base.errors.FileParsingError import FileParsingError
 from vfl2csv_forms import config
 from vfl2csv_forms.gui.InputHandler import InputHandler
 from vfl2csv_forms.gui.QHLine import QHLine
@@ -123,8 +124,10 @@ class GraphicalUI(QWidget):
                 self.notify_warning('Keine Versuchsflächen gefunden!')
             else:
                 self.input_handler.sort()
+        except FileParsingError as file_error:
+            self.handle_exception(file_error, title=f'Fehler beim Laden der Datei {file_error.file}')
         except Exception as err:
-            self.handle_exception(err)
+            self.handle_exception(err, title='Fehler beim Laden der Dateien')
         finally:
             self.update_input_status()
 
@@ -149,13 +152,10 @@ class GraphicalUI(QWidget):
         output_file = Path(output_file_str)
         self.prepare_conversion()
 
-        try:
-            progress, finished, error = self.input_handler.convert(output_file)
-            progress.connect(self.increment_progress_bar)
-            finished.connect(self.finish_conversion)
-            error.connect(self.handle_exception)
-        except Exception as err:
-            self.handle_exception(err)
+        progress, finished, error = self.input_handler.convert(output_file)
+        progress.connect(self.increment_progress_bar)
+        finished.connect(self.finish_conversion)
+        error.connect(partial(self.handle_exception, title='Fehler beim Erstellen der Datei'))
 
     def prepare_conversion(self):
         self.progress_bar.setMinimum(0)
@@ -260,8 +260,7 @@ class GraphicalUI(QWidget):
         self.move(new_geometry.topLeft())
 
     @Slot(Exception)
-    def handle_exception(self, exc: Exception):
+    def handle_exception(self, exc: Exception, title: str):
         logger.error(exc)
         traceback.print_exc()
-        self.notify_error('Fehler während des Speichern der Dateien', exc, traceback.format_exc())
-        self.finish_conversion()
+        self.notify_error(title, exc, traceback.format_exc())

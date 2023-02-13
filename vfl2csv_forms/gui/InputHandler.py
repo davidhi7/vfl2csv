@@ -38,8 +38,9 @@ class InputHandler(QObject):
                 path = Path(input_paths)
                 self.trial_sites.append(TrialSite.from_metadata_file(path))
             except FileParsingError as err:
-                logger.error(f'Error during reading file {input_paths}', exc_info=True)
-                raise ValueError(f'Error during reading file {input_paths}') from err
+                logger.error(f'Error during reading file {err.file}', exc_info=True)
+                self.trial_sites.clear()
+                raise
 
     def sort(self) -> None:
         self.trial_sites = sorted(self.trial_sites, key=self.sort_decorate_trial_site)
