@@ -11,7 +11,8 @@ from pandas import ExcelWriter
 from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_forms import config
 from vfl2csv_forms.excel import styles
-from vfl2csv_forms.excel.utilities import EXCEL_COLUMN_NAMES, zero_based_cell_name, zero_based_cell_range_name
+from vfl2csv_forms.excel.utilities import EXCEL_COLUMN_NAMES, zero_based_cell_name, zero_based_cell_range_name, \
+    zero_based_cell_range
 from vfl2csv_forms.excel.utilities import zero_based_cell
 from vfl2csv_forms.output.FormulaColumn import FormulaColumn
 
@@ -93,17 +94,31 @@ class TrialSiteFormular:
         )
 
     def write_metadata(self) -> None:
+        ws = self.worksheet
         # merge two horizontally adjacent cells each
-        for first_column in (0, 2, 5, 7):
+        metadata_columns = (2, 4, 7, 9)
+        for first_column in metadata_columns:
             for row in range(0, 4):
                 self.worksheet.merge_cells(zero_based_cell_range_name(first_column, row, first_column + 1, row))
 
         # write the data
         for index, key in enumerate(('Versuch', 'Parzelle', 'Forstamt', 'Revier')):
-            self.worksheet[f'A{index + 1}'] = f'{key}: '
-            self.worksheet[f'C{index + 1}'] = self.metadata[key]
-        self.worksheet['F1'] = 'Vermessung am: '
-        self.worksheet['F2'] = 'durch: '
+            zero_based_cell(ws, metadata_columns[0], index).value = f'{key}: '
+            zero_based_cell(ws, metadata_columns[1], index).value = self.metadata[key]
+
+        zero_based_cell(ws, metadata_columns[2], 0).value = 'Vermessung  '
+        zero_based_cell(ws, metadata_columns[2], 1).value = 'am: '
+        zero_based_cell(ws, metadata_columns[2], 2).value = 'durch: '
+
+        # apply formatting to the metadata section
+        metadata_key_cells = zero_based_cell_range(ws, metadata_columns[0], 0, metadata_columns[0], 3) \
+                             + zero_based_cell_range(ws, metadata_columns[2], 0, metadata_columns[2], 3)
+        metadata_value_cells = zero_based_cell_range(ws, metadata_columns[1], 0, metadata_columns[1], 3) \
+                               + zero_based_cell_range(ws, metadata_columns[3], 0, metadata_columns[3], 3)
+        for row in metadata_key_cells:
+            row[0].style = styles.metadata_keys.name
+        for row in metadata_value_cells:
+            row[0].style = styles.metadata_values.name
 
     def write_formulae_columns(self) -> None:
         for formulae_column in self.formulae_columns:
@@ -113,11 +128,6 @@ class TrialSiteFormular:
             self.first_empty_column += formulae_column.insert(self.first_empty_column, self.row_span, self.worksheet)
 
     def apply_formatting(self) -> None:
-        for row in self.worksheet['A1:A4'] + self.worksheet['F1:F4']:
-            row[0].style = styles.metadata_keys.name
-        for row in self.worksheet['C1:C4'] + self.worksheet['H1:H4']:
-            row[0].style = styles.metadata_values.name
-
         for column_index in range(self.first_empty_column):
             # header column
             zero_based_cell(self.worksheet, column_index, self.table_head_row).style = styles.table_head.name
