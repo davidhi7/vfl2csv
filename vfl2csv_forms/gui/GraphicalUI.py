@@ -1,6 +1,6 @@
 import logging
 import traceback
-from functools import wraps, partial
+from functools import partial
 from pathlib import Path
 
 from PySide6.QtCore import Qt, Slot, QSize, Signal
@@ -67,28 +67,6 @@ class GraphicalUI(QWidget):
 
         self.input_handler = InputHandler()
         self.update_input_status(skip_window_reposition=True)
-
-    def ExceptionHandlingSlot(*args):
-        """
-        Wrap the PySide6 `Slot` decorator to include custom exception handling.
-        :param args: Arguments to be passed to the actual Slot decorator
-        :return:
-        """
-        if len(args) == 0:
-            args = []
-
-        @Slot(*args)
-        def slotdecorator(func):
-            @wraps(func)
-            def wrapper(self, *args):
-                try:
-                    func(*args)
-                except Exception as exc:
-                    self.handle_exception(exc)
-
-            return wrapper
-
-        return slotdecorator
 
     @Slot()
     def single_file_input(self) -> None:
