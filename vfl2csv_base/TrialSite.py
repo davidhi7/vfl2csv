@@ -54,7 +54,7 @@ class TrialSite:
             for i, column in enumerate(df.columns[:head_column_count]):
                 if column[1] != column_scheme.head[i]['override_name']:
                     raise ValueError(
-                        f'Column {column[0]} of the dataframe does not match the expected name provided in '
+                        f'Column "{column[1]}" of the dataframe does not match the expected name provided in '
                         f'the columns.json file!')
                 df[column] = df[column].astype(pandas_datatypes_mapping[column_scheme.head[i]['type']])
 
