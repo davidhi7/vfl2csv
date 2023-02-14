@@ -78,7 +78,7 @@ class TrialSiteFormular:
         self.worksheet = worksheet
         self.write_metadata()
         self.write_formulae_columns()
-        self.apply_formatting()
+        self.apply_table_formatting()
         self.adjust_column_width()
         workbook.save(self.output_path)
 
@@ -95,6 +95,7 @@ class TrialSiteFormular:
         )
 
     def write_metadata(self) -> None:
+        """Insert the metadata into the sheet and format the updated cells."""
         ws = self.worksheet
         # merge two horizontally adjacent cells each
         metadata_columns = (2, 4, 7, 9)
@@ -128,11 +129,17 @@ class TrialSiteFormular:
                 continue
             self.first_empty_column += formulae_column.insert(self.first_empty_column, self.row_span, self.worksheet)
 
-    def apply_formatting(self) -> None:
+    def apply_table_formatting(self) -> None:
+        """
+        Apply most styles and conditional formatting rules, excluding the metadata keys/values as well as table values
+        (except for headers) not part of the dataframe, that is formula columns and comment columns (Aus/Bruch).
+        """
         for column_index in range(self.first_empty_column):
-            # header column
+            # apply style to header of all columns
             zero_based_cell(self.worksheet, column_index, self.table_head_row).style = styles.table_head.name
-            if len(self.df.columns) > column_index:
+            if column_index < len(self.df.columns):
+                # Do only format the values below the header if the column index is still contained in the dataframe
+                # Custom columns that are not contained in the dataframe should be formatted separately.
                 style = dtypes_styles_mapping.get(
                     self.df.dtypes[column_index].name,
                     styles.table_body_text
@@ -140,6 +147,7 @@ class TrialSiteFormular:
                 for row in self.row_span[1:]:
                     zero_based_cell(self.worksheet, column_index, row).style = style
 
+        # apply conditional formatting rules
         for key, rule in self.conditional_formatting_rules:
             self.worksheet.conditional_formatting.add(key, rule)
 
