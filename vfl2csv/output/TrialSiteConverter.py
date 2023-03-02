@@ -117,6 +117,7 @@ class TrialSiteConverter:
 
         measurement_type = override_name if override_name is not None else hierarchy[1]
 
+        # if the month is lower or equal to April, decrement the year to respect growing seasons
         return f'{measurement_type}_{date.year - (0 if date.month > 5 else 1)}'
 
     def write_data(self, filepath: Path) -> None:
