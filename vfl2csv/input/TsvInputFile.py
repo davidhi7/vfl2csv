@@ -33,7 +33,7 @@ class TsvInputFile(InputFile):
         # move back to start of the stream
         file_stream.seek(0)
 
-        df = pd.read_csv(file_stream, sep='\t', skiprows=13, header=list(range(0, 4)), decimal=',')
+        df = pd.read_csv(file_stream, sep='\t', skiprows=14, header=list(range(0, 4)), decimal=',')
         # this last column is only created by pandas because in the output format, each row ends with one tabulator
         # instead of the last value. Consequently, this last column does not contain any values and needs to be removed.
         df = df.drop(columns=df.columns[-1])
