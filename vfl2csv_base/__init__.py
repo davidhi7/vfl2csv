@@ -2,16 +2,16 @@ import logging
 import sys
 from pathlib import Path
 
+from vfl2csv_base.config_factory import get_config
+
 if 'unittest' in sys.modules:
     logging.basicConfig(format='%(levelname)s %(name)s: %(message)s', level=logging.WARNING)
 else:
     logging.basicConfig(format='%(levelname)s %(name)s: %(message)s', level=logging.INFO)
 
-from vfl2csv_base.ColumnScheme import ColumnScheme
-from vfl2csv_base.config_factory import get_config
-
 test_config = get_config(Path('tests/test-config.ini'))
-column_scheme = ColumnScheme.from_file(Path('config/columns.json'), """{
+
+default_column_scheme_json = """{
   "head": [
     {
       "override_name": "Bestandeseinheit",
@@ -45,4 +45,5 @@ column_scheme = ColumnScheme.from_file(Path('config/columns.json'), """{
     }
   ]
 }
-""")
+"""
+default_column_scheme_path = Path('./config/columns.json')

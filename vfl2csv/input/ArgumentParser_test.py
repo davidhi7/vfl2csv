@@ -1,6 +1,6 @@
-import pathlib
 import unittest
 from io import StringIO
+from pathlib import Path
 from unittest.mock import patch
 
 from vfl2csv.input.ArgumentParser import parser
@@ -22,9 +22,9 @@ class ArgumentParserTest(unittest.TestCase):
 
     def test_parseargs_2args(self):
         result = vars(parser.parse_args(['first-arg', 'second-arg']))
-        self.assertTrue(isinstance(result['output'], pathlib.Path))
+        self.assertTrue(isinstance(result['output'], Path))
         self.assertTrue(isinstance(result['input'], list))
-        self.assertTrue(isinstance(result['input'][0], pathlib.Path))
+        self.assertTrue(isinstance(result['input'][0], Path))
         self.assertEqual(str(result['output']), 'first-arg')
         self.assertEqual(str(result['input'][0]), 'second-arg')
 
