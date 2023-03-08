@@ -44,6 +44,7 @@ class ConversionAuditor:
         results: list[TrialSiteContent] = []
         for sheet in wb.sheetnames:
             lines: list[list[str]] = list(wb[sheet].rows)
+
             results.append(self._parse_input(lines))
         return results
 
@@ -110,7 +111,6 @@ class ConversionAuditor:
             key = (site[0]['Versuch'], site[0]['Parzelle'])
             reference_sites_index[key] = site
         for path in paths:
-            # TODO error handling
             self._verify_converted_trial_site(path, reference_sites_index)
         if len(reference_sites_index) != 0:
             remaining_trial_site_names = []
@@ -169,7 +169,7 @@ class ConversionAuditor:
         for row_index in range(len(data)):
             for col_index in range(len(data[row_index])):
                 error_flag = False
-                if re.fullmatch(r'\d+[\.,]\d+', data[row_index][col_index]):
+                if re.fullmatch(r'\d+[.,]\d+', data[row_index][col_index]):
                     data_value = data[row_index][col_index].replace(',', '.')
                     original_data_value = original_data[row_index][col_index].replace(',', '.')
                     if float(data_value) != float(original_data_value):
@@ -182,11 +182,4 @@ class ConversionAuditor:
                                      f'original trial site in line {row_index + 1}, column {col_index + 1}.\n'
                                      f'Converted: {data[row_index][col_index]}\n'
                                      f'Original: {original_data[row_index][col_index]}')
-            #
-            # for index in range(len(data)):
-            #     if original_data[index] != data[index]:
-            #         raise ValueError(f'Data of converted trial site {trialsite_key_str} does not match data of '
-            #                          f'original trial site in line {index + 1}.\n'
-            #                          f'Converted: {data[index]}\n'
-            #                          f'Original: {original_data[index]}')
         del original_trial_sites[trialsite_key]

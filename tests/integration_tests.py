@@ -1,5 +1,6 @@
 import logging
 import re
+import subprocess
 import sys
 import tempfile
 from pathlib import Path
@@ -39,7 +40,11 @@ def run_test(tmp_dir: Path, input_dir: Path):
               f'--column-scheme "{column_scheme_path}" ' \
               f'--config "{tmp_config}" ' \
               f'"{tmp_dir}" "{input_dir}" '
-    Popen(command, cwd=cwd, shell=True).wait()
+    print('>>> ' + command)
+    proc = Popen(command, cwd=cwd, shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
+    proc.wait()
+    for line in proc.stdout.readlines():
+        print('> ' + line.decode('ascii'), end='')
 
     # Find all output metadata files by looking for them using the config file name pattern.
     # Replace all placeholders for metadata with asterisks
@@ -50,15 +55,17 @@ def run_test(tmp_dir: Path, input_dir: Path):
 
 with tempfile.TemporaryDirectory() as tmp_dir:
     # First: Excel file conversion
+    print('=== Run integration tests on Excel input ===')
     input_dir: Path = test_config['Input'].getpath('excel_sample_input_dir')
     config.set('Input', 'input_format', 'Excel')
     config.set('Input', 'input_file_extension', 'xlsx')
     run_test(Path(tmp_dir) / 'excel', input_dir)
 
     # Second: TSV file conversion
+    print('=== Run integration tests on tab-delimited input ===')
     input_dir: Path = test_config['Input'].getpath('tsv_sample_input_dir')
     config.set('Input', 'input_format', 'TSV')
     config.set('Input', 'input_file_extension', 'txt')
     run_test(Path(tmp_dir) / 'tsv', input_dir)
 
-    print('done')
+    print('=== Completed without any errors ===')
