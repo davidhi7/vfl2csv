@@ -19,7 +19,7 @@ TrialSiteContent = tuple[TrialSiteMetadata, TrialSiteHeader, TrialSiteData]
 ExcelCell = Cell | ReadOnlyCell | EmptyCell
 
 
-class ConversionAudit:
+class ConversionAuditor:
     logger = logging.getLogger(__name__)
 
     def __init__(self, vfl2csv_config: ConfigParser, column_scheme: ColumnScheme):
@@ -27,15 +27,15 @@ class ConversionAudit:
         self.column_scheme = column_scheme
         self.reference: list[TrialSiteContent] = []
 
-    def set_reference_files(self, paths: list[Path], file_type: str) -> None:
+    def set_reference_files(self, paths: list[Path]) -> None:
         self.reference = []
+        file_type = self.config['Input']['input_format']
         if file_type.lower() == 'excel':
             for path in paths:
                 self.reference.extend(self._parse_excel_file(path))
         elif file_type.lower() == 'tsv':
             for path in paths:
-                self.reference.extend(self._parse_excel_file(path))
-
+                self.reference.append(self._parse_tsv_file(path))
         else:
             raise ValueError('`file_type` must be either "Excel" or "TSV"!')
 
@@ -43,7 +43,8 @@ class ConversionAudit:
         wb = load_workbook(file, read_only=True)
         results: list[TrialSiteContent] = []
         for sheet in wb.sheetnames:
-            results.append(self._parse_input(list(wb[sheet].rows)))
+            lines: list[list[str]] = list(wb[sheet].rows)
+            results.append(self._parse_input(lines))
         return results
 
     def _parse_tsv_file(self, file: Path) -> TrialSiteContent:
@@ -51,6 +52,8 @@ class ConversionAudit:
             raw_lines = file.readlines()
         lines: list[list[str]] = [line.split('\t') for line in raw_lines]
 
+        # TSV files appear to have one more empty line between metadata and data than the Excel sheets have.
+        # Simply delete one of these empty lines.
         del lines[13]
 
         # remove newlines at the end of cells or with their own cells
@@ -58,7 +61,7 @@ class ConversionAudit:
             if line[-1] == '\n':
                 del line[-1]
             elif line[-1].endswith('\n'):
-                line[-1] = line[-1][0:-2]
+                line[-1] = line[-1][0:-1]
 
         return self._parse_input(lines)
 
@@ -73,13 +76,13 @@ class ConversionAudit:
 
         years = []
         for column in lines[13]:
-            value = column.value if isinstance(column, ExcelCell) else column
-            # if re.fullmatch(r'\d{2}\.\d{2}\.\d{4}', value):
+            value: str | datetime.datetime = column.value if isinstance(column, ExcelCell) else column
             if isinstance(value, datetime.datetime):
-                # day, month, year = int(value.split('.'))
-                # years.append(int(year) - 0 if int(month) > 5 else 1)
                 month, year = value.month, value.year
                 years.append(year - (0 if month > 5 else 1))
+            elif re.fullmatch(r'\d{2}\.\d{2}\.\d{4}', value):
+                day, month, year = value.split('.')
+                years.append(int(year) - (0 if int(month) > 5 else 1))
             else:
                 years.append(-1)
         labels = [column['override_name'] for column in self.column_scheme.head]
@@ -92,8 +95,11 @@ class ConversionAudit:
             line_tokens = []
             for cell in line:
                 value = cell.value if isinstance(cell, ExcelCell) else cell
-                if value is None:
+                # check for `None` must happen first
+                if value is None or value == '':
                     value = 'NA'
+                if not isinstance(value, str):
+                    value = str(value)
                 line_tokens.append(value)
             data.append(line_tokens)
         return metadata, header, data
@@ -107,7 +113,11 @@ class ConversionAudit:
             # TODO error handling
             self._verify_converted_trial_site(path, reference_sites_index)
         if len(reference_sites_index) != 0:
-            raise ValueError('Count of remaining reference sites is greater than zero')
+            remaining_trial_site_names = []
+            for key, value in reference_sites_index.items():
+                remaining_trial_site_names.append('-'.join(key))
+            raise ValueError('Count of remaining reference sites is greater than zero, remaining sites: ' +
+                             ', '.join(remaining_trial_site_names))
 
     @staticmethod
     def _verify_converted_trial_site(path: Path, original_trial_sites: dict[tuple[str, str], TrialSiteContent]):
@@ -132,27 +142,51 @@ class ConversionAudit:
                     # tree metadata column
                     header.append((-1, cell))
             data = lines[1:]
-            for line in data:
-                for i, value in enumerate(line):
-                    # match integers (N) or floats with a decimal part of zero (N.0 / N.00)
-                    if re.fullmatch(r'\d+(\.0+)?', value):
-                        # >>> int(10.0) raises an error; this is solved by calling float() first
-                        line[i] = int(float(value))
-                    elif re.fullmatch(r'\d+\.\d+', value):
-                        line[i] = float(value)
 
         # delete 'DataFrame' entry because it's not part of the original metadata
         del metadata['DataFrame']
 
         trialsite_key = (metadata['Versuch'], metadata['Parzelle'])
+        trialsite_key_str = '-'.join(trialsite_key)
         if trialsite_key not in original_trial_sites:
-            raise ValueError('No original trial site with matching key')
+            raise ValueError(f'[{trialsite_key_str}] No original trial site with matching key')
 
         original_metadata, original_header, original_data = original_trial_sites[trialsite_key]
         if original_metadata != metadata:
-            raise ValueError('Metadata of original trial site does not match metadata of original trial site')
+            raise ValueError(f'Metadata of converted trial site {trialsite_key_str} does not match metadata of '
+                             f'original trial site')
+
         if original_header != header:
-            raise ValueError('Header of original trial site does not match header of original trial site')
-        if original_data != data:
-            raise ValueError('Data of original trial site does not match data of original trial site')
+            raise ValueError(f'Header of converted trial site {trialsite_key_str} does not match header of original '
+                             f'trial site.\n'
+                             f'Converted: {header}\n'
+                             f'Original: {original_header}')
+
+        if len(original_data) != len(data):
+            raise ValueError(f'Number of data rows of converted trial site {trialsite_key_str} does not match data '
+                             f'of original trial site')
+
+        for row_index in range(len(data)):
+            for col_index in range(len(data[row_index])):
+                error_flag = False
+                if re.fullmatch(r'\d+[\.,]\d+', data[row_index][col_index]):
+                    data_value = data[row_index][col_index].replace(',', '.')
+                    original_data_value = original_data[row_index][col_index].replace(',', '.')
+                    if float(data_value) != float(original_data_value):
+                        error_flag = True
+                else:
+                    if data[row_index][col_index] != original_data[row_index][col_index]:
+                        error_flag = True
+                if error_flag:
+                    raise ValueError(f'Data of converted trial site {trialsite_key_str} does not match data of '
+                                     f'original trial site in line {row_index + 1}, column {col_index + 1}.\n'
+                                     f'Converted: {data[row_index][col_index]}\n'
+                                     f'Original: {original_data[row_index][col_index]}')
+            #
+            # for index in range(len(data)):
+            #     if original_data[index] != data[index]:
+            #         raise ValueError(f'Data of converted trial site {trialsite_key_str} does not match data of '
+            #                          f'original trial site in line {index + 1}.\n'
+            #                          f'Converted: {data[index]}\n'
+            #                          f'Original: {original_data[index]}')
         del original_trial_sites[trialsite_key]
