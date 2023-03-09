@@ -7,7 +7,7 @@ import pandas as pd
 from pandas import MultiIndex
 
 from vfl2csv.output.TrialSiteConverter import TrialSiteConverter
-from vfl2csv_base import test_config, ColumnScheme
+from vfl2csv_base import test_config
 from vfl2csv_base.TrialSite import TrialSite
 
 
@@ -36,7 +36,6 @@ class TrialSiteConverterTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.tmp_dir.mkdir(parents=True, exist_ok=True)
-        cls.column_scheme = ColumnScheme.from_file(test_config.getpath('Config', 'sample-column-scheme'))
 
     @classmethod
     def tearDownClass(cls) -> None:
@@ -44,7 +43,7 @@ class TrialSiteConverterTest(unittest.TestCase):
 
     def test_refactor_dataframe(self):
         df = pd.DataFrame(columns=self.sample_multiIndex)
-        trial_site_converter = TrialSiteConverter(TrialSite(df, metadata=dict()), self.column_scheme)
+        trial_site_converter = TrialSiteConverter(TrialSite(df, metadata=dict()))
         trial_site_converter.refactor_dataframe()
         df = trial_site_converter.trial_site.df
         # expect 2 tree data labels (id and species) and 12 (4*3) measurement columns
@@ -72,7 +71,7 @@ class TrialSiteConverterTest(unittest.TestCase):
             '1': 'a  b',
             '2': 'a\nb',
             '3': 'a \n b'
-        }), self.column_scheme)
+        }))
         expectations = [' ', 'a b', 'a b', 'a b']
         trial_site_converter.trim_metadata()
         for i in range(4):
@@ -80,15 +79,14 @@ class TrialSiteConverterTest(unittest.TestCase):
 
     def test_refactor_dataframe_exceptions(self):
         # test empty column set
-        trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([()])), metadata=dict()),
-                                        self.column_scheme)
+        trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([()])), metadata=dict()))
         self.assertRaises(ValueError, trial_site.refactor_dataframe)
 
         # test column set with fewer columns than head columns in the template
         trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([
             ('Aufnahme', 'Wert', 'Einheit', 'Bst.-E.'),
             ('Aufnahme', 'Wert', 'Einheit', 'Art')
-        ])), metadata=dict()), self.column_scheme)
+        ])), metadata=dict()))
         self.assertRaises(ValueError, trial_site.refactor_dataframe)
 
         # test column set with measurement columns lacking one field compared to the template
@@ -98,7 +96,7 @@ class TrialSiteConverterTest(unittest.TestCase):
             ('Aufnahme', 'Wert', 'Einheit', 'Baum'),
             ('23.07.1984', 'D', 'cm', '159'),
             ('23.07.1984', 'Aus', 'Unnamed: 4_level_2', '15')
-        ])), metadata=dict()), self.column_scheme)
+        ])), metadata=dict()))
         self.assertRaises(ValueError, trial_site.refactor_dataframe)
 
     def test_simplifyColumnLabels_expect_decremented_year(self) -> None:
@@ -140,7 +138,7 @@ class TrialSiteConverterTest(unittest.TestCase):
                 pd.NA, pd.NA, pd.NA
             ]
         })
-        trial_site = TrialSiteConverter(TrialSite(df=test_df, metadata=dict()), None)
+        trial_site = TrialSiteConverter(TrialSite(df=test_df, metadata=dict()))
         trial_site.write_data(filepath=self.tmp_dir / 'data.csv')
         with open(self.tmp_dir / 'data.csv', 'r') as file:
             self.assertEqual(file.read(), "meta-data,D_2014\n1,NA\n2,NA\n3,NA\n")
@@ -151,7 +149,7 @@ class TrialSiteConverterTest(unittest.TestCase):
             'key-2': 'value-2',
             'key-3': 'value-3'
         }
-        trial_site = TrialSiteConverter(TrialSite(df=pd.DataFrame(), metadata=test_metadata), None)
+        trial_site = TrialSiteConverter(TrialSite(df=pd.DataFrame(), metadata=test_metadata))
         trial_site.write_metadata(filepath=self.tmp_dir / 'metadata.txt')
         with open(self.tmp_dir / 'metadata.txt', 'r') as file:
             self.assertEqual(file.read(), "key-1=value-1\nkey-2=value-2\nkey-3=value-3\n")
