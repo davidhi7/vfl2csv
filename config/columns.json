@@ -30,6 +30,7 @@
     },
     {
       "override_name": "H",
+      "add_difference": true,
       "type": "float64"
     }
   ]

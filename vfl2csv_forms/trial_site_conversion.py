@@ -103,6 +103,6 @@ def insert_new_columns(df: pd.DataFrame, new_year: int, old_columns: list[Expand
             df.insert(column_index + 1, (new_year, column_name), pd.Series(dtype=column_datatype))
             if template.get('add_difference', False):
                 formula_columns.append(
-                    FormulaColumn(True, '-', f'Diff {column_name}_{new_year}', [column_index + 1, column_index],
+                    FormulaColumn(True, '-', f'Diff {column_name}', [column_index + 1, column_index],
                                   styles.table_body_rational, styles.full_conditional_formatting_list()))
     return df, formula_columns
