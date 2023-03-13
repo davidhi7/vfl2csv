@@ -120,10 +120,24 @@ class ConversionAuditor:
                              ', '.join(remaining_trial_site_names))
 
     @staticmethod
-    def _verify_converted_trial_site(path: Path, original_trial_sites: dict[tuple[str, str], TrialSiteContent]):
+    def _verify_metadata_embedded_path(pattern: str, metadata: dict[str, str], actual_path: Path) \
+            -> ValueError | None:
+        for key, value in metadata.items():
+            pattern = pattern.replace(f'{{{key.lower()}}}', value)
+        pattern_tokens = re.split(r'[\/\\]', pattern)
+        # get the last N components of the file ath (i.e. the filename and the N-1 last directories)
+        path_tokens = re.split(r'[\/\\]', str(actual_path.absolute()))[-len(pattern_tokens):]
+        if pattern_tokens != path_tokens:
+            raise ValueError(f'Actual file path does not match expected file path.\n'
+                             f'Actual path: {"/".join(path_tokens)}\n'
+                             f'Expected path: {"/".join(pattern_tokens)}')
+        return
+
+    def _verify_converted_trial_site(self, path: Path, original_trial_sites: dict[tuple[str, str], TrialSiteContent]):
         metadata: TrialSiteMetadata = {}
         header: TrialSiteHeader = []
         data: TrialSiteData
+        # read metadata
         # this implementation is copy-pasted from TrialSite.from_metadata_file
         with open(path, 'r', encoding='utf-8') as file:
             for line in file.readlines():
@@ -131,7 +145,16 @@ class ConversionAuditor:
                 key, value = line.split('=', maxsplit=1)
                 # remove trailing newline in value
                 metadata[key] = value.rstrip()
-        with open(path.parent / metadata['DataFrame']) as file:
+
+        dataframe_path = path.parent / metadata['DataFrame']
+        # delete 'DataFrame' entry because it's not part of the original metadata
+        del metadata['DataFrame']
+        # check the file path
+        self._verify_metadata_embedded_path(self.config['Output']['metadata_output_pattern'], metadata, path)
+        self._verify_metadata_embedded_path(self.config['Output']['csv_output_pattern'], metadata, dataframe_path)
+
+        # read header & content
+        with open(dataframe_path) as file:
             lines = [line.replace('\n', '').split(',') for line in file.readlines()]
             for cell in lines[0]:
                 if re.fullmatch(r'\D+_\d{4}', cell):
@@ -142,9 +165,6 @@ class ConversionAuditor:
                     # tree metadata column
                     header.append((-1, cell))
             data = lines[1:]
-
-        # delete 'DataFrame' entry because it's not part of the original metadata
-        del metadata['DataFrame']
 
         trialsite_key = (metadata['Versuch'], metadata['Parzelle'])
         trialsite_key_str = '-'.join(trialsite_key)
