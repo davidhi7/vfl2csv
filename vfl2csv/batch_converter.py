@@ -4,10 +4,11 @@ import traceback
 from collections import Counter
 from multiprocessing import RLock, Pool
 from pathlib import Path
-from typing import NoReturn
 
 import numpy as np
 
+from tests.ConversionAuditor import ConversionAuditor
+from vfl2csv import column_scheme
 from vfl2csv import config
 from vfl2csv.input.ExcelInputSheet import ExcelInputSheet
 from vfl2csv.input.InputFile import InputFile
@@ -57,7 +58,9 @@ def trial_site_pipeline(
         process_index: int
 ) -> dict[str, int]:
     process_logger = logging.getLogger(f'process {process_index}')
-    errors = list()
+    # store all metadata output files to check for errors later
+    metadata_output_files = []
+    errors = []
     for input_sheet in input_batch:
         # noinspection PyBroadException
         try:
@@ -88,17 +91,20 @@ def trial_site_pipeline(
 
             converter.write_data(data_output_file)
             converter.write_metadata(metadata_output_file)
+
+            metadata_output_files.append(metadata_output_file)
         except Exception as e:
             traceback.print_exc()
             process_logger.warning(f'Exception in process {process_index}: {str(e)}')
             errors.append(e)
     return {
         'total_count': len(input_batch),
-        'errors': len(errors)
+        'errors': len(errors),
+        'metadata_output_files': metadata_output_files
     }
 
 
-def run(output_dir: Path, input_path: list[Path]) -> NoReturn:
+def run(output_dir: Path, input_path: list[Path]) -> None:
     input_files, input_trial_sites = find_input_sheets(input_path)
     logger.info(
         f'Found {len(input_trial_sites)} trial sites in {len(input_files)} {config["Input"]["input_format"]} files')
@@ -138,4 +144,21 @@ def run(output_dir: Path, input_path: list[Path]) -> NoReturn:
 
     logger.info(
         f'Converted {summarised_result["total_count"]} trial sites, {summarised_result["errors"]} errors occurred.')
-    exit(0)
+
+    if summarised_result["errors"] > 0:
+        logger.error(
+            f'Converted {summarised_result["total_count"]} trial sites, {summarised_result["errors"]} errors occurred.'
+            f'\nSkip checks due to the errors'
+        )
+        return
+
+    logger.error(f'Converted {summarised_result["total_count"]} trial sites without errors.')
+
+    # Verify converted files
+    logger.info('Verify all output files...')
+    auditor = ConversionAuditor(vfl2csv_config=config, column_scheme=column_scheme)
+    auditor.set_reference_files(input_files)
+    # `summarised_result['metadata_output_files']` returns a list of all metadata output file paths, not an int
+    # noinspection PyTypeChecker
+    auditor.audit_converted_metadata_files(summarised_result['metadata_output_files'])
+    logger.info('Verification completed, no errors')
