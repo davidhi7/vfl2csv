@@ -150,9 +150,9 @@ def run(output_dir: Path, input_path: list[Path]) -> None:
             f'Converted {summarised_result["total_count"]} trial sites, {summarised_result["errors"]} errors occurred.'
             f'\nSkip checks due to the errors'
         )
-        return
+        return 1
 
-    logger.error(f'Converted {summarised_result["total_count"]} trial sites without errors.')
+    logger.info(f'Converted {summarised_result["total_count"]} trial sites without errors.')
 
     # Verify converted files
     logger.info('Verify all output files...')
