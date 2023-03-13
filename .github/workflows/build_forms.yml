@@ -34,19 +34,19 @@ jobs:
       - name: Install build dependencies
         run: pip install -r requirements-build.txt
 
-      - name: Build artifacts (macOS-specific)
+      - name: Build artifacts
         if: matrix.os != 'macos-latest'
         run: >
           python -m nuitka --standalone --assume-yes-for-downloads --disable-console --follow-imports
-          --enable-plugin=pyside6 --lto=no vfl2csv_forms
+          --enable-plugin=pyside6 vfl2csv_forms
 
-      - name: Build artifacts (macOS-specific)
+      - name: Build artifacts (macOS specific)
         if: matrix.os == 'macos-latest'
         # disabling the console leads to difficulties
         # ("FATAL: Error, cannot disable console unless also using '--macos-create-app-bundle'.")
         run: >
           python -m nuitka --standalone --assume-yes-for-downloads --follow-imports
-          --enable-plugin=pyside6 --lto=no vfl2csv_forms
+          --enable-plugin=pyside6 vfl2csv_forms
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
