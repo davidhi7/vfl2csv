@@ -104,7 +104,7 @@ def trial_site_pipeline(
     }
 
 
-def run(output_dir: Path, input_path: list[Path]) -> None:
+def run(output_dir: Path, input_path: list[Path]) -> int:
     input_files, input_trial_sites = find_input_sheets(input_path)
     logger.info(
         f'Found {len(input_trial_sites)} trial sites in {len(input_files)} {config["Input"]["input_format"]} files')
@@ -162,3 +162,4 @@ def run(output_dir: Path, input_path: list[Path]) -> None:
     # noinspection PyTypeChecker
     auditor.audit_converted_metadata_files(summarised_result['metadata_output_files'])
     logger.info('Verification completed, no errors')
+    return 0
