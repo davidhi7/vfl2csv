@@ -8,19 +8,17 @@ from typing import Iterable
 from vfl2csv_base.TrialSite import TrialSite
 
 
-class InputFile(ABC):
-    @abstractmethod
-    def parse(self) -> None: pass
+class InputData(ABC):
 
     @abstractmethod
-    def get_trial_site(self) -> TrialSite:
-        pass
+    def parse(self) -> TrialSite: ...
 
     @abstractmethod
-    def __str__(self) -> TrialSite:
-        pass
+    def __str__(self) -> TrialSite: ...
+
+    @abstractmethod
+    def string_representation(self, short=False): ...
 
     @staticmethod
     @abstractmethod
-    def iterate_files(files: Iterable[Path]) -> list[InputFile]:
-        pass
+    def iterate_files(files: Iterable[Path]) -> list[InputData]: ...

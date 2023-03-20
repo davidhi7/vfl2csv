@@ -11,7 +11,7 @@ from tests.ConversionAuditor import ConversionAuditor
 from vfl2csv import column_scheme
 from vfl2csv import config
 from vfl2csv.input.ExcelInputSheet import ExcelInputSheet
-from vfl2csv.input.InputFile import InputFile
+from vfl2csv.input.InputData import InputData
 from vfl2csv.input.TsvInputFile import TsvInputFile
 from vfl2csv.output.TrialSiteConverter import TrialSiteConverter
 
@@ -19,16 +19,20 @@ CONFIG_ALLOWED_INPUT_FORMATS = ('TSV', 'Excel')
 logger = logging.getLogger(__name__)
 
 
-def find_input_sheets(input_path: list[Path] | Path) -> tuple[list[Path], list[InputFile]]:
+def find_input_data(input_path: str | Path | list[str | Path]) -> tuple[list[Path], list[InputData]]:
+    # if `input_path` is a string, convert to a path
+    if isinstance(input_path, str):
+        input_path = Path(input_path)
+
     # if `input_path` is a list, find recursively
     if not isinstance(input_path, Path):
         accumulated_input_files = []
         accumulated_input_trial_sites = []
 
         for path in input_path:
-            input_files, input_trial_sites = find_input_sheets(path)
+            input_files, input_data = find_input_data(path)
             accumulated_input_files.extend(input_files)
-            accumulated_input_trial_sites.extend(input_trial_sites)
+            accumulated_input_trial_sites.extend(input_data)
         return accumulated_input_files, accumulated_input_trial_sites
 
     if input_path.is_file():
@@ -41,17 +45,17 @@ def find_input_sheets(input_path: list[Path] | Path) -> tuple[list[Path], list[I
             input_files = list(input_path.glob(f'*.{input_file_extension}'))
 
     if config['Input']['input_format'] == 'Excel':
-        input_trial_sites = ExcelInputSheet.iterate_files(input_files)
+        input_data = ExcelInputSheet.iterate_files(input_files)
     elif config['Input']['input_format'] == 'TSV':
-        input_trial_sites = TsvInputFile.iterate_files(input_files)
+        input_data = TsvInputFile.iterate_files(input_files)
     else:
         raise ValueError(f'Input format {config["Input"]["input_format"]} is neither "Excel" nor "TSV"')
 
-    return input_files, input_trial_sites
+    return input_files, input_data
 
 
 def trial_site_pipeline(
-        input_batch: list[InputFile],
+        input_batch: list[InputData],
         output_data_pattern: Path,
         output_metadata_pattern: Path,
         lock: RLock,
@@ -66,7 +70,7 @@ def trial_site_pipeline(
         try:
             process_logger.info(f'Converting input {str(input_sheet)}')
             input_sheet.parse()
-            trial_site = input_sheet.get_trial_site()
+            trial_site = input_sheet.trial_site
             converter = TrialSiteConverter(trial_site)
             converter.refactor_dataframe()
             converter.trim_metadata()
@@ -105,7 +109,7 @@ def trial_site_pipeline(
 
 
 def run(output_dir: Path, input_path: list[Path]) -> int:
-    input_files, input_trial_sites = find_input_sheets(input_path)
+    input_files, input_trial_sites = find_input_data(input_path)
     logger.info(
         f'Found {len(input_trial_sites)} trial sites in {len(input_files)} {config["Input"]["input_format"]} files')
 

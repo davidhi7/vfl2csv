@@ -3,27 +3,29 @@ import traceback
 from functools import partial
 from pathlib import Path
 
-from PySide6.QtCore import Qt, Slot, QSize, Signal
+from PySide6.QtCore import Qt, Slot, QSize
 from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QTableWidget, \
     QAbstractItemView, QHeaderView, QMessageBox, QFileDialog, QTableWidgetItem, QProgressBar
 
 from vfl2csv_base.errors.FileParsingError import FileParsingError
-from vfl2csv_forms import config
-from vfl2csv_forms.gui.InputHandler import InputHandler
-from vfl2csv_forms.gui.QHLine import QHLine
+from vfl2csv_gui.TextMap import TextMap
+from vfl2csv_gui.components.QHLine import QHLine
+from vfl2csv_gui.interfaces.AbstractInputHandler import AbstractInputHandler
 
 logger = logging.getLogger(__name__)
 
 
 class GraphicalUI(QWidget):
-    require_centre = Signal()
-
-    def __init__(self):
+    def __init__(self, text_map: TextMap, input_handler: AbstractInputHandler, output_file_format: str):
         super().__init__()
+        self.text_map = text_map
+        self.input_handler = input_handler
+        self.output_file_format = output_file_format
+
         self.setLayout(QVBoxLayout())
 
-        self.setWindowTitle('Formular erstellen')
-        title = QLabel('Formular erstellen')
+        self.setWindowTitle(text_map['window-title'])
+        title = QLabel(text_map['content-title'])
         title_font = title.font()
         title_font.setPointSize(24)
         title.setFont(title_font)
@@ -43,13 +45,13 @@ class GraphicalUI(QWidget):
 
         self.status_label = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
 
-        self.status_table = QTableWidget(0, 2)
+        self.status_table = QTableWidget(0, len(text_map['list-headers']))
         self.status_table.setVisible(False)
         self.status_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.status_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.status_table.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
-        self.run_button = QPushButton('Formular erzeugen')
+        self.run_button = QPushButton(text_map['convert'])
         self.run_button.clicked.connect(self.create)
         self.run_button.setMinimumHeight(50)
 
@@ -65,15 +67,14 @@ class GraphicalUI(QWidget):
         self.layout().addWidget(self.run_button)
         self.layout().addWidget(self.progress_bar)
 
-        self.input_handler = InputHandler()
         self.update_input_status(skip_window_reposition=True)
 
     @Slot()
     def single_file_input(self) -> None:
         files_input: tuple[list[Path], str] = QFileDialog.getOpenFileNames(
             parent=self,
-            caption='Metadaten-Datei auswählen',
-            filter=f'Metadaten ({config["Input"].get("metadata_search_pattern")});;Alle Dateien (*)'
+            caption=self.text_map['filedialog-input-single-file'],
+            filter=self.text_map['filedialog-input-single-file-filter']
         )
         # the first value of the tuple is a list of selected file names. This list is empty, if the dialog is cancelled
         if len(files_input[0]) == 0:
@@ -85,7 +86,7 @@ class GraphicalUI(QWidget):
     def directory_input(self) -> None:
         directory_input: str = QFileDialog.getExistingDirectory(
             parent=self,
-            caption='Metadaten-Verzeichnis auswählen',
+            caption=self.text_map['filedialog-input-dictionary'],
             options=QFileDialog.ShowDirsOnly
         )
         # only the selected path is returned, nothing else
@@ -99,33 +100,34 @@ class GraphicalUI(QWidget):
         try:
             self.input_handler.load_input(input_paths)
             if len(self.input_handler) == 0:
-                self.notify_warning('Keine Versuchsflächen gefunden!')
+                self.notify_warning(self.text_map['input-no-files-found'])
             else:
                 self.input_handler.sort()
         except FileParsingError as file_error:
-            self.handle_exception(file_error, title=f'Fehler beim Laden der Datei {file_error.file}')
+            self.handle_exception(file_error,
+                                  title=self.text_map.get_replace('input-error-reading-file', file_error.file))
         except Exception as err:
-            self.handle_exception(err, title='Fehler beim Laden der Dateien')
+            self.handle_exception(err, title=self.text_map['input-error-general'])
         finally:
             self.update_input_status()
 
     @Slot()
     def create(self) -> None:
         if len(self.input_handler) == 0:
-            self.notify_warning('Es sind keine Versuchsflächen ausgewählt!')
+            self.notify_warning(self.text_map['error-no-files-selected'])
             return
         output_file_str = QFileDialog.getSaveFileName(
             parent=self,
-            caption='Dateispeicherort',
-            filter='Excel-Datei (*.xlsx)'
+            caption=self.text_map['filedialog-output'],
+            filter=self.text_map['filedialog-output-filter']
         )[0]
 
         # empty path is returned if the dialog is cancelled
         if output_file_str == '':
             return
 
-        if not output_file_str.endswith('.xlsx'):
-            output_file_str += '.xlsx'
+        if not output_file_str.endswith(f'.{self.output_file_format}'):
+            output_file_str += f'.{self.output_file_format}'
 
         output_file = Path(output_file_str)
         self.prepare_conversion()
@@ -133,7 +135,7 @@ class GraphicalUI(QWidget):
         progress, finished, error = self.input_handler.convert(output_file)
         progress.connect(self.increment_progress_bar)
         finished.connect(self.finish_conversion)
-        error.connect(partial(self.handle_exception, title='Fehler beim Erstellen der Datei'))
+        error.connect(partial(self.handle_exception, title=self.text_map['conversion-error-title']))
         error.connect(lambda exc: self.finish_conversion(success=False))
 
     def prepare_conversion(self):
@@ -152,7 +154,7 @@ class GraphicalUI(QWidget):
     @Slot()
     def finish_conversion(self, success: bool = True):
         if success:
-            self.notify_success('Formular erstellt')
+            self.notify_success(self.text_map['done'])
         self.progress_bar.setVisible(False)
         self.manage_space()
         self.run_button.setDisabled(False)
@@ -184,22 +186,20 @@ class GraphicalUI(QWidget):
     def update_input_status(self, skip_window_reposition=False) -> None:
         trial_site_count = len(self.input_handler)
         if trial_site_count == 0:
-            self.status_label.setText('Es sind keine Versuchsflächen ausgewählt.')
+            self.status_label.setText(self.text_map['no-files-selected'])
             self.status_table.setVisible(False)
         else:
-            self.status_label.setText(f'{trial_site_count} Versuchsflächen sind ausgewählt:')
+            self.status_label.setText(self.text_map.get_replace('n-files-selected', trial_site_count))
 
             self.status_table.clear()
             self.status_table.setVisible(True)
-            self.status_table.setHorizontalHeaderLabels(('Versuch', 'Parzelle', 'entfernen'))
+            self.status_table.setHorizontalHeaderLabels(self.text_map['list-headers'])
             self.status_table.setRowCount(trial_site_count)
-            for row, trial_site in enumerate(self.input_handler.trial_sites):
-                widget0 = QTableWidgetItem(trial_site.metadata['Versuch'])
-                widget0.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                widget1 = QTableWidgetItem(trial_site.metadata['Parzelle'])
-                widget1.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
-                self.status_table.setItem(row, 0, widget0)
-                self.status_table.setItem(row, 1, widget1)
+            for row, representation in enumerate(self.input_handler.table_representation()):
+                for col, value in enumerate(representation):
+                    widget = QTableWidgetItem(value)
+                    widget.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+                    self.status_table.setItem(row, col, widget)
         self.manage_space(skip_window_move=skip_window_reposition)
 
     def get_qtable_widget_size(self) -> QSize:

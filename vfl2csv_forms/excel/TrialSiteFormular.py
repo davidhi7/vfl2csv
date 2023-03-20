@@ -12,10 +12,10 @@ from pandas import ExcelWriter
 from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_forms import config
 from vfl2csv_forms.excel import styles
+from vfl2csv_forms.excel.FormulaColumn import FormulaColumn
 from vfl2csv_forms.excel.utilities import EXCEL_COLUMN_NAMES, zero_based_cell_name, zero_based_cell_range_name, \
     zero_based_cell_range, get_character_count
 from vfl2csv_forms.excel.utilities import zero_based_cell
-from vfl2csv_forms.output.FormulaColumn import FormulaColumn
 
 dtypes_styles_mapping = {
     'string': styles.table_body_text,

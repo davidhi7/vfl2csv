@@ -3,7 +3,7 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
-from vfl2csv.input.ArgumentParser import parser
+from vfl2csv.ArgumentParser import parser
 
 
 class ArgumentParserTest(unittest.TestCase):

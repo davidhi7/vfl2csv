@@ -4,11 +4,11 @@ from typing import Iterable
 import pandas as pd
 
 from vfl2csv.input.ExcelWorkbook import ExcelWorkbook
-from vfl2csv.input.InputFile import InputFile
+from vfl2csv.input.InputData import InputData
 from vfl2csv_base.TrialSite import TrialSite
 
 
-class ExcelInputSheet(InputFile):
+class ExcelInputSheet(InputData):
     def __init__(self, workbook: ExcelWorkbook, sheet_name: str):
         """
         Create a new Excel output file object.
@@ -17,13 +17,12 @@ class ExcelInputSheet(InputFile):
         :param workbook: ExcelWorkbook instance
         :param sheet_name: Name of the sheet containing all trial site data
         """
-        self.trial_site = None
         self.file_path = workbook.path
         self.open_workbook = workbook.open_workbook
         self.input_stream = workbook.in_mem_file
         self.sheet_name = sheet_name
 
-    def parse(self) -> None:
+    def parse(self) -> TrialSite:
         # extract metadata saved in the columns A5:A11 in a 'key : value' format
         metadata = dict()
         sheet = self.open_workbook[self.sheet_name]
@@ -34,13 +33,15 @@ class ExcelInputSheet(InputFile):
 
         df = pd.read_excel(self.input_stream, sheet_name=self.sheet_name, header=list(range(0, 4)), skiprows=13)
 
-        self.trial_site = TrialSite(df, metadata)
+        return TrialSite(df, metadata)
 
-    def get_trial_site(self) -> TrialSite:
-        return self.trial_site
+    def string_representation(self, short=False):
+        if short:
+            return f'{self.file_path.name} - {self.sheet_name}'
+        return f'{self.file_path} - {self.sheet_name}'
 
     def __str__(self) -> str:
-        return f'{self.file_path}#{self.sheet_name}'
+        return self.string_representation()
 
     @staticmethod
     def iterate_files(input_files: Iterable[Path]) -> list['ExcelInputSheet']:

@@ -1,17 +1,19 @@
 import logging
 from pathlib import Path
 
-from PySide6.QtCore import QObject, QThreadPool
+from PySide6.QtCore import QThreadPool
 
 from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_base.errors.FileParsingError import FileParsingError
 from vfl2csv_forms import config
-from vfl2csv_forms.gui.ConversionWorker import ConversionWorker
+from vfl2csv_forms.ui.ConversionWorker import ConversionWorker
+from vfl2csv_gui.interfaces.AbstractInputHandler import AbstractInputHandler
+from vfl2csv_gui.interfaces.CommunicationSignals import CommunicationSignals
 
 logger = logging.getLogger(__name__)
 
 
-class InputHandler(QObject):
+class InputHandler(AbstractInputHandler):
 
     def __init__(self):
         super().__init__()
@@ -60,7 +62,13 @@ class InputHandler(QObject):
     def __len__(self) -> int:
         return len(self.trial_sites)
 
-    def convert(self, output_file: Path):
+    def convert(self, output_file: Path) -> CommunicationSignals:
         worker = ConversionWorker(self.trial_sites, output_file)
         QThreadPool.globalInstance().start(worker)
-        return worker.state.progress, worker.state.finished, worker.state.error
+        return worker.signals
+
+    def table_representation(self) -> list[list[str]]:
+        return [[
+            trial_site.metadata['Versuch'],
+            trial_site.metadata['Parzelle']
+        ] for trial_site in self.trial_sites]
