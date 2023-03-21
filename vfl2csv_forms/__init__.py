@@ -2,6 +2,7 @@ from pathlib import Path
 
 from vfl2csv_base import config_factory, default_column_scheme_path, default_column_scheme_json
 from vfl2csv_base.ColumnScheme import ColumnScheme
+from vfl2csv_gui.ConversionGuiConfig import ConversionGuiConfig
 from vfl2csv_gui.TextMap import TextMap
 
 config = config_factory.get_config(Path('config/config_forms.ini'), """[Input]
@@ -12,7 +13,7 @@ directory_search_recursively = true
 excel_sheet_pattern = {versuch}-{parzelle}
 """)
 column_scheme = ColumnScheme.from_file(path=default_column_scheme_path, template=default_column_scheme_json)
-gui_text_map = TextMap({
+gui_config = ConversionGuiConfig(text_map=TextMap({
     'window-title': 'Formular erstellen',
     'content-title': 'Formular erstellen',
     'filedialog-input-single-file': 'Metadaten-Datei auswählen',
@@ -30,4 +31,4 @@ gui_text_map = TextMap({
     'conversion-error-title': 'Fehler beim Erstellen der Datei',
     'done': 'Formular erstellt',
     'list-headers': ['Versuch', 'Parzelle']
-})
+}), output_is_file=True, output_file_extension='xlsx')

@@ -3,6 +3,7 @@ import sys
 from vfl2csv.ArgumentParser import parser
 from vfl2csv_base import config_factory, default_column_scheme_json, default_column_scheme_path
 from vfl2csv_base.ColumnScheme import ColumnScheme
+from vfl2csv_gui.ConversionGuiConfig import ConversionGuiConfig
 from vfl2csv_gui.TextMap import TextMap
 
 default_config = """[Input]
@@ -30,7 +31,7 @@ else:
     arguments = vars(parser.parse_args())
     config = config_factory.get_config(arguments['config'], template=default_config)
     column_scheme = ColumnScheme.from_file(arguments['column_scheme'], template=default_column_scheme_json)
-gui_text_map = TextMap({
+gui_config = ConversionGuiConfig(text_map=TextMap({
     'window-title': 'Dateien konvertieren',
     'content-title': 'Dateien konvertieren',
     'filedialog-input-single-file': 'Eingabedateien auswählen',
@@ -48,4 +49,4 @@ gui_text_map = TextMap({
     'conversion-error-title': 'Fehler beim Konvertieren der Dateien',
     'done': 'Dateien konvertiert',
     'list-headers': ['Datei']
-})
+}), output_is_file=False)

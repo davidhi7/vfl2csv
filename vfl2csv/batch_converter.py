@@ -65,12 +65,11 @@ def trial_site_pipeline(
     # store all metadata output files to check for errors later
     metadata_output_files = []
     errors = []
-    for input_sheet in input_batch:
+    for input_data in input_batch:
         # noinspection PyBroadException
         try:
-            process_logger.info(f'Converting input {str(input_sheet)}')
-            input_sheet.parse()
-            trial_site = input_sheet.trial_site
+            process_logger.info(f'Converting input {str(input_data)}')
+            trial_site = input_data.parse()
             converter = TrialSiteConverter(trial_site)
             converter.refactor_dataframe()
             converter.trim_metadata()
@@ -90,7 +89,7 @@ def trial_site_pipeline(
                     metadata_output_file.touch(exist_ok=False)
                 except FileExistsError as e:
                     raise Exception(
-                        f'Process {process_index}: Corresponding output file(s) for trial site {input_sheet} does '
+                        f'Process {process_index}: Corresponding output file(s) for trial site {input_data} does '
                         f'already exist!') from e
 
             converter.write_data(data_output_file)

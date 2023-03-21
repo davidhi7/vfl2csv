@@ -5,31 +5,34 @@ from pathlib import Path
 
 from PySide6.QtCore import Qt, Slot, QSize
 from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QTableWidget, \
-    QAbstractItemView, QHeaderView, QMessageBox, QFileDialog, QTableWidgetItem, QProgressBar
+    QAbstractItemView, QHeaderView, QMessageBox, QFileDialog, QTableWidgetItem, QProgressBar, QSizePolicy
 
 from vfl2csv_base.errors.FileParsingError import FileParsingError
-from vfl2csv_gui.TextMap import TextMap
+from vfl2csv_gui.ConversionGuiConfig import ConversionGuiConfig
 from vfl2csv_gui.components.QHLine import QHLine
 from vfl2csv_gui.interfaces.AbstractInputHandler import AbstractInputHandler
 
 logger = logging.getLogger(__name__)
 
 
-class GraphicalUI(QWidget):
-    def __init__(self, text_map: TextMap, input_handler: AbstractInputHandler, output_file_format: str):
+class BaseGui(QWidget):
+    def __init__(self, config: ConversionGuiConfig, input_handler: AbstractInputHandler):
         super().__init__()
-        self.text_map = text_map
+        self.text_map = config.text_map
+        self.output_is_file = config.output_is_file
+        self.output_file_format = config.output_file_extension
         self.input_handler = input_handler
-        self.output_file_format = output_file_format
 
-        self.setLayout(QVBoxLayout())
+        layout = QVBoxLayout()
 
-        self.setWindowTitle(text_map['window-title'])
-        title = QLabel(text_map['content-title'])
+        self.setWindowTitle(self.text_map['window-title'])
+        title = QLabel(self.text_map['content-title'])
         title_font = title.font()
         title_font.setPointSize(24)
         title.setFont(title_font)
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        # title margins like to expand when resizing the window vertically. Disable this
+        title.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed))
         # this way, the spacing between the label and the top of the viewport are equally wide as to the sides
         title.setContentsMargins(8, 0, 8, 8)
 
@@ -45,28 +48,29 @@ class GraphicalUI(QWidget):
 
         self.status_label = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
 
-        self.status_table = QTableWidget(0, len(text_map['list-headers']))
+        self.status_table = QTableWidget(0, len(self.text_map['list-headers']))
         self.status_table.setVisible(False)
         self.status_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.status_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.status_table.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
-        self.run_button = QPushButton(text_map['convert'])
+        self.run_button = QPushButton(self.text_map['convert'])
         self.run_button.clicked.connect(self.create)
         self.run_button.setMinimumHeight(50)
 
         self.progress_bar = QProgressBar()
         self.progress_bar.setVisible(False)
 
-        self.layout().addWidget(title)
-        self.layout().addLayout(button_layout)
-        self.layout().addWidget(QHLine())
-        self.layout().addWidget(self.status_label)
-        self.layout().addWidget(self.status_table)
-        self.layout().addWidget(QHLine())
-        self.layout().addWidget(self.run_button)
-        self.layout().addWidget(self.progress_bar)
+        layout.addWidget(title)
+        layout.addLayout(button_layout)
+        layout.addWidget(QHLine())
+        layout.addWidget(self.status_label)
+        layout.addWidget(self.status_table)
+        layout.addWidget(QHLine())
+        layout.addWidget(self.run_button)
+        layout.addWidget(self.progress_bar)
 
+        self.setLayout(layout)
         self.update_input_status(skip_window_reposition=True)
 
     @Slot()
@@ -116,27 +120,35 @@ class GraphicalUI(QWidget):
         if len(self.input_handler) == 0:
             self.notify_warning(self.text_map['error-no-files-selected'])
             return
-        output_file_str = QFileDialog.getSaveFileName(
-            parent=self,
-            caption=self.text_map['filedialog-output'],
-            filter=self.text_map['filedialog-output-filter']
-        )[0]
-
+        output_path: str
+        if self.output_is_file:
+            output_path = QFileDialog.getSaveFileName(
+                parent=self,
+                caption=self.text_map['filedialog-output'],
+                filter=self.text_map['filedialog-output-filter']
+            )[0]
+            if not output_path.endswith(f'.{self.output_file_format}'):
+                output_path += f'.{self.output_file_format}'
+        else:
+            output_path = QFileDialog.getExistingDirectory(
+                parent=self,
+                caption=self.text_map['filedialog-input-dictionary'],
+                options=QFileDialog.ShowDirsOnly
+            )
         # empty path is returned if the dialog is cancelled
-        if output_file_str == '':
+        if output_path == '':
             return
 
-        if not output_file_str.endswith(f'.{self.output_file_format}'):
-            output_file_str += f'.{self.output_file_format}'
+        if self.output_is_file and not output_path.endswith(f'.{self.output_file_format}'):
+            output_path += f'.{self.output_file_format}'
 
-        output_file = Path(output_file_str)
         self.prepare_conversion()
 
-        progress, finished, error = self.input_handler.convert(output_file)
-        progress.connect(self.increment_progress_bar)
-        finished.connect(self.finish_conversion)
-        error.connect(partial(self.handle_exception, title=self.text_map['conversion-error-title']))
-        error.connect(lambda exc: self.finish_conversion(success=False))
+        signals = self.input_handler.convert(Path(output_path))
+        signals.progress.connect(self.increment_progress_bar)
+        signals.finished.connect(self.finish_conversion)
+        signals.error.connect(partial(self.handle_exception, title=self.text_map['conversion-error-title']))
+        signals.error.connect(lambda exc: self.finish_conversion(success=False))
 
     def prepare_conversion(self):
         self.progress_bar.setMinimum(0)
@@ -218,25 +230,27 @@ class GraphicalUI(QWidget):
         return QSize(width, height)
 
     def manage_space(self, skip_window_move=False) -> None:
-        old_geometry = self.frameGeometry()
-        table_widget_size = self.get_qtable_widget_size()
-        self.status_table.setMinimumHeight(table_widget_size.height())
-        self.status_table.setMaximumHeight(table_widget_size.height())
-        # this needs to be done after setting size constraints for the table so these changes are taken into account
-        root_size_hint = self.sizeHint()
-        self.setMinimumSize(root_size_hint)
-        self.setMaximumSize(root_size_hint)
-
-        # Allow to skip moving the window. This is useful on the initial call when the window is later centered when
-        # showing it initially
-        if skip_window_move:
-            return
-
-        # window size management: make sure that on window resize the resized window shares the same center as the
-        # window before the resize
-        new_geometry = self.frameGeometry()
-        new_geometry.moveCenter(old_geometry.center())
-        self.move(new_geometry.topLeft())
+        pass
+        # self.status_table.setMinimumHeight(self.get_qtable_widget_size().height())
+        # TODO fix
+        # old_geometry = self.window().frameGeometry()
+        # table_widget_size = self.get_qtable_widget_size()
+        # self.status_table.setFixedHeight(table_widget_size.height())
+        #
+        # # this needs to be done after setting size constraints for the table so these changes are taken into account
+        # root_size_hint = self.window().sizeHint()
+        # self.window().setFixedHeight(root_size_hint.height())
+        #
+        # # Allow to skip moving the window. This is useful on the initial call when the window is later centered when
+        # # showing it initially
+        # if skip_window_move:
+        #     return
+        #
+        # # window size management: make sure that on window resize the resized window shares the same center as the
+        # # window before the resize
+        # new_geometry = self.window().frameGeometry()
+        # new_geometry.moveCenter(old_geometry.center())
+        # self.window().move(new_geometry.topLeft())
 
     @Slot(Exception)
     def handle_exception(self, exc: Exception, title: str):

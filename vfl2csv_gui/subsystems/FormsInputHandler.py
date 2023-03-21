@@ -6,9 +6,9 @@ from PySide6.QtCore import QThreadPool
 from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_base.errors.FileParsingError import FileParsingError
 from vfl2csv_forms import config
-from vfl2csv_forms.ui.ConversionWorker import ConversionWorker
 from vfl2csv_gui.interfaces.AbstractInputHandler import AbstractInputHandler
 from vfl2csv_gui.interfaces.CommunicationSignals import CommunicationSignals
+from vfl2csv_gui.subsystems.FormsConversionWorker import ConversionWorker
 
 logger = logging.getLogger(__name__)
 

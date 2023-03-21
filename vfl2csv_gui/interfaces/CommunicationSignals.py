@@ -1,7 +1,7 @@
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, QObject
 
 
-class CommunicationSignals:
+class CommunicationSignals(QObject):
     """
     Wrapper for signals used for communication between the GUI and worker instances.
     """

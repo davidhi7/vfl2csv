@@ -1,10 +1,10 @@
 from PySide6.QtWidgets import QWidget, QTabWidget, QVBoxLayout
 
-from vfl2csv import gui_text_map as vfl2csv_text
-from vfl2csv.ui.InputHandler import InputHandler as Vlf2csvInputHandler
-from vfl2csv_forms import gui_text_map as vfl2csv_forms_text
-from vfl2csv_forms.ui.InputHandler import InputHandler as FormsInputHandler
-from vfl2csv_gui.components.BaseConversionGui import GraphicalUI
+from vfl2csv import gui_config as vfl2csv_gui_config
+from vfl2csv_forms import gui_config as forms_gui_config
+from vfl2csv_gui.components.BaseGui import BaseGui
+from vfl2csv_gui.subsystems.FormsInputHandler import InputHandler as FormsInputHandler
+from vfl2csv_gui.subsystems.Vfl2csvInputHandler import InputHandler as Vlf2csvInputHandler
 
 
 class MainWindow(QWidget):
@@ -12,13 +12,14 @@ class MainWindow(QWidget):
         super().__init__()
         layout = QVBoxLayout()
         tab_widget = QTabWidget()
-        main_window = GraphicalUI(text_map=vfl2csv_forms_text,
-                                  input_handler=FormsInputHandler(),
-                                  output_file_format='xlsx')
-        main_window2 = GraphicalUI(text_map=vfl2csv_text,
-                                   input_handler=Vlf2csvInputHandler(),
-                                   output_file_format='xlsx')
-        tab_widget.addTab(main_window, 'Formulare')
-        tab_widget.addTab(main_window2, 'Konvertierung')
+
+        forms_ui = BaseGui(config=forms_gui_config,
+                           input_handler=FormsInputHandler())
+
+        vfl2csv_ui = BaseGui(config=vfl2csv_gui_config,
+                             input_handler=Vlf2csvInputHandler())
+
+        tab_widget.addTab(forms_ui, 'Formulare')
+        tab_widget.addTab(vfl2csv_ui, 'Konvertierung')
         layout.addWidget(tab_widget)
         self.setLayout(layout)
