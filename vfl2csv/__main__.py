@@ -7,4 +7,10 @@ from vfl2csv.batch_converter import run
 logger = logging.getLogger(__name__)
 
 if __name__ == '__main__':
-    sys.exit(run(arguments['output'], arguments['input']))
+    success, report = run(arguments['output'], arguments['input'])
+    if not success:
+        logger.info('Failed')
+        sys.exit(1)
+
+    logger.info('Done')
+    sys.exit(0)

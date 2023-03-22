@@ -4,7 +4,7 @@ import traceback
 from collections import Counter
 from multiprocessing import RLock, Pool
 from pathlib import Path
-from typing import Any
+from typing import TypedDict, NotRequired, Optional, Callable
 
 import numpy as np
 
@@ -18,6 +18,14 @@ from vfl2csv.output.TrialSiteConverter import TrialSiteConverter
 
 CONFIG_ALLOWED_INPUT_FORMATS = ('TSV', 'Excel')
 logger = logging.getLogger(__name__)
+
+
+class Report(TypedDict):
+    total_count: int
+    errors: list[Exception]
+    metadata_output_files: list[Path]
+    verification_success: NotRequired[bool]
+    verification_error: NotRequired[ValueError]
 
 
 def find_input_data(input_path: str | Path | list[str | Path]) -> tuple[list[Path], list[InputData]]:
@@ -60,9 +68,22 @@ def trial_site_pipeline(
         output_data_pattern: Path,
         output_metadata_pattern: Path,
         lock: RLock,
-        process_index: int
-) -> dict[str, Any]:
-    process_logger = logging.getLogger(f'process {process_index}')
+        on_done: Callable[[str], None],
+        process_index: Optional[int]
+) -> Report:
+    """
+    Convert a batch of input data.
+    @param input_batch: List of `InputData` objects
+    @param output_data_pattern: Pattern for storing data files
+    @param output_metadata_pattern: Pattern for storing metadata files
+    @param lock: Lock for synchronization
+    @param on_done: Callable to execute after finishing a trial site conversion.
+    Consumes a string summarizing the input file.
+    @param process_index: Index of the current process for logging. If multiprocessing is not used, the parameter can be
+    omitted.
+    @return: report of all conversions containing metadata and errors.
+    """
+    process_logger = logging.getLogger(f'process {process_index or "root"}')
     # store all metadata output files to check for errors later
     metadata_output_files = []
     errors = []
@@ -97,18 +118,19 @@ def trial_site_pipeline(
             converter.write_metadata(metadata_output_file)
 
             metadata_output_files.append(metadata_output_file)
+            on_done(str(input_data))
         except Exception as e:
             traceback.print_exc()
             process_logger.warning(f'Exception in process {process_index}: {str(e)}')
             errors.append(e)
     return {
         'total_count': len(input_batch),
-        'errors': len(errors),
+        'errors': errors,
         'metadata_output_files': metadata_output_files
     }
 
 
-def run(output_dir: Path, input_path: list[Path]) -> int:
+def run(output_dir: Path, input_path: list[Path], on_done: Callable[[str], None]) -> tuple[bool, Report]:
     input_files, input_trial_sites = find_input_data(input_path)
     logger.info(
         f'Found {len(input_trial_sites)} trial sites in {len(input_files)} {config["Input"]["input_format"]} files')
@@ -130,40 +152,46 @@ def run(output_dir: Path, input_path: list[Path]) -> int:
                     process_count * [output_data_file],
                     process_count * [output_metadata_file],
                     process_count * [lock],
+                    process_count * [on_done],
                     range(process_count)
                 )
                 result = pool.starmap(trial_site_pipeline, process_args)
-                summarised_result = Counter()
+                summarised_result: Report = Counter()
                 for r in result:
                     summarised_result.update(r)
     else:
         # allow disabling multiprocessing for easier debugging and optimized performance when working with little data
         logger.info('Multiprocessing is disabled')
-        summarised_result = trial_site_pipeline(input_trial_sites,
-                                                output_data_file,
-                                                output_metadata_file,
-                                                RLock(),
-                                                process_index=0
-                                                )
+        summarised_result: Report = trial_site_pipeline(input_trial_sites,
+                                                        output_data_file,
+                                                        output_metadata_file,
+                                                        RLock(),
+                                                        on_done,
+                                                        process_index=0)
+    summarised_result: Report = dict(summarised_result)
+
+    if len(summarised_result['errors']) != 0:
+        logger.warning(
+            f'{len(summarised_result["errors"])} errors occured during converting {summarised_result["total_count"]} '
+            f'trial sites')
+        return False, summarised_result
 
     logger.info(
-        f'Converted {summarised_result["total_count"]} trial sites, {summarised_result["errors"]} errors occurred.')
+        f'Converted {summarised_result["total_count"]} trial sites successfully, proceed with verification of '
+        f'converted trial sites.')
 
-    if summarised_result["errors"] > 0:
-        logger.error(
-            f'Converted {summarised_result["total_count"]} trial sites, {summarised_result["errors"]} errors occurred.'
-            f'\nSkip checks due to the errors'
-        )
-        return 1
+    try:
+        auditor = ConversionAuditor(vfl2csv_config=config, column_scheme=column_scheme)
+        auditor.set_reference_files(input_files)
+        auditor.audit_converted_metadata_files(summarised_result['metadata_output_files'])
+        summarised_result['verification_success'] = True
+        logger.info('Verification succeeded')
+    except ValueError as e:
+        logger.error('Verification failed:', e)
+        summarised_result['verification_error'] = e
+        summarised_result['verification_success'] = False
 
-    logger.info(f'Converted {summarised_result["total_count"]} trial sites without errors.')
-
-    # Verify converted files
-    logger.info('Verify all output files...')
-    auditor = ConversionAuditor(vfl2csv_config=config, column_scheme=column_scheme)
-    auditor.set_reference_files(input_files)
-    # `summarised_result['metadata_output_files']` returns a list of all metadata output file paths, not an int
-    # noinspection PyTypeChecker
-    auditor.audit_converted_metadata_files(summarised_result['metadata_output_files'])
-    logger.info('Verification completed, no errors')
-    return 0
+    success = len(summarised_result['errors']) == 0 and \
+              'verification_success' in summarised_result and \
+              summarised_result['verification_success'] is True
+    return success, summarised_result

@@ -43,6 +43,10 @@ def run_test(tmp_dir: Path, input_dir: Path):
     print('>>> ' + command)
     proc = Popen(command, cwd=cwd, shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     proc.wait()
+
+    if proc.returncode != 0:
+        raise ValueError(f'Return code {proc.returncode} instead of 0')
+
     for line in proc.stdout.readlines():
         print('> ' + line.decode('ascii'), end='')
 
