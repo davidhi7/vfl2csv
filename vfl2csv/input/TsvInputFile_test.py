@@ -1,5 +1,4 @@
 import unittest
-from pathlib import Path
 
 import pandas as pd
 
@@ -17,8 +16,7 @@ class TsvInputFileTest(unittest.TestCase):
         self.assertEqual(len(sheets), 6)
 
     def test_parse_dataframe(self):
-        self.sample_instance.parse()
-        df: pd.DataFrame = self.sample_instance.get_trial_site().df
+        df: pd.DataFrame = self.sample_instance.parse().df
         self.assertEqual(len(df.columns), 15)
         self.assertEqual(len(df), 159)
         values_count = df.count(axis='rows')
@@ -28,8 +26,7 @@ class TsvInputFileTest(unittest.TestCase):
             self.assertEqual(values_count[column], values_expected)
 
     def test_parse_metadata(self):
-        self.sample_instance.parse()
-        metadata: dict = self.sample_instance.trial_site.metadata
+        metadata: dict = self.sample_instance.parse().metadata
         self.assertEqual(metadata, {
             "Forstamt": "44   Schönheide",
             "Revier": "Hundshübel",
