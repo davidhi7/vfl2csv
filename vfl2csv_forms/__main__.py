@@ -4,7 +4,7 @@ from PySide6.QtWidgets import QApplication
 
 from vfl2csv_forms import gui_config
 from vfl2csv_gui.components.BaseGui import BaseGui
-from vfl2csv_gui.subsystems.FormsInputHandler import InputHandler
+from vfl2csv_gui.subsystems.forms.FormsInputHandler import InputHandler
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)

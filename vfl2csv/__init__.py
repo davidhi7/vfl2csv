@@ -3,8 +3,6 @@ import sys
 from vfl2csv.ArgumentParser import parser
 from vfl2csv_base import config_factory, default_column_scheme_json, default_column_scheme_path
 from vfl2csv_base.ColumnScheme import ColumnScheme
-from vfl2csv_gui.ConversionGuiConfig import ConversionGuiConfig
-from vfl2csv_gui.TextMap import TextMap
 
 default_config = """[Input]
 # TSV for tab delimited values or Excel for Excel files
@@ -31,22 +29,3 @@ else:
     arguments = vars(parser.parse_args())
     config = config_factory.get_config(arguments['config'], template=default_config)
     column_scheme = ColumnScheme.from_file(arguments['column_scheme'], template=default_column_scheme_json)
-gui_config = ConversionGuiConfig(text_map=TextMap({
-    'window-title': 'Dateien konvertieren',
-    'content-title': 'Dateien konvertieren',
-    'filedialog-input-single-file': 'Eingabedateien auswählen',
-    'filedialog-input-single-file-filter':
-        f'{config["Input"]["input_format"]}-Dateien (*.{config["Input"]["input_file_extension"]});;Alle Dateien (*)',
-    'filedialog-input-dictionary': 'Eingabeverzeichnis auswählen',
-    'no-files-selected': 'Es sind keine Eingabedateien ausgewählt.',
-    'n-files-selected': '{} Dateien ausgewählt',
-    'error-no-files-selected': 'Es sind keine Eingabedateien ausgewählt!',
-    'filedialog-output': 'Dateispeicherort',
-    'input-no-files-found': 'Keine Eingabedateien gefunden!',
-    'input-error-reading-file': 'Fehler beim Laden der Datei {}',
-    'input-error-general': 'Fehler beim Laden der Dateien',
-    'convert': 'Dateien konvertieren',
-    'conversion-error-title': 'Fehler beim Konvertieren der Dateien',
-    'done': 'Dateien konvertiert',
-    'list-headers': ['Datei']
-}), output_is_file=False)

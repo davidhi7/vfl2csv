@@ -5,7 +5,7 @@ from PySide6.QtCore import QThreadPool
 from vfl2csv import batch_converter
 from vfl2csv.input.InputData import InputData
 from vfl2csv_gui.interfaces.AbstractInputHandler import AbstractInputHandler
-from vfl2csv_gui.subsystems.Vfl2csvConversionWorker import ConversionWorker
+from vfl2csv_gui.subsystems.vfl2csv.Vfl2csvConversionWorker import ConversionWorker
 
 
 class InputHandler(AbstractInputHandler):

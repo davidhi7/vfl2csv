@@ -8,7 +8,7 @@ from vfl2csv_base.errors.FileParsingError import FileParsingError
 from vfl2csv_forms import config
 from vfl2csv_gui.interfaces.AbstractInputHandler import AbstractInputHandler
 from vfl2csv_gui.interfaces.CommunicationSignals import CommunicationSignals
-from vfl2csv_gui.subsystems.FormsConversionWorker import ConversionWorker
+from vfl2csv_gui.subsystems.forms.FormsConversionWorker import ConversionWorker
 
 logger = logging.getLogger(__name__)
 

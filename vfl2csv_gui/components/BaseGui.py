@@ -8,9 +8,9 @@ from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QHBoxLa
     QAbstractItemView, QHeaderView, QMessageBox, QFileDialog, QTableWidgetItem, QProgressBar, QSizePolicy
 
 from vfl2csv_base.errors.FileParsingError import FileParsingError
-from vfl2csv_gui.ConversionGuiConfig import ConversionGuiConfig
 from vfl2csv_gui.components.QHLine import QHLine
 from vfl2csv_gui.interfaces.AbstractInputHandler import AbstractInputHandler
+from vfl2csv_gui.interfaces.ConversionGuiConfig import ConversionGuiConfig
 
 logger = logging.getLogger(__name__)
 
@@ -33,8 +33,6 @@ class BaseGui(QWidget):
         title.setAlignment(Qt.AlignmentFlag.AlignCenter)
         # title margins like to expand when resizing the window vertically. Disable this
         title.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed))
-        # this way, the spacing between the label and the top of the viewport are equally wide as to the sides
-        title.setContentsMargins(8, 0, 8, 8)
 
         single_file_input = QPushButton('Datei(en) auswählen')
         single_file_input.clicked.connect(self.single_file_input)
@@ -46,7 +44,8 @@ class BaseGui(QWidget):
         button_layout.addWidget(QLabel(text='oder', alignment=Qt.AlignmentFlag.AlignCenter))
         button_layout.addWidget(directory_input)
 
-        self.status_label = QLabel(alignment=Qt.AlignmentFlag.AlignCenter)
+        self.status_label = QLabel(text=self.text_map['no-files-selected'], alignment=Qt.AlignmentFlag.AlignCenter)
+        # self.status_label.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed))
 
         self.status_table = QTableWidget(0, len(self.text_map['list-headers']))
         self.status_table.setVisible(False)
@@ -212,7 +211,7 @@ class BaseGui(QWidget):
                     widget = QTableWidgetItem(value)
                     widget.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
                     self.status_table.setItem(row, col, widget)
-        self.manage_space(skip_window_move=skip_window_reposition)
+        self.manage_space()
 
     def get_qtable_widget_size(self) -> QSize:
         """
@@ -224,33 +223,13 @@ class BaseGui(QWidget):
         for i in range(self.status_table.columnCount()):
             width += self.status_table.columnWidth(i)
         height = self.status_table.horizontalHeader().height() + 4
-        # limit the shown rows to 20
-        for i in range(min((self.status_table.rowCount()), 20)):
+        # limit the number of shown rows to 10
+        for i in range(min((self.status_table.rowCount()), 10)):
             height += self.status_table.rowHeight(i)
         return QSize(width, height)
 
-    def manage_space(self, skip_window_move=False) -> None:
-        pass
-        # self.status_table.setMinimumHeight(self.get_qtable_widget_size().height())
-        # TODO fix
-        # old_geometry = self.window().frameGeometry()
-        # table_widget_size = self.get_qtable_widget_size()
-        # self.status_table.setFixedHeight(table_widget_size.height())
-        #
-        # # this needs to be done after setting size constraints for the table so these changes are taken into account
-        # root_size_hint = self.window().sizeHint()
-        # self.window().setFixedHeight(root_size_hint.height())
-        #
-        # # Allow to skip moving the window. This is useful on the initial call when the window is later centered when
-        # # showing it initially
-        # if skip_window_move:
-        #     return
-        #
-        # # window size management: make sure that on window resize the resized window shares the same center as the
-        # # window before the resize
-        # new_geometry = self.window().frameGeometry()
-        # new_geometry.moveCenter(old_geometry.center())
-        # self.window().move(new_geometry.topLeft())
+    def manage_space(self) -> None:
+        self.status_table.setMinimumHeight(self.get_qtable_widget_size().height())
 
     @Slot(Exception)
     def handle_exception(self, exc: Exception, title: str):
