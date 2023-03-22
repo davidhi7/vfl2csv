@@ -4,6 +4,7 @@ import traceback
 from collections import Counter
 from multiprocessing import RLock, Pool
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 
@@ -60,7 +61,7 @@ def trial_site_pipeline(
         output_metadata_pattern: Path,
         lock: RLock,
         process_index: int
-) -> dict[str, int]:
+) -> dict[str, Any]:
     process_logger = logging.getLogger(f'process {process_index}')
     # store all metadata output files to check for errors later
     metadata_output_files = []
