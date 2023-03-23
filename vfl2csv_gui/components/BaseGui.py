@@ -45,7 +45,6 @@ class BaseGui(QWidget):
         button_layout.addWidget(directory_input)
 
         self.status_label = QLabel(text=self.text_map['no-files-selected'], alignment=Qt.AlignmentFlag.AlignCenter)
-        # self.status_label.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed))
 
         self.status_table = QTableWidget(0, len(self.text_map['list-headers']))
         self.status_table.setVisible(False)
