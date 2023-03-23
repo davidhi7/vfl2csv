@@ -146,7 +146,7 @@ class BaseGui(QWidget):
         signals.progress.connect(self.increment_progress_bar)
         signals.finished.connect(self.finish_conversion)
         signals.error.connect(partial(self.handle_exception, title=self.text_map['conversion-error-title']))
-        signals.error.connect(partial(self.finish_conversion, success=False))
+        signals.error.connect(lambda exc: self.finish_conversion(success=False))
 
     def prepare_conversion(self):
         self.progress_bar.setMinimum(0)
