@@ -1,7 +1,7 @@
 import logging
-import traceback
 from functools import partial
 from pathlib import Path
+from typing import Optional
 
 from PySide6.QtCore import Qt, Slot, QSize
 from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QTableWidget, \
@@ -69,7 +69,7 @@ class BaseGui(QWidget):
         layout.addWidget(self.progress_bar)
 
         self.setLayout(layout)
-        self.update_input_status(skip_window_reposition=True)
+        self.update_input_status()
 
     @Slot()
     def single_file_input(self) -> None:
@@ -130,7 +130,7 @@ class BaseGui(QWidget):
         else:
             output_path = QFileDialog.getExistingDirectory(
                 parent=self,
-                caption=self.text_map['filedialog-input-dictionary'],
+                caption=self.text_map['filedialog-output'],
                 options=QFileDialog.ShowDirsOnly
             )
         # empty path is returned if the dialog is cancelled
@@ -182,7 +182,8 @@ class BaseGui(QWidget):
                           icon=QMessageBox.Icon.Critical
                           )
 
-    def notification(self, text: str, informative_text: str | None, detailed_text: str | None, icon: QMessageBox.Icon) \
+    def notification(self, text: str, informative_text: Optional[str], detailed_text: Optional[str],
+                     icon: QMessageBox.Icon) \
             -> None:
         msg_box = QMessageBox(self)
         msg_box.setIcon(icon or QMessageBox.Icon.NoIcon)
@@ -193,7 +194,7 @@ class BaseGui(QWidget):
             msg_box.setDetailedText(detailed_text)
         msg_box.exec()
 
-    def update_input_status(self, skip_window_reposition=False) -> None:
+    def update_input_status(self) -> None:
         trial_site_count = len(self.input_handler)
         if trial_site_count == 0:
             self.status_label.setText(self.text_map['no-files-selected'])
@@ -230,8 +231,7 @@ class BaseGui(QWidget):
     def manage_space(self) -> None:
         self.status_table.setMinimumHeight(self.get_qtable_widget_size().height())
 
-    @Slot(Exception)
-    def handle_exception(self, exc: Exception, title: str):
-        logger.error(exc)
-        traceback.print_exc()
-        self.notify_error(title, exc, traceback.format_exc())
+    @Slot()
+    def handle_exception(self, exc: tuple[Exception, str], title: str):
+        logger.error(str(exc[0]) + '\n' + exc[1])
+        self.notify_error(title, exc[0], exc[1])

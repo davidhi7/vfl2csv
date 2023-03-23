@@ -1,7 +1,7 @@
 import logging
 import multiprocessing
 import traceback
-from collections import Counter
+from collections import Counter, namedtuple
 from multiprocessing import RLock, Pool
 from pathlib import Path
 from typing import TypedDict, Optional, Callable
@@ -19,13 +19,15 @@ from vfl2csv.output.TrialSiteConverter import TrialSiteConverter
 CONFIG_ALLOWED_INPUT_FORMATS = ('TSV', 'Excel')
 logger = logging.getLogger(__name__)
 
+ExceptionReport = namedtuple('ExceptionReport', ['exception', 'traceback'])
 
-class Report(TypedDict):
+
+class Report(TypedDict, total=False):
     total_count: int
-    errors: list[Exception]
+    errors: list[ExceptionReport]
     metadata_output_files: list[Path]
     verification_success: Optional[bool]
-    verification_error: Optional[ValueError]
+    verification_error: Optional[ExceptionReport]
 
 
 def find_input_data(input_path: str | Path | list[str | Path]) -> tuple[list[Path], list[InputData]]:
@@ -68,7 +70,8 @@ def trial_site_pipeline(
         output_data_pattern: Path,
         output_metadata_pattern: Path,
         lock: RLock,
-        on_done: Callable[[str], None],
+        on_progress: Optional[Callable[[str | None], None]],
+        on_progress_queue: Optional[multiprocessing.Queue],
         process_index: Optional[int]
 ) -> Report:
     """
@@ -77,13 +80,15 @@ def trial_site_pipeline(
     @param output_data_pattern: Pattern for storing data files
     @param output_metadata_pattern: Pattern for storing metadata files
     @param lock: Lock for synchronization
-    @param on_done: Callable to execute after finishing a trial site conversion.
+    @param on_progress: Callable to execute after finishing a trial site conversion.
     Consumes a string summarizing the input file.
+    @param on_progress_queue: Similar to `on_progress`, a string representation of a trial siteis put into the queue
+    after finishing its conversion.
     @param process_index: Index of the current process for logging. If multiprocessing is not used, the parameter can be
     omitted.
     @return: report of all conversions containing metadata and errors.
     """
-    process_logger = logging.getLogger(f'process {process_index or "root"}')
+    process_logger = logging.getLogger(f'process {process_index if process_index is not None else "root"}')
     # store all metadata output files to check for errors later
     metadata_output_files = []
     errors = []
@@ -106,33 +111,30 @@ def trial_site_pipeline(
 
             # lock this segment to prevent race conditions during multiprocessing.
             with lock:
-                try:
-                    data_output_file.touch(exist_ok=False)
-                    metadata_output_file.touch(exist_ok=False)
-                except FileExistsError as e:
-                    raise Exception(
-                        f'Process {process_index}: Corresponding output file(s) for trial site {input_data} does '
-                        f'already exist!') from e
+                data_output_file.touch(exist_ok=False)
+                metadata_output_file.touch(exist_ok=False)
 
             converter.write_data(data_output_file)
             converter.write_metadata(metadata_output_file)
 
             metadata_output_files.append(metadata_output_file)
-            on_done(str(input_data))
-        except Exception as e:
-            traceback.print_exc()
-            process_logger.warning(f'Exception in process {process_index}: {str(e)}')
-            errors.append(e)
+        except Exception as exc:
+            exc_traceback = traceback.format_exc()
+            process_logger.warning(f'Exception in process {process_index}: {str(exc)}\n{exc_traceback}')
+            errors.append(ExceptionReport(exc, exc_traceback))
+        finally:
+            if on_progress is not None:
+                on_progress(str(input_data))
+            if on_progress_queue is not None:
+                on_progress_queue.put(str(input_data))
     return {
         'total_count': len(input_batch),
         'errors': errors,
-        'metadata_output_files': metadata_output_files,
-        'verification_error': None,
-        'verification_success': None
+        'metadata_output_files': metadata_output_files
     }
 
 
-def run(output_dir: Path, input_path: list[Path], on_done: Callable[[str], None]) -> tuple[bool, Report]:
+def run(output_dir: Path, input_path: list[Path], on_progress: Callable[[str | None], None]) -> tuple[bool, Report]:
     input_files, input_trial_sites = find_input_data(input_path)
     logger.info(
         f'Found {len(input_trial_sites)} trial sites in {len(input_files)} {config["Input"]["input_format"]} files')
@@ -148,18 +150,28 @@ def run(output_dir: Path, input_path: list[Path], on_done: Callable[[str], None]
 
         with multiprocessing.Manager() as manager:
             lock = manager.RLock()
+            queue = manager.Queue()
             with Pool() as pool:
                 process_args = zip(
                     np.array_split(input_trial_sites, process_count),
                     process_count * [output_data_file],
                     process_count * [output_metadata_file],
                     process_count * [lock],
-                    process_count * [on_done],
+                    process_count * [None],
+                    process_count * [queue],
                     range(process_count)
                 )
-                result = pool.starmap(trial_site_pipeline, process_args)
+                result = pool.starmap_async(trial_site_pipeline, process_args)
+                expected_queue_values = len(input_trial_sites)
+                actual_queue_values = 0
+                while not result.ready() and actual_queue_values < expected_queue_values:
+                    value = queue.get()
+                    if value is None:
+                        break
+                    on_progress(value)
+                    actual_queue_values += 1
                 summarised_result: Report = Counter()
-                for r in result:
+                for r in result.get():
                     summarised_result.update(r)
     else:
         # allow disabling multiprocessing for easier debugging and optimized performance when working with little data
@@ -168,13 +180,14 @@ def run(output_dir: Path, input_path: list[Path], on_done: Callable[[str], None]
                                                         output_data_file,
                                                         output_metadata_file,
                                                         RLock(),
-                                                        on_done,
+                                                        on_progress=on_progress,
+                                                        on_progress_queue=None,
                                                         process_index=0)
     summarised_result: Report = dict(summarised_result)
 
     if len(summarised_result['errors']) != 0:
         logger.warning(
-            f'{len(summarised_result["errors"])} errors occured during converting {summarised_result["total_count"]} '
+            f'{len(summarised_result["errors"])} errors occurred during converting {summarised_result["total_count"]} '
             f'trial sites')
         return False, summarised_result
 
@@ -188,12 +201,13 @@ def run(output_dir: Path, input_path: list[Path], on_done: Callable[[str], None]
         auditor.audit_converted_metadata_files(summarised_result['metadata_output_files'])
         summarised_result['verification_success'] = True
         logger.info('Verification succeeded')
-    except ValueError as e:
-        logger.error('Verification failed:', e)
-        summarised_result['verification_error'] = e
+    except ValueError as exc:
+        exc_traceback = traceback.format_exc()
+        logger.error(f'Verification failed: {exc}')
+        summarised_result['verification_error'] = ExceptionReport(exc, exc_traceback)
         summarised_result['verification_success'] = False
 
     success = len(summarised_result['errors']) == 0 \
-              and summarised_result['verification_success'] is True \
-              and summarised_result['verification_error'] is None
+              and summarised_result.get('verification_success') is True \
+              and summarised_result.get('verification_error') is None
     return success, summarised_result
