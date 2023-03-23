@@ -15,11 +15,10 @@ from vfl2csv.input.ExcelInputSheet import ExcelInputSheet
 from vfl2csv.input.InputData import InputData
 from vfl2csv.input.TsvInputFile import TsvInputFile
 from vfl2csv.output.TrialSiteConverter import TrialSiteConverter
+from vfl2csv_gui.interfaces.ExceptionReport import ExceptionReport
 
 CONFIG_ALLOWED_INPUT_FORMATS = ('TSV', 'Excel')
 logger = logging.getLogger(__name__)
-
-ExceptionReport = namedtuple('ExceptionReport', ['exception', 'traceback'])
 
 
 class Report(TypedDict, total=False):
