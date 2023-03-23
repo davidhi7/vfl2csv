@@ -4,7 +4,7 @@ import traceback
 from collections import Counter
 from multiprocessing import RLock, Pool
 from pathlib import Path
-from typing import TypedDict, NotRequired, Optional, Callable
+from typing import TypedDict, Optional, Callable
 
 import numpy as np
 
@@ -24,8 +24,8 @@ class Report(TypedDict):
     total_count: int
     errors: list[Exception]
     metadata_output_files: list[Path]
-    verification_success: NotRequired[bool]
-    verification_error: NotRequired[ValueError]
+    verification_success: Optional[bool]
+    verification_error: Optional[ValueError]
 
 
 def find_input_data(input_path: str | Path | list[str | Path]) -> tuple[list[Path], list[InputData]]:
@@ -126,7 +126,9 @@ def trial_site_pipeline(
     return {
         'total_count': len(input_batch),
         'errors': errors,
-        'metadata_output_files': metadata_output_files
+        'metadata_output_files': metadata_output_files,
+        'verification_error': None,
+        'verification_success': None
     }
 
 
@@ -191,7 +193,7 @@ def run(output_dir: Path, input_path: list[Path], on_done: Callable[[str], None]
         summarised_result['verification_error'] = e
         summarised_result['verification_success'] = False
 
-    success = len(summarised_result['errors']) == 0 and \
-              'verification_success' in summarised_result and \
-              summarised_result['verification_success'] is True
+    success = len(summarised_result['errors']) == 0 \
+              and summarised_result['verification_success'] is True \
+              and summarised_result['verification_error'] is None
     return success, summarised_result
