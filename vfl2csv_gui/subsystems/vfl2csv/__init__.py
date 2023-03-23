@@ -12,7 +12,7 @@ vfl2csv_gui_config = ConversionGuiConfig(text_map=TextMap({
     'no-files-selected': 'Es sind keine Eingabedateien ausgewählt.',
     'n-files-selected': '{} Dateien ausgewählt:',
     'error-no-files-selected': 'Es sind keine Eingabedateien ausgewählt!',
-    'filedialog-output': 'Dateispeicherort',
+    'filedialog-output': 'Zielverzeichnis',
     'input-no-files-found': 'Keine Eingabedateien gefunden!',
     'input-error-reading-file': 'Fehler beim Laden der Datei {}',
     'input-error-general': 'Fehler beim Laden der Dateien',
