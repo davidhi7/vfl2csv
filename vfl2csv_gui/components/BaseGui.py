@@ -40,9 +40,9 @@ class BaseGui(QWidget):
         directory_input.clicked.connect(self.directory_input)
 
         button_layout = QHBoxLayout()
-        button_layout.addWidget(single_file_input)
-        button_layout.addWidget(QLabel(text='oder', alignment=Qt.AlignmentFlag.AlignCenter))
-        button_layout.addWidget(directory_input)
+        button_layout.addWidget(single_file_input, stretch=3)
+        button_layout.addWidget(QLabel(text='oder', alignment=Qt.AlignmentFlag.AlignCenter), stretch=1)
+        button_layout.addWidget(directory_input, stretch=3)
 
         self.status_label = QLabel(text=self.text_map['no-files-selected'], alignment=Qt.AlignmentFlag.AlignCenter)
 
