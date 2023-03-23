@@ -125,7 +125,7 @@ class ConversionAuditor:
         for key, value in metadata.items():
             pattern = pattern.replace(f'{{{key.lower()}}}', value)
         pattern_tokens = re.split(r'[\/\\]', pattern)
-        # get the last N components of the file ath (i.e. the filename and the N-1 last directories)
+        # get the last N components of the file path (i.e. the filename and the N-1 last directories)
         path_tokens = re.split(r'[\/\\]', str(actual_path.absolute()))[-len(pattern_tokens):]
         if pattern_tokens != path_tokens:
             raise ValueError(f'Actual file path does not match expected file path.\n'
