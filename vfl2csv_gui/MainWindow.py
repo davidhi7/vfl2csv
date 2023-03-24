@@ -1,10 +1,10 @@
 from PySide6.QtWidgets import QWidget, QTabWidget, QVBoxLayout
 
 from vfl2csv_gui.components.BaseGui import BaseGui
-from vfl2csv_gui.subsystems.forms import forms_gui_config
 from vfl2csv_gui.subsystems.forms.FormsInputHandler import InputHandler as FormsInputHandler
-from vfl2csv_gui.subsystems.vfl2csv import vfl2csv_gui_config
+from vfl2csv_gui.subsystems.forms.forms_gui_config import forms_gui_config
 from vfl2csv_gui.subsystems.vfl2csv.Vfl2csvInputHandler import InputHandler as Vlf2csvInputHandler
+from vfl2csv_gui.subsystems.vfl2csv.vfl2csv_gui_config import vfl2csv_gui_config
 
 
 class MainWindow(QWidget):

@@ -34,9 +34,9 @@ class BaseGui(QWidget):
         # title margins like to expand when resizing the window vertically. Disable this
         title.setSizePolicy(QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed))
 
-        single_file_input = QPushButton('Datei(en) auswählen')
+        single_file_input = QPushButton(self.text_map['input-files'])
         single_file_input.clicked.connect(self.single_file_input)
-        directory_input = QPushButton('Verzeichnis auswählen')
+        directory_input = QPushButton(self.text_map['input-directory'])
         directory_input.clicked.connect(self.directory_input)
 
         button_layout = QHBoxLayout()

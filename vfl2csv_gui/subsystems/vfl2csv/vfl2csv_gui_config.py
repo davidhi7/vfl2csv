@@ -5,6 +5,8 @@ from vfl2csv_gui.interfaces.ConversionGuiConfig import ConversionGuiConfig
 vfl2csv_gui_config = ConversionGuiConfig(text_map=TextMap({
     'window-title': 'Dateien konvertieren',
     'content-title': 'Dateien konvertieren',
+    'input-files': 'Dateien auswählen',
+    'input-directory': 'Verzeichnis auswählen',
     'filedialog-input-single-file': 'Eingabedateien auswählen',
     'filedialog-input-single-file-filter':
         f'{setup.config["Input"]["input_format"]}-Dateien (*.{setup.config["Input"]["input_file_extension"]});;Alle Dateien (*)',
