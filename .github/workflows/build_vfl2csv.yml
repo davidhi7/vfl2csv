@@ -36,7 +36,7 @@ jobs:
 
       - name: Build artifacts
         run: >
-          python -m nuitka --standalone --assume-yes-for-downloads --follow-imports vfl2csv
+          python -m nuitka --standalone --assume-yes-for-downloads  --enable-plugin=multiprocessing --follow-imports vfl2csv
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3

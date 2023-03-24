@@ -1,23 +1,23 @@
-name: Build all platforms
+name: Build GUI for all platforms
 
 on:
   workflow_dispatch:
   push:
     branches:
       - 'main'
-    
+
 jobs:
   build:
     strategy:
       matrix:
-        os: [windows-latest, ubuntu-latest, macos-latest]
+        os: [ windows-latest, ubuntu-latest, macos-latest ]
     
     runs-on: ${{ matrix.os }}
     
     steps:
       - name: Check-out repository
         uses: actions/checkout@v3
-        
+
       - name: Set up Python 3.10
         uses: actions/setup-python@v4
         with:
@@ -38,7 +38,7 @@ jobs:
         if: matrix.os != 'macos-latest'
         run: >
           python -m nuitka --standalone --assume-yes-for-downloads --disable-console --follow-imports
-          --enable-plugin=pyside6 vfl2csv_forms
+          --enable-plugin=pyside6 --enable-plugin=multiprocessing vfl2csv_gui
 
       - name: Build artifacts (macOS specific)
         if: matrix.os == 'macos-latest'
@@ -46,10 +46,10 @@ jobs:
         # ("FATAL: Error, cannot disable console unless also using '--macos-create-app-bundle'.")
         run: >
           python -m nuitka --standalone --assume-yes-for-downloads --follow-imports
-          --enable-plugin=pyside6 vfl2csv_forms
+          --enable-plugin=pyside6 --enable-plugin=multiprocessing vfl2csv_gui
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
           name: ${{ runner.os }} Build
-          path: 'vfl2csv_forms.dist/'
+          path: 'vfl2csv_gui.dist/'
