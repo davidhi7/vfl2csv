@@ -44,32 +44,54 @@ def run_test(tmp_dir: Path, input_dir: Path):
     proc = Popen(command, cwd=cwd, shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     proc.wait()
 
-    if proc.returncode != 0:
-        raise ValueError(f'Return code {proc.returncode} instead of 0')
-
     for line in proc.stdout.readlines():
         print('> ' + line.decode('ascii'), end='')
+
+    if proc.returncode != 0:
+        raise ValueError(f'Return code {proc.returncode} instead of 0')
 
     # Find all output metadata files by looking for them using the config file name pattern.
     # Replace all placeholders for metadata with asterisks
     metadata_file_pattern = re.sub(r'\{[^}]+}', '*', config['Output']['metadata_output_pattern'])
     metadata_files = list(tmp_dir.glob(metadata_file_pattern))
+    if len(metadata_files) == 0:
+        raise ValueError('No metadata files found')
     auditor.audit_converted_metadata_files(metadata_files)
 
 
 with tempfile.TemporaryDirectory() as tmp_dir:
-    # First: Excel file conversion
+    # Excel file conversion
     print('=== Run integration tests on Excel input ===')
     input_dir: Path = test_config['Input'].getpath('excel_sample_input_dir')
     config.set('Input', 'input_format', 'Excel')
     config.set('Input', 'input_file_extension', 'xlsx')
+    config.set('Multiprocessing', 'enabled', 'False')
     run_test(Path(tmp_dir) / 'excel', input_dir)
 
-    # Second: TSV file conversion
+    # TSV file conversion
     print('=== Run integration tests on tab-delimited input ===')
     input_dir: Path = test_config['Input'].getpath('tsv_sample_input_dir')
     config.set('Input', 'input_format', 'TSV')
     config.set('Input', 'input_file_extension', 'txt')
+    config.set('Multiprocessing', 'enabled', 'False')
     run_test(Path(tmp_dir) / 'tsv', input_dir)
+
+    # Excel files with multiprocessing
+    print('=== Run integration tests using multiprocessing ===')
+    input_dir: Path = test_config['Input'].getpath('excel_sample_input_dir')
+    config.set('Input', 'input_format', 'Excel')
+    config.set('Input', 'input_file_extension', 'xlsx')
+    config.set('Multiprocessing', 'enabled', 'True')
+    config.set('Multiprocessing', 'sheets_per_core', '1')
+    run_test(Path(tmp_dir) / 'mp-tsv', input_dir)
+
+    # TSV files with multiprocessing
+    print('=== Run integration tests using multiprocessing ===')
+    input_dir: Path = test_config['Input'].getpath('tsv_sample_input_dir')
+    config.set('Input', 'input_format', 'TSV')
+    config.set('Input', 'input_file_extension', 'txt')
+    config.set('Multiprocessing', 'enabled', 'True')
+    config.set('Multiprocessing', 'sheets_per_core', '1')
+    run_test(Path(tmp_dir) / 'mp-excel', input_dir)
 
     print('=== Completed without any errors ===')
