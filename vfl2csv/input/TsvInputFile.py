@@ -3,7 +3,7 @@ from typing import Iterable
 
 import pandas as pd
 
-from vfl2csv import config
+from vfl2csv import setup
 from vfl2csv.input.InputData import InputData
 from vfl2csv_base.TrialSite import TrialSite
 
@@ -20,7 +20,7 @@ class TsvInputFile(InputData):
         self.file_path = file_path
 
     def parse(self) -> TrialSite:
-        file_stream = open(self.file_path, 'r', encoding=config['Input'].get('tsv_encoding', 'utf_8'))
+        file_stream = open(self.file_path, 'r', encoding=setup.config['Input'].get('tsv_encoding', 'utf_8'))
         # skip first 4 rows containing unused data
         metadata = dict()
         for _ in range(4):

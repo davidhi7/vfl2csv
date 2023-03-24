@@ -1,7 +1,7 @@
 import logging
 import multiprocessing
 import traceback
-from collections import Counter, namedtuple
+from collections import Counter
 from multiprocessing import RLock, Pool
 from pathlib import Path
 from typing import TypedDict, Optional, Callable
@@ -9,8 +9,7 @@ from typing import TypedDict, Optional, Callable
 import numpy as np
 
 from tests.ConversionAuditor import ConversionAuditor
-from vfl2csv import column_scheme
-from vfl2csv import config
+from vfl2csv import setup
 from vfl2csv.input.ExcelInputSheet import ExcelInputSheet
 from vfl2csv.input.InputData import InputData
 from vfl2csv.input.TsvInputFile import TsvInputFile
@@ -48,18 +47,18 @@ def find_input_data(input_path: str | Path | list[str | Path]) -> tuple[list[Pat
     if input_path.is_file():
         input_files = (input_path,)
     else:
-        input_file_extension = config['Input']['input_file_extension']
-        if config['Input'].getboolean('directory_search_recursively', False):
+        input_file_extension = setup.config['Input']['input_file_extension']
+        if setup.config['Input'].getboolean('directory_search_recursively', False):
             input_files = list(input_path.rglob(f'*.{input_file_extension}'))
         else:
             input_files = list(input_path.glob(f'*.{input_file_extension}'))
 
-    if config['Input']['input_format'] == 'Excel':
+    if setup.config['Input']['input_format'] == 'Excel':
         input_data = ExcelInputSheet.iterate_files(input_files)
-    elif config['Input']['input_format'] == 'TSV':
+    elif setup.config['Input']['input_format'] == 'TSV':
         input_data = TsvInputFile.iterate_files(input_files)
     else:
-        raise ValueError(f'Input format {config["Input"]["input_format"]} is neither "Excel" nor "TSV"')
+        raise ValueError(f'Input format {setup.config["Input"]["input_format"]} is neither "Excel" nor "TSV"')
 
     return input_files, input_data
 
@@ -133,17 +132,19 @@ def trial_site_pipeline(
     }
 
 
-def run(output_dir: Path, input_path: list[Path], on_progress: Callable[[str | None], None]) -> tuple[bool, Report]:
+def run(output_dir: Path, input_path: list[Path], on_progress: Optional[Callable[[Optional[str]], None]]) -> tuple[
+    bool, Report]:
     input_files, input_trial_sites = find_input_data(input_path)
     logger.info(
-        f'Found {len(input_trial_sites)} trial sites in {len(input_files)} {config["Input"]["input_format"]} files')
+        f'Found {len(input_trial_sites)} trial sites in {len(input_files)} {setup.config["Input"]["input_format"]} files')
 
-    output_data_file = output_dir / config['Output'].getpath('csv_output_pattern')
-    output_metadata_file = output_dir / config['Output'].getpath('metadata_output_pattern')
+    output_data_file = output_dir / setup.config['Output'].getpath('csv_output_pattern')
+    output_metadata_file = output_dir / setup.config['Output'].getpath('metadata_output_pattern')
     logger.info(f'Writing output to {output_dir}')
 
-    process_count = max(round(len(input_trial_sites) / config['Multiprocessing'].getint('sheets_per_core', 32)), 1)
-    if config['Multiprocessing'].getboolean('enabled', False) and process_count > 1:
+    process_count = max(round(len(input_trial_sites) / setup.config['Multiprocessing'].getint('sheets_per_core', 32)),
+                        1)
+    if setup.config['Multiprocessing'].getboolean('enabled', False) and process_count > 1:
         # use multiprocessing for improved performance with larger inputs
         logger.info(f'Found {multiprocessing.cpu_count()} CPU threads, {process_count} processes are going to be used')
 
@@ -161,14 +162,19 @@ def run(output_dir: Path, input_path: list[Path], on_progress: Callable[[str | N
                     range(process_count)
                 )
                 result = pool.starmap_async(trial_site_pipeline, process_args)
-                expected_queue_values = len(input_trial_sites)
-                actual_queue_values = 0
-                while not result.ready() and actual_queue_values < expected_queue_values:
-                    value = queue.get()
-                    if value is None:
-                        break
-                    on_progress(value)
-                    actual_queue_values += 1
+
+                if on_progress is not None:
+                    expected_queue_values = len(input_trial_sites)
+                    actual_queue_values = 0
+
+                    while not result.ready() and actual_queue_values < expected_queue_values:
+                        value = queue.get()
+                        if value is None:
+                            break
+                        on_progress(value)
+                        actual_queue_values += 1
+                else:
+                    result.wait()
                 summarised_result: Report = Counter()
                 for r in result.get():
                     summarised_result.update(r)
@@ -195,7 +201,7 @@ def run(output_dir: Path, input_path: list[Path], on_progress: Callable[[str | N
         f'converted trial sites.')
 
     try:
-        auditor = ConversionAuditor(vfl2csv_config=config, column_scheme=column_scheme)
+        auditor = ConversionAuditor(vfl2csv_config=setup.config, column_scheme=setup.column_scheme)
         auditor.set_reference_files(input_files)
         auditor.audit_converted_metadata_files(summarised_result['metadata_output_files'])
         summarised_result['verification_success'] = True

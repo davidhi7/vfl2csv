@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from typing import Optional
 
-from vfl2csv import column_scheme
+from vfl2csv import setup
 from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_base.datatypes_mapping import pandas_datatypes_mapping as dtypes_mapping
 
@@ -40,9 +40,9 @@ class TrialSiteConverter:
         The entire column specification as well as the corresponding data types are declared in the 
         config/columns.json file.'''
         # count of expected columns containing tree data
-        head_column_count = len(column_scheme.head)
+        head_column_count = len(setup.column_scheme.head)
         # count of expected measurement fields (different types of values)
-        measurement_fields_count = len(column_scheme.measurements)
+        measurement_fields_count = len(setup.column_scheme.measurements)
 
         column_count = len(self.trial_site.df.columns)
         # count of all columns containing measurements
@@ -57,7 +57,7 @@ class TrialSiteConverter:
         # new column names are assigned later
         new_column_names = list()
         # first, iterate head columns
-        for template, column in zip(column_scheme.head, self.trial_site.df.columns[0:head_column_count]):
+        for template, column in zip(setup.column_scheme.head, self.trial_site.df.columns[0:head_column_count]):
             # rename columns
             new_column_names.append(template['override_name'])
             # reassign datatype
@@ -69,7 +69,7 @@ class TrialSiteConverter:
             column_shift = head_column_count + measurement_index * measurement_fields_count
             # iterate all columns of the next measurement
             for template, column_hierarchy in zip(
-                    column_scheme.measurements,
+                    setup.column_scheme.measurements,
                     self.trial_site.df.columns[column_shift:column_shift + measurement_fields_count]
             ):
                 # rename column

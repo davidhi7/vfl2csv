@@ -1,6 +1,8 @@
-import sys
+import configparser
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Optional
 
-from vfl2csv.ArgumentParser import parser
 from vfl2csv_base import config_factory, default_column_scheme_json, default_column_scheme_path
 from vfl2csv_base.ColumnScheme import ColumnScheme
 
@@ -22,10 +24,19 @@ enabled = true
 sheets_per_core = 32
 """
 
-if 'unittest' in sys.modules or 'vfl2csv_gui' in sys.modules:
-    config = config_factory.get_config('./config/config_vfl2csv.ini')
-    column_scheme = ColumnScheme.from_file(default_column_scheme_path)
-else:
-    arguments = vars(parser.parse_args())
-    config = config_factory.get_config(arguments['config'], template=default_config)
-    column_scheme = ColumnScheme.from_file(arguments['column_scheme'], template=default_column_scheme_json)
+
+@dataclass
+class Setup:
+    config: configparser.ConfigParser
+    column_scheme: ColumnScheme
+
+
+setup = Setup(config=config_factory.get_config('./config/config_vfl2csv.ini'),
+              column_scheme=ColumnScheme.from_file(default_column_scheme_path))
+
+
+def set_custom_configs(config_path: Optional[Path], column_scheme_path: Optional[Path]):
+    if config_path is not None:
+        setup.config = config_factory.get_config(config_path, template=default_config)
+    if column_scheme_path is not None:
+        setup.column_scheme = ColumnScheme.from_file(column_scheme_path, template=default_column_scheme_json)
