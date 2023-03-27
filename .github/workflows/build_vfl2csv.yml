@@ -42,12 +42,12 @@ jobs:
       - name: Run integration tests on artifact (Windows)
         if: matrix.os == 'windows-latest'
         run: >
-          python -m tests.integration_tests --executable 'vfl2csv.dist/vfl2csv.exe'
+          python -m tests.integration_tests --executable '.\vfl2csv.dist\vfl2csv.exe'
 
       - name: Run integration tests on artifact (Ubuntu / macOS)
         if: matrix.os != 'windows-latest'
         run: >
-          python -m tests.integration_tests --executable 'vfl2csv.dist/vfl2csv.bin'
+          python -m tests.integration_tests --executable './vfl2csv.dist/vfl2csv.bin'
 
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
