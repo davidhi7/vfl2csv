@@ -1,4 +1,6 @@
-from PySide6.QtWidgets import QWidget, QTabWidget, QVBoxLayout
+import sys
+
+from PySide6.QtWidgets import QWidget, QTabWidget, QVBoxLayout, QApplication
 
 from vfl2csv_gui.components.BaseGui import BaseGui
 from vfl2csv_gui.subsystems.forms.FormsInputHandler import InputHandler as FormsInputHandler
@@ -23,3 +25,10 @@ class MainWindow(QWidget):
         tab_widget.addTab(vfl2csv_ui, 'Konvertierung')
         layout.addWidget(tab_widget)
         self.setLayout(layout)
+
+
+def start():
+    app = QApplication(sys.argv)
+    main_window = MainWindow()
+    main_window.show()
+    sys.exit(app.exec())
