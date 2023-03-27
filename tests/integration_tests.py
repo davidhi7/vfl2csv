@@ -1,3 +1,4 @@
+import argparse
 import logging
 import re
 import subprocess
@@ -20,6 +21,18 @@ column_scheme = ColumnScheme.from_file(column_scheme_path)
 
 auditor = ConversionAuditor(config, column_scheme)
 
+parser = argparse.ArgumentParser(
+    prog='integration_tests',
+    description='Run integration tests on vfl2csv'
+)
+parser.add_argument(
+    '--executable', '-x',
+    action='store',
+    default=f'{sys.executable} -m vfl2csv',
+    help='specify a custom executable to test'
+)
+arguments = vars(parser.parse_args())
+
 
 def run_test(tmp_dir: Path, input_dir: Path):
     # Find input files manually
@@ -31,10 +44,10 @@ def run_test(tmp_dir: Path, input_dir: Path):
     tmp_config = tmp_dir / 'config.ini'
     with open(tmp_config, 'x') as file:
         config.write(file)
-    command = f'{sys.executable} -m vfl2csv ' \
-              f'--column-scheme "{column_scheme_path}" ' \
-              f'--config "{tmp_config}" ' \
-              f'"{tmp_dir}" "{input_dir}" '
+    command = arguments['executable'] + \
+              f' --column-scheme "{column_scheme_path}"' \
+              f' --config "{tmp_config}"' \
+              f' "{tmp_dir}" "{input_dir}"'
     print('>>> ' + command)
     proc = Popen(command, cwd=cwd, shell=True, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
     proc.wait()
