@@ -49,6 +49,16 @@ jobs:
           python -m nuitka --standalone --assume-yes-for-downloads --follow-imports
           --enable-plugin=pyside6 --enable-plugin=multiprocessing vfl2csv_gui
 
+      - name: Run integration tests on artifact (Windows)
+        if: matrix.os == 'windows-latest'
+        run: >
+          python -m tests.integration_tests --executable 'vfl2csv_gui.dist/vfl2csv_gui.exe --cli'
+
+      - name: Run integration tests on artifact (Ubuntu / macOS)
+        if: matrix.os != 'windows-latest'
+        run: >
+          python -m tests.integration_tests --executable 'vfl2csv_gui.dist/vfl2csv_gui.bin --cli'
+
       - name: Upload Artifacts
         uses: actions/upload-artifact@v3
         with:
