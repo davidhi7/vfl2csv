@@ -6,14 +6,9 @@ import tempfile
 from pathlib import Path
 from subprocess import Popen
 
-from openpyxl.cell import Cell, ReadOnlyCell
-from openpyxl.cell.read_only import EmptyCell
-
 from tests.ConversionAuditor import ConversionAuditor
 from vfl2csv_base import config_factory, test_config
 from vfl2csv_base.ColumnScheme import ColumnScheme
-
-ExcelCell = Cell | ReadOnlyCell | EmptyCell
 
 logger = logging.getLogger(__name__)
 cwd = Path(__file__).parent.parent
