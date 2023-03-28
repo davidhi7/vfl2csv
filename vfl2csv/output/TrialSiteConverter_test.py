@@ -65,7 +65,7 @@ class TrialSiteConverterTest(unittest.TestCase):
         self.assertEqual(df.dtypes.array, (pd.UInt16Dtype, pd.StringDtype, pd.UInt16Dtype) + 4 * (
             pd.Float64Dtype, pd.UInt8Dtype, pd.Float64Dtype))
 
-    def test_refactor_metadata(self):
+    def test_trim_metadata(self):
         trial_site_converter = TrialSiteConverter(TrialSite(df=None, metadata={
             '0': '    ',
             '1': 'a  b',
@@ -73,7 +73,7 @@ class TrialSiteConverterTest(unittest.TestCase):
             '3': 'a \n b'
         }))
         expectations = [' ', 'a b', 'a b', 'a b']
-        trial_site_converter.refactor_metadata()
+        trial_site_converter.trim_metadata()
         for i in range(4):
             self.assertEqual(trial_site_converter.trial_site.metadata[str(i)], expectations[i])
 

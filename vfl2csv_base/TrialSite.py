@@ -21,7 +21,7 @@ class TrialSite:
     def replace_metadata_keys(self, pattern: Path | str) -> Path | str:
         """
         Return the given string with metadata keys being replaced with the corresponding values.
-        Metadata keys wrapped in curly brackets are replaced with the corresponding value.
+        Lowercase Metadata keys wrapped in curly brackets are replaced with the corresponding value.
         E.g. When invoking this function with the parameter '{forstamt}/', the return value is '1234 sample forstamt/'
         :param pattern: string or Path containing a variable number of metadata keys
         :return: string with metadata values in place of the keys in the pattern
@@ -54,7 +54,7 @@ class TrialSite:
             for i, column in enumerate(df.columns[:head_column_count]):
                 if column[1] != column_scheme.head[i]['override_name']:
                     raise ValueError(
-                        f'Column {column[0]} of the dataframe does not match the expected name provided in '
+                        f'Column "{column[1]}" of the dataframe does not match the expected name provided in '
                         f'the columns.json file!')
                 df[column] = df[column].astype(pandas_datatypes_mapping[column_scheme.head[i]['type']])
 
@@ -106,12 +106,15 @@ class TrialSite:
         if not metadata_path.is_file():
             raise FileNotFoundError(f'{metadata_path} is not a valid file')
         metadata = dict()
-        with open(metadata_path, 'r', encoding='utf-8') as file:
-            for line in file.readlines():
-                # use maxsplit to avoid removing equality symbols in the value
-                key, value = line.split('=', maxsplit=1)
-                # remove trailing newline in value
-                metadata[key] = value.rstrip()
+        try:
+            with open(metadata_path, 'r', encoding='utf-8') as file:
+                for line in file.readlines():
+                    # use maxsplit to avoid removing equality symbols in the value
+                    key, value = line.split('=', maxsplit=1)
+                    # remove trailing newline in value
+                    metadata[key] = value.rstrip()
+        except UnicodeDecodeError as err:
+            raise FileParsingError(metadata_path) from err
 
         df_path = metadata_path.parent / Path(metadata['DataFrame'])
         if not df_path.is_file():

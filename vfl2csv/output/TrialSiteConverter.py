@@ -3,7 +3,7 @@ import re
 from pathlib import Path
 from typing import Optional
 
-from vfl2csv_base import column_scheme as column_layout
+from vfl2csv import setup
 from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_base.datatypes_mapping import pandas_datatypes_mapping as dtypes_mapping
 
@@ -18,11 +18,17 @@ class TrialSiteConverter:
         """
         Refactor the dataframe. Transfer the output format into the required output format by renaming and rearranging
         columns as well as modifying the data types of the dataframe.
+        Before doing so, it is verified that the input data matches the column counts provided in the ColumnScheme
+        instance.
         """
-        '''Rename columns: The first three columns contain the tree population (Bestandeseinheit), tree species (
-        Baumart) and tree id (Baumnummer), followed by measurements. For each measurement recording, there are at 
-        least three columns: 1. D: Durchmesser / diameter 2. Aus: Ausscheidungskennung / reason why a tree ceased to 
-        stand in the trial site 3. H: Höhe / height Additional measurement columns may also be included and declared 
+        '''
+        In the default configuration, the first three columns contain the tree population (Bestandeseinheit), tree
+        species (Baumart) and tree id (Baumnummer), followed by measurements. For each measurement recording, there are
+        at least three columns:
+            1. D: diameter (Durchmesser)
+            2. Aus: reason why a tree ceased to stand in the trial site ('Ausscheidungskennung')
+            3. H: height (Höhe)
+         Additional measurement columns may also be included and declared 
         in the config/columns.json file.
 
         The header part of the output files has four levels: 1. date on which measurements where taken 2. type of 
@@ -33,36 +39,51 @@ class TrialSiteConverter:
         
         The entire column specification as well as the corresponding data types are declared in the 
         config/columns.json file.'''
-        head_column_count = len(column_layout.head)
-        measurement_fields_count = len(column_layout.measurements)
+        # count of expected columns containing tree data
+        head_column_count = len(setup.column_scheme.head)
+        # count of expected measurement fields (different types of values)
+        measurement_fields_count = len(setup.column_scheme.measurements)
 
         column_count = len(self.trial_site.df.columns)
+        # count of all columns containing measurements
         measurement_column_count = column_count - head_column_count
+        # `measurement_column_count` must be a multiple of `measurement_fields_count` and the count of all columns must
+        # be atleast the count of all head columns
         if measurement_column_count % measurement_fields_count != 0 or column_count < head_column_count:
             raise ValueError('Invalid column count')
+        # count of all measurement recordings, so sets of every field
         measurement_count = measurement_column_count // measurement_fields_count
 
+        # new column names are assigned later
         new_column_names = list()
-        for i, column in enumerate(self.trial_site.df.columns[0:head_column_count]):
-            head_column_template = column_layout.head[i]
-            new_column_names.append(head_column_template['override_name'])
-            self.trial_site.df[column] = self.trial_site.df[column].astype(dtypes_mapping[head_column_template['type']])
+        # first, iterate head columns
+        for template, column in zip(setup.column_scheme.head, self.trial_site.df.columns[0:head_column_count]):
+            # rename columns
+            new_column_names.append(template['override_name'])
+            # reassign datatype
+            self.trial_site.df[column] = self.trial_site.df[column].astype(dtypes_mapping[template['type']])
 
+        # iterate all measurements
         for measurement_index in range(measurement_count):
+            # number of columns already refactored
             column_shift = head_column_count + measurement_index * measurement_fields_count
-            for i, column_hierarchy in enumerate(
-                    self.trial_site.df.columns[column_shift:column_shift + measurement_fields_count]):
-                measurement_column_template = column_layout.measurements[i]
+            # iterate all columns of the next measurement
+            for template, column_hierarchy in zip(
+                    setup.column_scheme.measurements,
+                    self.trial_site.df.columns[column_shift:column_shift + measurement_fields_count]
+            ):
+                # rename column
                 new_column_names.append(
                     self.simplify_measurement_column_labels(column_hierarchy,
-                                                            measurement_column_template['override_name'])
+                                                            template['override_name'])
                 )
+                # reassign datatype
                 self.trial_site.df[column_hierarchy] = self.trial_site.df[column_hierarchy].astype(
-                    dtypes_mapping[measurement_column_template['type']]
+                    dtypes_mapping[template['type']]
                 )
         self.trial_site.df.columns = new_column_names
 
-    def refactor_metadata(self) -> None:
+    def trim_metadata(self) -> None:
         """
         Replace double whitespaces in metadata keys with simple spaces.
         :return:
@@ -74,14 +95,15 @@ class TrialSiteConverter:
     def simplify_measurement_column_labels(hierarchy: HierarchicalColumnLabel, override_name: Optional[str]) -> str:
         """
         Reformat measurement column labels for the dataframe.
-        See comments of #parse_data for more explanations
+        Simplify the tuple of four header values into one string
+        See comments of #refactor_dataframe for more explanations
         :param hierarchy: Tuple consisting of four values
         :param override_name: If not None, use this as measurement name prefix instead of the prefix provided in the
         column hierarchy.
         :return: simplified label matching the requirements
 
         Not to confuse with `vfl2csv_base.Trialsite#compress_column_labels`, which only takes a tuple of two values as
-        input column names
+        input column name
         """
         if isinstance(hierarchy[0], datetime.datetime) or isinstance(hierarchy[0], datetime.date):
             date = hierarchy[0]
@@ -94,6 +116,7 @@ class TrialSiteConverter:
 
         measurement_type = override_name if override_name is not None else hierarchy[1]
 
+        # if the month is lower or equal to April, decrement the year to respect growing seasons
         return f'{measurement_type}_{date.year - (0 if date.month > 5 else 1)}'
 
     def write_data(self, filepath: Path) -> None:

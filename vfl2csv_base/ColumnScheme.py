@@ -13,7 +13,9 @@ class ColumnScheme:
         self.measurements = ColumnSchemeSection(measurements)
 
     @staticmethod
-    def from_file(path: Path, template: str = '') -> ColumnScheme:
+    def from_file(path: Path | str, template: str = '{}') -> ColumnScheme:
+        if not isinstance(path, Path):
+            path = Path(path)
         if not path.is_file():
             logger.info('Create new column scheme config' + str(path.absolute()))
             path.parent.mkdir(exist_ok=True)

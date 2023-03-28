@@ -13,3 +13,6 @@ dist/
 # build dirs from nuitka
 __main__.build
 __main__.dist
+
+# test coverage results
+.coverage
