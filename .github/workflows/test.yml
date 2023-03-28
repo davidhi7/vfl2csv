@@ -30,4 +30,4 @@ jobs:
         run: python3 tests/unit_tests.py
 
       - name: Run integration tests
-        run: cd $GITHUB_WORKSPACE && python3 -m tests.integration_tests
+        run: python3 -m tests.integration_tests
