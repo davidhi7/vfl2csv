@@ -80,10 +80,10 @@ class ConversionAuditor:
             value: str | datetime.datetime = column.value if isinstance(column, ExcelCell) else column
             if isinstance(value, datetime.datetime):
                 month, year = value.month, value.year
-                years.append(year - (0 if month > 5 else 1))
+                years.append(year - (0 if month > 6 else 1))
             elif re.fullmatch(r'\d{2}\.\d{2}\.\d{4}', value):
                 day, month, year = value.split('.')
-                years.append(int(year) - (0 if int(month) > 5 else 1))
+                years.append(int(year) - (0 if int(month) > 6 else 1))
             else:
                 years.append(-1)
         labels = [column['override_name'] for column in self.column_scheme.head]

@@ -1,33 +1,28 @@
 # vfl2csv
 
-Two Utilities developed for TU Dresden Chair of Forest Growth and Woody Biomass Production.
+Two utilities developed for TU Dresden Chair of Forest Growth and Woody Biomass Production.
 
-1. Command line utility for converting outputs from the proprietary Versuchsflächendatenbanksystem into CSV files
-2. GUI application based on `PySide6` and Qt that creates Excel forms for uncomplicated measurement acquisition
+1. `vfl2csv`: CLI and GUI for converting outputs from the proprietary Versuchsflächendatenbanksystem into CSV files
+2. `vfl2csv_forms`: GUI application that creates Excel forms for uncomplicated measurement acquisition from CSV files
+   created by `vfl2csv`
+
+Both components are part of the unified GUI `vfl2csv_gui`.
 
 ## Dependencies
 
-* Python 3 and pip
+* Recent Python 3
 * `pandas`
 * `OpenPyXL`
 * `PySide6`
 
 ```bash
-python3 -m pip install -r requirements.txt
+$ python -m pip install -r requirements.txt
 ```
 
 ## Launch
 
-### `vfl2csv`: command line utility for converting into CSV files
-
 ```bash
-vfl2csv$ python3 -m vfl2csv path/to/input path/to/output
-```
-
-### `vfl2csv_forms`: GUI application for Excel form generation
-
-```bash
-vfl2csv$ python3 -m vfl2csv_forms
+$ python -m vfl2csv_gui
 ```
 
 ## Configuration
@@ -59,8 +54,8 @@ The general format is:
 }
 ```
 
-where the empty objects in `head` are placeholders for head columns that list tree identifications and metadata.
-the empty objects in `mneasurements` are placeholders representing measurement columns.
+The empty objects in `head` are placeholders for head columns that list tree identifications and metadata.
+The empty objects in `mneasurements` are placeholders representing measurement columns.
 Incrementally, new measurements are recorded and all individual measurement columns must be added in the defined order
 to the CSV file.
 Each column is described by a JSON object containing the following required and optional key-value-pairs:
