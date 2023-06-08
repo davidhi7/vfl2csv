@@ -102,4 +102,4 @@ with tempfile.TemporaryDirectory() as tmp_dir:
     config.set('Multiprocessing', 'sheets_per_core', '1')
     run_test(Path(tmp_dir) / 'mp-excel', input_dir)
 
-    print('=== Completed without any errors ===')
+    print('=== Completed without any exceptions ===')

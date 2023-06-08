@@ -9,7 +9,7 @@ from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_forms import trial_site_conversion
 from vfl2csv_forms.excel import styles
 from vfl2csv_gui.interfaces.CommunicationSignals import CommunicationSignals
-from vfl2csv_gui.interfaces.ExceptionReport import ExceptionReport
+from vfl2csv_base.exceptions.ExceptionReport import ExceptionReport
 
 logger = logging.getLogger(__name__)
 

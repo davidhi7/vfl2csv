@@ -8,7 +8,7 @@ import pandas as pd
 
 from vfl2csv_base.ColumnScheme import ColumnScheme
 from vfl2csv_base.datatypes_mapping import pandas_datatypes_mapping
-from vfl2csv_base.errors.FileParsingError import FileParsingError
+from vfl2csv_base.exceptions.FileParsingError import FileParsingError
 
 measurement_column_pattern = re.compile(r'\w+_\d{4}')
 

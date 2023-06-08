@@ -7,7 +7,7 @@ from vfl2csv_base.config_factory import get_config
 
 
 class ConfigFactory(unittest.TestCase):
-    sample_config_path = Path('tests/test-config.ini')
+    sample_config_path = Path('config/config_tests.ini')
 
     def test_get(self) -> None:
         config = get_config(self.sample_config_path)

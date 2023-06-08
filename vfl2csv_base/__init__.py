@@ -9,7 +9,7 @@ if 'unittest' in sys.modules:
 else:
     logging.basicConfig(format='%(levelname)s %(name)s: %(message)s', level=logging.INFO)
 
-test_config = get_config(Path('tests/test-config.ini'))
+test_config = get_config(Path('config/config_tests.ini'))
 
 default_column_scheme_json = """{
   "head": [

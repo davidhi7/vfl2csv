@@ -1,16 +1,17 @@
 import logging
-from functools import partial
+import traceback
 from pathlib import Path
 from typing import Optional
 
 from PySide6.QtCore import Qt, Slot, QSize
 from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QTableWidget, \
-    QAbstractItemView, QHeaderView, QMessageBox, QFileDialog, QTableWidgetItem, QProgressBar, QSizePolicy
+    QAbstractItemView, QHeaderView, QMessageBox, QFileDialog, QTableWidgetItem, QProgressBar, QSizePolicy, QCheckBox
 
-from vfl2csv_base.errors.FileParsingError import FileParsingError
+from vfl2csv_base.exceptions.FileParsingError import FileParsingError
 from vfl2csv_gui.components.QHLine import QHLine
 from vfl2csv_gui.interfaces.AbstractInputHandler import AbstractInputHandler
 from vfl2csv_gui.interfaces.ConversionGuiConfig import ConversionGuiConfig
+from vfl2csv_base.exceptions.ExceptionReport import ExceptionReport
 
 logger = logging.getLogger(__name__)
 
@@ -52,6 +53,9 @@ class BaseGui(QWidget):
         self.status_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.status_table.verticalHeader().setSectionResizeMode(QHeaderView.Stretch)
 
+        self.setting_checkboxes: dict[str, QCheckBox] = {}
+        for key in config.boolean_options:
+            self.setting_checkboxes[key] = QCheckBox(self.text_map[key])
         self.run_button = QPushButton(self.text_map['convert'])
         self.run_button.clicked.connect(self.create)
         self.run_button.setMinimumHeight(50)
@@ -65,6 +69,8 @@ class BaseGui(QWidget):
         layout.addWidget(self.status_label)
         layout.addWidget(self.status_table)
         layout.addWidget(QHLine())
+        for checkbox in self.setting_checkboxes.values():
+            layout.addWidget(checkbox)
         layout.addWidget(self.run_button)
         layout.addWidget(self.progress_bar)
 
@@ -105,11 +111,10 @@ class BaseGui(QWidget):
                 self.notify_warning(self.text_map['input-no-files-found'])
             else:
                 self.input_handler.sort()
-        except FileParsingError as file_error:
-            self.handle_exception(file_error,
-                                  title=self.text_map.get_replace('input-error-reading-file', file_error.file))
-        except Exception as err:
-            self.handle_exception(err, title=self.text_map['input-error-general'])
+        except FileParsingError as file_parsing_exception:
+            self.handle_exception(ExceptionReport(file_parsing_exception, traceback.format_exc()))
+        except Exception as exception:
+            self.handle_exception(ExceptionReport(exception, traceback.format_exc()))
         finally:
             self.update_input_status()
 
@@ -140,18 +145,19 @@ class BaseGui(QWidget):
         if self.output_is_file and not output_path.endswith(f'.{self.output_file_format}'):
             output_path += f'.{self.output_file_format}'
 
-        self.prepare_conversion()
+        setting_values = {key: checkbox.isChecked() for key, checkbox in self.setting_checkboxes.items()}
 
-        signals = self.input_handler.convert(Path(output_path))
+        steps, signals = self.input_handler.convert(Path(output_path), setting_values)
+        self.setup_progress_bar(steps)
         signals.progress.connect(self.increment_progress_bar)
         signals.finished.connect(self.finish_conversion)
-        signals.error.connect(partial(self.handle_exception, title=self.text_map['conversion-error-title']))
-        signals.error.connect(lambda exc: self.finish_conversion(success=False))
+        signals.error.connect(
+            lambda exception_report: self.finish_conversion(success=False, exception_report=exception_report))
 
-    def prepare_conversion(self):
+    def setup_progress_bar(self, steps: int):
         self.progress_bar.setMinimum(0)
         # one step for each trial site
-        self.progress_bar.setMaximum(len(self.input_handler))
+        self.progress_bar.setMaximum(steps)
         self.progress_bar.setValue(0)
         self.progress_bar.setVisible(True)
         self.manage_space()
@@ -162,9 +168,11 @@ class BaseGui(QWidget):
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
     @Slot()
-    def finish_conversion(self, success: bool = True):
+    def finish_conversion(self, success: bool = True, exception_report: ExceptionReport = None):
         if success:
             self.notify_success(self.text_map['done'])
+        elif exception_report:
+            self.handle_exception(exception_report)
         self.progress_bar.setVisible(False)
         self.manage_space()
         self.run_button.setDisabled(False)
@@ -232,6 +240,8 @@ class BaseGui(QWidget):
         self.status_table.setMinimumHeight(self.get_qtable_widget_size().height())
 
     @Slot()
-    def handle_exception(self, exc: tuple[Exception, str], title: str):
-        logger.error(str(exc[0]) + '\n' + exc[1])
-        self.notify_error(title, exc[0], exc[1])
+    def handle_exception(self, exception_report: ExceptionReport):
+        exception = exception_report.exception
+        traceback = exception_report.traceback
+        logger.error(str(exception) + '\n' + traceback)
+        self.notify_error(self.text_map['conversion-error-title'], exception, traceback)

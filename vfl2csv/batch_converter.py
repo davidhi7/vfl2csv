@@ -14,7 +14,7 @@ from vfl2csv.input.ExcelInputSheet import ExcelInputSheet
 from vfl2csv.input.InputData import InputData
 from vfl2csv.input.TsvInputFile import TsvInputFile
 from vfl2csv.output.TrialSiteConverter import TrialSiteConverter
-from vfl2csv_gui.interfaces.ExceptionReport import ExceptionReport
+from vfl2csv_base.exceptions.ExceptionReport import ExceptionReport
 
 CONFIG_ALLOWED_INPUT_FORMATS = ('TSV', 'Excel')
 logger = logging.getLogger(__name__)
@@ -22,13 +22,18 @@ logger = logging.getLogger(__name__)
 
 class Report(TypedDict, total=False):
     total_count: int
-    errors: list[ExceptionReport]
+    exceptions: list[ExceptionReport]
     metadata_output_files: list[Path]
     verification_success: Optional[bool]
     verification_error: Optional[ExceptionReport]
 
 
 def find_input_data(input_path: str | Path | list[str | Path]) -> tuple[list[Path], list[InputData]]:
+    """
+    Query input data recursively
+    @param input_path: path string, Path object or list of path strings or Objects
+    @return: List of input files, list of InputData objects
+    """
     # if `input_path` is a string, convert to a path
     if isinstance(input_path, str):
         input_path = Path(input_path)
@@ -80,18 +85,17 @@ def trial_site_pipeline(
     @param lock: Lock for synchronization
     @param on_progress: Callable to execute after finishing a trial site conversion.
     Consumes a string summarizing the input file.
-    @param on_progress_queue: Similar to `on_progress`, a string representation of a trial siteis put into the queue
-    after finishing its conversion.
+    @param on_progress_queue: Similar to `on_progress`, a string representation of a trial site is put into the
+    multiprocessing queue after finishing its conversion.
     @param process_index: Index of the current process for logging. If multiprocessing is not used, the parameter can be
     omitted.
-    @return: report of all conversions containing metadata and errors.
+    @return: report of all conversions containing metadata and exceptions.
     """
     process_logger = logging.getLogger(f'process {process_index if process_index is not None else "root"}')
-    # store all metadata output files to check for errors later
+    # store all metadata output files to check for exceptions later
     metadata_output_files = []
     errors = []
     for input_data in input_batch:
-        # noinspection PyBroadException
         try:
             process_logger.info(f'Converting input {str(input_data)}')
             trial_site = input_data.parse()
@@ -127,16 +131,16 @@ def trial_site_pipeline(
                 on_progress_queue.put(str(input_data))
     return {
         'total_count': len(input_batch),
-        'errors': errors,
+        'exceptions': errors,
         'metadata_output_files': metadata_output_files
     }
 
 
-def run(output_dir: Path, input_path: list[Path], on_progress: Optional[Callable[[Optional[str]], None]]) -> tuple[
-    bool, Report]:
+def run(output_dir: Path, input_path: list[Path], on_progress: Optional[Callable[[Optional[str]], None]]) -> Report:
     input_files, input_trial_sites = find_input_data(input_path)
     logger.info(
-        f'Found {len(input_trial_sites)} trial sites in {len(input_files)} {setup.config["Input"]["input_format"]} files')
+        f'Found {len(input_trial_sites)} trial sites in {len(input_files)} {setup.config["Input"]["input_format"]} '
+        f'files')
 
     output_data_file = output_dir / setup.config['Output'].getpath('csv_output_pattern')
     output_metadata_file = output_dir / setup.config['Output'].getpath('metadata_output_pattern')
@@ -163,6 +167,7 @@ def run(output_dir: Path, input_path: list[Path], on_progress: Optional[Callable
                 )
                 result = pool.starmap_async(trial_site_pipeline, process_args)
 
+                # Run `on_progress` for every expected value of the queue after finishing all batches
                 if on_progress is not None:
                     expected_queue_values = len(input_trial_sites)
                     actual_queue_values = 0
@@ -177,6 +182,7 @@ def run(output_dir: Path, input_path: list[Path], on_progress: Optional[Callable
                     result.wait()
                 summarised_result: Report = Counter()
                 for r in result.get():
+                    # noinspection PyTypeChecker
                     summarised_result.update(r)
     else:
         # allow disabling multiprocessing for easier debugging and optimized performance when working with little data
@@ -190,11 +196,11 @@ def run(output_dir: Path, input_path: list[Path], on_progress: Optional[Callable
                                                         process_index=0)
     summarised_result: Report = dict(summarised_result)
 
-    if len(summarised_result['errors']) != 0:
-        logger.warning(
-            f'{len(summarised_result["errors"])} errors occurred during converting {summarised_result["total_count"]} '
-            f'trial sites')
-        return False, summarised_result
+    if len(summarised_result['exceptions']) != 0:
+        message = f'{len(summarised_result["exceptions"])} exceptions occurred during converting ' \
+                  f'{summarised_result["total_count"]} trial sites'
+        logger.warning(message)
+        raise Exception(message)
 
     logger.info(
         f'Converted {summarised_result["total_count"]} trial sites successfully, proceed with verification of '
@@ -212,7 +218,6 @@ def run(output_dir: Path, input_path: list[Path], on_progress: Optional[Callable
         summarised_result['verification_error'] = ExceptionReport(exc, exc_traceback)
         summarised_result['verification_success'] = False
 
-    success = len(summarised_result['errors']) == 0 \
-              and summarised_result.get('verification_success') is True \
-              and summarised_result.get('verification_error') is None
-    return success, summarised_result
+    if summarised_result['verification_success'] is False or summarised_result['verification_error'] is not None:
+        raise ValueError('Failed verification')
+    return summarised_result
