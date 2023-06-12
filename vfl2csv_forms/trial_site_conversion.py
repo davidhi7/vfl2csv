@@ -20,7 +20,7 @@ def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
     trial_site.verify_column_integrity(column_scheme)
     df, metadata = trial_site.df.copy(), trial_site.metadata
     # replace string labels with tuples of year and type of the value for easier computations
-    df.columns = TrialSite.expand_column_labels(df.columns)
+    df.columns = list(TrialSite.expand_column_labels(df.columns))
 
     # Determine the latest measurement year. Its data will act as the reference in the formular
     latest_year = max(map(lambda label: label[0], df.columns[len(column_scheme.head):]))
@@ -56,7 +56,7 @@ def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
     df, formulae_columns = insert_new_columns(df, datetime.date.today().year, included_body_columns)
 
     # set compressed column names again (type_YYYY)
-    df.columns = TrialSite.compress_column_labels(df.columns)
+    df.columns = list(TrialSite.compress_column_labels(df.columns))
     return TrialSiteFormular(TrialSite(df, metadata), output_path, formulae_columns)
 
 

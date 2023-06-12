@@ -10,6 +10,7 @@ import numpy as np
 
 from tests.ConversionAuditor import ConversionAuditor
 from vfl2csv import setup
+from vfl2csv.exceptions import ConversionException, VerificationException
 from vfl2csv.input.ExcelInputSheet import ExcelInputSheet
 from vfl2csv.input.InputData import InputData
 from vfl2csv.input.TsvInputFile import TsvInputFile
@@ -20,12 +21,10 @@ CONFIG_ALLOWED_INPUT_FORMATS = ('TSV', 'Excel')
 logger = logging.getLogger(__name__)
 
 
-class Report(TypedDict, total=False):
+class Report(TypedDict):
     total_count: int
     exceptions: list[ExceptionReport]
     metadata_output_files: list[Path]
-    verification_success: Optional[bool]
-    verification_error: Optional[ExceptionReport]
 
 
 def find_input_data(input_path: str | Path | list[str | Path]) -> tuple[list[Path], list[InputData]]:
@@ -136,11 +135,20 @@ def trial_site_pipeline(
     }
 
 
-def run(output_dir: Path, input_path: list[Path], on_progress: Optional[Callable[[Optional[str]], None]]) -> Report:
+def run(output_dir: Path, input_path: str | Path | list[str | Path],
+        on_progress: Optional[Callable[[Optional[str]], None]]) -> Report:
+    """
+    Convert vfl files to CSV and metadata files.
+    If exceptions occur during the conversion process, a ConversionException is raised.
+    If the verification of converted files fails or reports issues, a VerificationException is raised.
+    :param output_dir: Output directory
+    :param input_path: List of file or directories to search for input files. See batch_converter.find_input_data()
+    :param on_progress: Optional callback that is invoked after every converted trial site
+    :return: Report of the conversion process
+    """
     input_files, input_trial_sites = find_input_data(input_path)
-    logger.info(
-        f'Found {len(input_trial_sites)} trial sites in {len(input_files)} {setup.config["Input"]["input_format"]} '
-        f'files')
+    logger.info(f'Found {len(input_trial_sites)} trial sites in {len(input_files)} '
+                f'{setup.config["Input"]["input_format"]} files')
 
     output_data_file = output_dir / setup.config['Output'].getpath('csv_output_pattern')
     output_metadata_file = output_dir / setup.config['Output'].getpath('metadata_output_pattern')
@@ -156,6 +164,9 @@ def run(output_dir: Path, input_path: list[Path], on_progress: Optional[Callable
             lock = manager.RLock()
             queue = manager.Queue()
             with Pool() as pool:
+                # Passing on_progress callbacks to different processes may cause issues depending on the callback.
+                # Therefore, we invoke the callbacks in the main process while communicating with the other processes
+                # using a queue
                 process_args = zip(
                     np.array_split(input_trial_sites, process_count),
                     process_count * [output_data_file],
@@ -167,18 +178,22 @@ def run(output_dir: Path, input_path: list[Path], on_progress: Optional[Callable
                 )
                 result = pool.starmap_async(trial_site_pipeline, process_args)
 
-                # Run `on_progress` for every expected value of the queue after finishing all batches
                 if on_progress is not None:
+                    # Run `on_progress` for every expected value of the queue after finishing all batches
                     expected_queue_values = len(input_trial_sites)
-                    actual_queue_values = 0
+                    # count of values received from the queue
+                    received_queue_values = 0
 
-                    while not result.ready() and actual_queue_values < expected_queue_values:
+                    # Run until either all processes are finished or the count of received queue values matches the
+                    # count of input trial sites
+                    while not result.ready() and received_queue_values < expected_queue_values:
                         value = queue.get()
                         if value is None:
                             break
                         on_progress(value)
-                        actual_queue_values += 1
+                        received_queue_values += 1
                 else:
+                    # If there is no on_progress callback, simply wait for the processes to finish
                     result.wait()
                 summarised_result: Report = Counter()
                 for r in result.get():
@@ -200,7 +215,7 @@ def run(output_dir: Path, input_path: list[Path], on_progress: Optional[Callable
         message = f'{len(summarised_result["exceptions"])} exceptions occurred during converting ' \
                   f'{summarised_result["total_count"]} trial sites'
         logger.warning(message)
-        raise Exception(message)
+        raise ConversionException(message)
 
     logger.info(
         f'Converted {summarised_result["total_count"]} trial sites successfully, proceed with verification of '
@@ -210,14 +225,9 @@ def run(output_dir: Path, input_path: list[Path], on_progress: Optional[Callable
         auditor = ConversionAuditor(vfl2csv_config=setup.config, column_scheme=setup.column_scheme)
         auditor.set_reference_files(input_files)
         auditor.audit_converted_metadata_files(summarised_result['metadata_output_files'])
-        summarised_result['verification_success'] = True
         logger.info('Verification succeeded')
-    except ValueError as exc:
-        exc_traceback = traceback.format_exc()
-        logger.error(f'Verification failed: {exc}')
-        summarised_result['verification_error'] = ExceptionReport(exc, exc_traceback)
-        summarised_result['verification_success'] = False
-
-    if summarised_result['verification_success'] is False or summarised_result['verification_error'] is not None:
-        raise ValueError('Failed verification')
-    return summarised_result
+        return summarised_result
+    except ValueError as exception:
+        logger.error(f'Verification failed: {exception}')
+        logger.error(traceback.format_exc())
+        raise VerificationException(exception)

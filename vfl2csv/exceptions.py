@@ -1,0 +1,6 @@
+class ConversionException(Exception):
+    ...
+
+
+class VerificationException(ValueError):
+    ...

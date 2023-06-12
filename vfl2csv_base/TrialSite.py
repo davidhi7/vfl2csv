@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from pathlib import Path
-from typing import Iterator, Generator
+from typing import Generator
 
 import pandas as pd
 
@@ -47,7 +47,7 @@ class TrialSite:
 
         # work only on a deep copy of the dataframe
         df = self.df.copy(deep=True)
-        df.columns = self.expand_column_labels(df.columns)
+        df.columns = list(self.expand_column_labels(df.columns))
 
         # verify head columns
         if head_column_count > 0:
@@ -77,8 +77,11 @@ class TrialSite:
         df.columns = self.compress_column_labels(df.columns)
         self.df = self.df.astype(df.dtypes)
 
+    def __str__(self) -> str:
+        return f'{self.metadata["Revier"]}/{self.metadata["Versuch"]}-{self.metadata["Parzelle"]}'
+
     @staticmethod
-    def compress_column_labels(multi_index: Iterator[tuple[int, str]]) -> Generator[str, None, None]:
+    def compress_column_labels(multi_index: list[tuple[int, str]]) -> Generator[str, None, None]:
         """
         Convert labels from the tuple `(year or -1, type)` into the string 'type_year'
         """
@@ -89,7 +92,7 @@ class TrialSite:
                 yield label[1]
 
     @staticmethod
-    def expand_column_labels(index: Iterator[str]) -> Generator[tuple[int, str], None, None]:
+    def expand_column_labels(index: list[str]) -> Generator[tuple[int, str], None, None]:
         """
         Convert labels from the string 'type_year' into the tuple `(year or -1, type)`
         """
