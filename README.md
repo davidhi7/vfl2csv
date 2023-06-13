@@ -79,3 +79,11 @@ Measurement columns can occur multiple times but must always be in the right ord
 ### vfl2csv_forms
 
 `config/config_forms.ini`
+
+## History
+### 1.2.2 2023-06-13
+* Allow to create form directly from vfl2csv GUI
+* Fixed error handling
+
+### 1.2.1 2023-05-03
+* Increase threshold for measurement year decrementation to 07-01 instead of 06-01
