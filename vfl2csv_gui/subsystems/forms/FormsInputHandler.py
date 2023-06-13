@@ -4,16 +4,16 @@ from pathlib import Path
 from PySide6.QtCore import QThreadPool
 
 from vfl2csv_base.TrialSite import TrialSite
-from vfl2csv_base.errors.FileParsingError import FileParsingError
+from vfl2csv_base.exceptions.FileParsingError import FileParsingError
 from vfl2csv_forms import config
 from vfl2csv_gui.interfaces.AbstractInputHandler import AbstractInputHandler
 from vfl2csv_gui.interfaces.CommunicationSignals import CommunicationSignals
-from vfl2csv_gui.subsystems.forms.FormsConversionWorker import ConversionWorker
+from vfl2csv_gui.subsystems.forms.FormsConversionWorker import FormsConversionHandler
 
 logger = logging.getLogger(__name__)
 
 
-class InputHandler(AbstractInputHandler):
+class FormsInputHandler(AbstractInputHandler):
 
     def __init__(self):
         super().__init__()
@@ -44,6 +44,21 @@ class InputHandler(AbstractInputHandler):
                 self.trial_sites.clear()
                 raise
 
+    def clear(self) -> None:
+        self.trial_sites.clear()
+
+    def convert(self, output_file: Path, settings: dict[str, bool] = None) -> tuple[int, CommunicationSignals]:
+        steps = len(self.trial_sites)
+        worker = FormsConversionHandler(self.trial_sites, output_file)
+        QThreadPool.globalInstance().start(worker)
+        return steps, worker.signals
+
+    def table_representation(self) -> list[list[str]]:
+        return [[
+            trial_site.metadata['Versuch'],
+            trial_site.metadata['Parzelle']
+        ] for trial_site in self.trial_sites]
+
     def sort(self) -> None:
         self.trial_sites = sorted(self.trial_sites, key=self.sort_decorate_trial_site)
 
@@ -56,19 +71,5 @@ class InputHandler(AbstractInputHandler):
             plot = trial_site.metadata['Parzelle']
         return trial, plot
 
-    def clear(self) -> None:
-        self.trial_sites.clear()
-
-    def __len__(self) -> int:
+    def __len__(self):
         return len(self.trial_sites)
-
-    def convert(self, output_file: Path) -> CommunicationSignals:
-        worker = ConversionWorker(self.trial_sites, output_file)
-        QThreadPool.globalInstance().start(worker)
-        return worker.signals
-
-    def table_representation(self) -> list[list[str]]:
-        return [[
-            trial_site.metadata['Versuch'],
-            trial_site.metadata['Parzelle']
-        ] for trial_site in self.trial_sites]

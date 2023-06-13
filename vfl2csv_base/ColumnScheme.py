@@ -17,7 +17,7 @@ class ColumnScheme:
         if not isinstance(path, Path):
             path = Path(path)
         if not path.is_file():
-            logger.info('Create new column scheme config' + str(path.absolute()))
+            logger.info('Create new column scheme config file ' + str(path.absolute()))
             path.parent.mkdir(exist_ok=True)
             with open(path, 'w') as file:
                 file.write(template)
