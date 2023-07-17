@@ -113,10 +113,10 @@ class TrialSiteFormular:
         zero_based_cell(ws, metadata_columns[2], 2).value = 'durch: '
 
         # apply formatting to the metadata section
-        metadata_key_cells = zero_based_cell_range(ws, metadata_columns[0], 0, metadata_columns[0], 3) \
-                             + zero_based_cell_range(ws, metadata_columns[2], 0, metadata_columns[2], 3)
-        metadata_value_cells = zero_based_cell_range(ws, metadata_columns[1], 0, metadata_columns[1], 3) \
-                               + zero_based_cell_range(ws, metadata_columns[3], 0, metadata_columns[3], 3)
+        metadata_key_cells = zero_based_cell_range(ws, metadata_columns[0], 0, metadata_columns[0], 3) + \
+                             zero_based_cell_range(ws, metadata_columns[2], 0, metadata_columns[2], 3)
+        metadata_value_cells = zero_based_cell_range(ws, metadata_columns[1], 0, metadata_columns[1], 3) + \
+                               zero_based_cell_range(ws, metadata_columns[3], 0, metadata_columns[3], 3)
         for row in metadata_key_cells:
             row[0].style = styles.metadata_keys.name
         for row in metadata_value_cells:
@@ -163,7 +163,7 @@ class TrialSiteFormular:
                 continue
             first_content_value: str = column_content[1][0].value
             if isinstance(first_content_value, str) and first_content_value.startswith('='):
-                # raw formulaes are not displayed, so we should not take them into account
+                # raw formulae are not displayed, so we should not take them into account
                 max_length = get_character_count(column_content[0][0].value, decimal_digits=1)
             else:
                 for row in column_content:

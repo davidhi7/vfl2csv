@@ -22,5 +22,5 @@ vfl2csv_gui_config = ConversionGuiConfig(text_map=TextMap({
     'conversion-error-title': 'Fehler beim Konvertieren der Dateien',
     'done': 'Dateien konvertiert',
     'list-headers': ['Datei'],
-    'settting_create_form': 'Auch ein Formular erstellen'
-}), output_is_file=False, boolean_options=['settting_create_form'])
+    'setting_create_form': 'Auch ein Formular erstellen'
+}), output_is_file=False, boolean_options=['setting_create_form'])

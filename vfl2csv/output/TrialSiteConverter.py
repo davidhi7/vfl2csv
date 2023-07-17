@@ -48,7 +48,7 @@ class TrialSiteConverter:
         # count of all columns containing measurements
         measurement_column_count = column_count - head_column_count
         # `measurement_column_count` must be a multiple of `measurement_fields_count` and the count of all columns must
-        # be atleast the count of all head columns
+        # be at least the count of all head columns
         if measurement_column_count % measurement_fields_count != 0 or column_count < head_column_count:
             raise ValueError('Invalid column count')
         # count of all measurement recordings, so sets of every field

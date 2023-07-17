@@ -7,7 +7,7 @@ import openpyxl
 class ExcelWorkbook:
     def __init__(self, path: Path):
         """
-        Create Excel workbook object. The Excel file at the given path is opened and sheetnames are extracted.
+        Create Excel workbook object. The Excel file at the given path is opened and sheet names are extracted.
         :param path: Path to the Excel file
         """
         self.path = path

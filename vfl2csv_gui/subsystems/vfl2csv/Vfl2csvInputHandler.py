@@ -26,8 +26,8 @@ class Vfl2csvInputHandler(AbstractInputHandler):
         self.input_data = []
 
     def convert(self, output_dir: Path, settings: dict[str, bool] = None) -> tuple[int, CommunicationSignals]:
-        setting_create_form = settings['settting_create_form']
-        worker = Vfl2csvConversionWorker(output_dir, self.input_files, create_form=setting_create_form)
+        setting_create_form = settings['setting_create_form']
+        worker = Vfl2csvConversionWorker(output_dir, self.input_files, self.input_data, create_form=setting_create_form)
         QThreadPool.globalInstance().start(worker)
         steps = len(self.input_data) * 2 if setting_create_form else 1
         return steps, worker.signals
