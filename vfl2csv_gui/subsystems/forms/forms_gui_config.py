@@ -5,10 +5,12 @@ from vfl2csv_gui.interfaces.ConversionGuiConfig import ConversionGuiConfig
 forms_gui_config = ConversionGuiConfig(text_map=TextMap({
     'window-title': 'Formular erstellen',
     'content-title': 'Formular erstellen',
+    'content-caption': 'Erzeuge Excel-Formulare aus bereits umgewandelten Versuchsflächen',
     'input-files': 'Dateien auswählen',
     'input-directory': 'Verzeichnis auswählen',
     'filedialog-input-single-file': 'Metadaten-Datei auswählen',
-    'filedialog-input-single-file-filter': f'Metadaten ({config["Input"]["metadata_search_pattern"]});;Alle Dateien (*)',
+    'filedialog-input-single-file-filter':
+        f'Metadaten-Datei ({config["Input"]["metadata_search_pattern"]});;Alle Dateien (*)',
     'filedialog-input-dictionary': 'Metadaten-Verzeichnis auswählen',
     'no-files-selected': 'Es sind keine Versuchsflächen ausgewählt.',
     'n-files-selected': '{} Versuchsflächen ausgewählt:',

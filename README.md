@@ -81,6 +81,9 @@ Measurement columns can occur multiple times but must always be in the right ord
 `config/config_forms.ini`
 
 ## History
+### 1.2.4
+* Add documentation
+
 ### 1.2.3
 * Fix bug with 1.2.2 form creation from vfl2csv GUI
 * Code style improvements
