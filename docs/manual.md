@@ -60,9 +60,3 @@ Dafür müssen entweder die Metadaten-Dateien direkt oder Verzeichnisse mit dies
 Das anschließend erzeugte Excel-Formular enthält ein Tabellenblatt für jede Versuchsfläche mit den letzten Messwerten
 sowie Spalten für die neuen Messwerte. Weiterhin werden Spalten für die Differenzen sowie Mittelwerte der neuen
 Messreihen erstellt.
-
-## Konfiguration
-
-Die Versuchsflächendaten werden stets in vorgegebenen Spalten gespeichert: Standardmäßig sind die ersten drei Spalten die Bestandeseinheit, Baumart und die Baumnummer, anschließend folgen für jede Messung Stammdurchmesser, Ausscheidungskennung und Höhe. Diese Anordnung wird auch in Auszügen der Versuchsflächendatenbank erwartet, wenn diese Auszüge in CSV-Dateien und Metadaten-Dateien umgewandelt werden. 
-
-Um beispielsweise weitere Arten von Messwerten zu verarbeiten, muss das Programm anders konfiguriert werden, um mit diesen Spalten umzugehen
