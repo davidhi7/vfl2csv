@@ -12,18 +12,25 @@ from vfl2csv_gui.subsystems.forms.FormsInputHandler import FormsInputHandler, Fo
 logger = logging.getLogger(__name__)
 cwd = Path(__file__).parent.parent
 
-test_config = config_factory.get_config(Path('config/config_tests.ini'))
-output_file: Path = test_config['Output'].getpath('temp_dir') / 'output.xlsx'
-reference_file: Path = test_config['Input'].getpath('forms_reference_file')
+test_config = config_factory.get_config(cwd / Path('config/config_tests.ini'))
+output_file: Path = cwd / test_config['Output'].getpath('temp_dir') / 'output.xlsx'
+reference_file: Path = cwd / test_config['Input'].getpath('forms_reference_file')
 
 
 def verify():
-    output = pd.read_excel(output_file)
-    reference = pd.read_excel(reference_file)
-    if not output.equals(reference):
-        logger.error('Output does not match reference')
-        logger.error(output.compare(reference))
-        raise ValueError("Output file contents don't match reference file contents")
+    output = pd.read_excel(output_file, sheet_name=None)
+    reference = pd.read_excel(reference_file, sheet_name=None)
+    if not reference.keys() == output.keys():
+        logger.error(f'Output sheet names: {output.keys()}')
+        logger.error(f'Reference sheet names: {reference.keys()}')
+        raise ValueError("Output sheet names do not match reference sheet names")
+    for sheet in reference.keys():
+        if not output[sheet].equals(reference[sheet]):
+            try:
+                logger.error(output[sheet].compare(reference[sheet]))
+            except ValueError:
+                logger.error("Can't compare sheets because they have different column/row counts")
+            raise ValueError("Output file contents don't match reference file contents")
     logger.info('Test succeeded')
 
 
