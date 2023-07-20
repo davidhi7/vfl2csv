@@ -79,6 +79,11 @@ Measurement columns can occur multiple times but must always be in the right ord
 
 ## History
 
+### 1.2.5
+
+* More testing
+* Add `display_name` property for all columns to configure formula column names
+
 ### 1.2.4
 
 * Add documentation
