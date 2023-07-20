@@ -74,10 +74,12 @@ class FormulaColumn:
             zero_based_cell(ws, target_column, row).value = formula
             # zero_based_cell(ws, row, column).value = f'={formula}'
             zero_based_cell(ws, target_column, row).style = self.style.name
-        for rule in self.conditional_formatting_rules:
-            ws.conditional_formatting.add(
-                zero_based_cell_range_name(target_column, rows[1], target_column, rows[-1]),
-                rule
-            )
+        # Inserting conditional formatting for all non-header cells will fail if there aren't any
+        if len(rows) >= 2:
+            for rule in self.conditional_formatting_rules:
+                ws.conditional_formatting.add(
+                    zero_based_cell_range_name(target_column, rows[1], target_column, rows[-1]),
+                    rule
+                )
         self.yielded_column = target_column + column_shift
         return column_shift + 1

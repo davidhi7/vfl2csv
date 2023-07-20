@@ -2,37 +2,44 @@
   "head": [
     {
       "name": "Bst.-E.",
-      "override_name": "Bestandeseinheit",
+      "override_name": "BE_csv",
+      "display_name": "BE_form",
       "form_include": false,
       "type": "uint16"
     },
     {
       "name": "Baum",
-      "override_name": "Baumart",
-      "display_name": "BA",
+      "override_name": "BA_csv",
+      "display_name": "BA_form",
       "type": "string"
     },
     {
       "name": "Art",
-      "override_name": "Baumnummer",
-      "display_name": "BNr",
+      "override_name": "BN_csv",
+      "display_name": "BN_form",
       "type": "uint32"
     }
   ],
   "measurements": [
     {
       "name": "D",
+      "override_name": "D_csv",
+      "display_name": "D_form",
       "new_columns_count": 2,
       "add_difference": true,
       "type": "float64"
     },
     {
       "name": "Aus",
+      "override_name": "Aus_csv",
+      "display_name": "Aus_form",
       "form_include": false,
       "type": "uint8"
     },
     {
       "name": "H",
+      "override_name": "H_csv",
+      "display_name": "H_form",
       "add_difference": true,
       "type": "float64"
     }

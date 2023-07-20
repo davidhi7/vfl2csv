@@ -14,8 +14,7 @@ from vfl2csv_base.ColumnScheme import ColumnScheme
 logger = logging.getLogger(__name__)
 cwd = Path(__file__).parent.parent
 
-config_path = Path('config/config_vfl2csv.ini')
-config = config_factory.get_config(config_path)
+config = config_factory.get_config(Path('config/config_vfl2csv.ini'))
 column_scheme_path = Path('config/columns.json')
 column_scheme = ColumnScheme.from_file(column_scheme_path)
 

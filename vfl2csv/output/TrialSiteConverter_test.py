@@ -99,6 +99,27 @@ class TrialSiteConverterTest(unittest.TestCase):
         ])), metadata=dict()))
         self.assertRaises(ValueError, trial_site.refactor_dataframe)
 
+        # test wrong column names in input
+        trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([
+            ('Aufnahme', 'Wert', 'Einheit', 'wrong'),
+            ('Aufnahme', 'Wert', 'Einheit', 'Art'),
+            ('Aufnahme', 'Wert', 'Einheit', 'Baum'),
+            ('23.07.1984', 'D', 'cm', '159'),
+            ('23.07.1984', 'Aus', 'Unnamed: 4_level_2', '15'),
+            ('23.07.1984', 'H', 'Unnamed: 4_level_2', '159')
+        ])), metadata=dict()))
+        self.assertRaises(ValueError, trial_site.refactor_dataframe)
+
+        trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([
+            ('Aufnahme', 'Wert', 'Einheit', 'Bst.-E.'),
+            ('Aufnahme', 'Wert', 'Einheit', 'Art'),
+            ('Aufnahme', 'Wert', 'Einheit', 'Baum'),
+            ('23.07.1984', 'wrong', 'cm', '159'),
+            ('23.07.1984', 'Aus', 'Unnamed: 4_level_2', '15'),
+            ('23.07.1984', 'H', 'Unnamed: 4_level_2', '159')
+        ])), metadata=dict()))
+        self.assertRaises(ValueError, trial_site.refactor_dataframe)
+
     def test_simplifyColumnLabels_expect_decremented_year(self) -> None:
         # Test with no override_name
         self.assertEqual('D_2021', TrialSiteConverter.simplify_measurement_column_labels(

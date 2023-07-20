@@ -14,36 +14,43 @@ test_config = get_config(Path('config/config_tests.ini'))
 default_column_scheme_json = """{
   "head": [
     {
+      "name": "Bst.-E.",
       "override_name": "Bestandeseinheit",
       "form_include": false,
       "type": "uint16"
     },
     {
+      "name": "Art",
       "override_name": "Baumart",
+      "display_name": "BA",
       "type": "string"
     },
     {
+      "name": "Baum",
       "override_name": "Baumnummer",
+      "display_name": "BNr",
       "type": "uint32"
     }
   ],
   "measurements": [
     {
-      "override_name": "D",
+      "name": "D",
       "new_columns_count": 2,
       "add_difference": true,
       "type": "float64"
     },
     {
-      "override_name": "Aus",
+      "name": "Aus",
       "form_include": false,
       "type": "uint8"
     },
     {
-      "override_name": "H",
+      "name": "H",
+      "add_difference": true,
       "type": "float64"
     }
   ]
 }
+
 """
 default_column_scheme_path = Path('./config/columns.json')

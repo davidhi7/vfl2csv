@@ -57,6 +57,11 @@ class TrialSiteFormular:
         # wrap 'Aus' in space to achieve same string length and consequently column width as 'Bruch'
         self.df.insert(len(self.df.columns), ' Aus ', pd.Series(dtype=pd.StringDtype()))
         self.df.insert(len(self.df.columns), 'Bruch', pd.Series(dtype=pd.StringDtype()))
+
+        if len(self.row_span) < 2:
+            # In this case there is only the header column
+            return
+
         # conditional formatting for the entire data row if either Aus or Bruch is not empty
         rule = Rule(
             dxf=DifferentialStyle(fill=PatternFill(bgColor='FDFDD9')),
@@ -161,13 +166,17 @@ class TrialSiteFormular:
             max_length = 0
             if column_content[0][0].value is None:
                 continue
-            first_content_value: str = column_content[1][0].value
-            if isinstance(first_content_value, str) and first_content_value.startswith('='):
-                # raw formulae are not displayed, so we should not take them into account
-                max_length = get_character_count(column_content[0][0].value, decimal_digits=1)
             else:
-                for row in column_content:
-                    max_length = max(max_length, get_character_count(row[0].value, decimal_digits=1))
+                max_length = get_character_count(column_content[0][0].value, decimal_digits=1)
+
+            # only scan content if there is any content
+            if len(column_content) >= 2:
+                first_content_value: str = column_content[1][0].value
+                if not (isinstance(first_content_value, str) and first_content_value.startswith('=')):
+                    # If condition above is not true, then we have a column with formulas and cannot compute the width
+                    # of the formula's output
+                    for row in column_content:
+                        max_length = max(max_length, get_character_count(row[0].value, decimal_digits=1))
 
             # adding one and multiplying by 1.3 fits well
             column_width = 1.3 * (max_length + 1)

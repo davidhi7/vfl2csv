@@ -37,18 +37,14 @@ The general format is:
 {
   "head": [
     {
-      
     },
     {
-      
     }
   ],
   "measurements": [
     {
-      
     },
     {
-      
     }
   ]
 }
@@ -62,9 +58,10 @@ Each column is described by a JSON object containing the following required and 
 
 | Key name                                     |                 expected value                  | required | comment                                                                                                                                                                                                                                                                                                |
 |----------------------------------------------|:-----------------------------------------------:|:--------:|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `override_name`                              |                      `str`                      |    x     | Name of the column, appears in the CSV files and forms as header. Starts with `override`, because it overrides the initial name in the input files for `vfl2csv`.                                                                                                                                      |
+| `name`                                       |                      `str`                      |    x     | Name of the column, must be identical to the name of the corresponding column of the vfldb data excerpt                                                                                                                                                                                                |                                                                                                                                                                                                
+| `override_name`                              |                      `str`                      |          | Override `name` in the CSV files and form header.                                                                                                                                                                                                                                                      |
+| `display_name`                               |                      `str`                      |          | Name used in forms. If provided, this setting overrides `override_name` exclusively in forms.                                                                                                                                                                                                          |
 | `type`                                       | `string`, `{u,}int{8,16,32,64}`, `float{32,64}` |    x     | Datatype that best fits the values in the columns.                                                                                                                                                                                                                                                     |
-| `display_name` (only in `head`)              |                      `str`                      |          | Name used in forms. If provided, this setting overrides `override_name` in forms.                                                                                                                                                                                                                      |
 | `form_include`                               |                `true` or `false`                |          | Whether this column should be part of forms                                                                                                                                                                                                                                                            |
 | `new_columns_count` (only in `measurements`) |                      `int`                      |          | If `form_include == true`: How many input columns should be inserted into forms to allow multiple measurements per tree. For example, often two measurements are used for estimating the tree's real diameter. If `> 1`, another column will calculate the mean values of all measurements for a tree. |
 | `add_difference` (only in `measurements`)    |                `true` or `false`                |          | If `true`, a dedicated column will be inserted into forms calculating the difference between the new and last older measurements.                                                                                                                                                                      |                                                                                                                                                                                                                                                
@@ -81,16 +78,21 @@ Measurement columns can occur multiple times but must always be in the right ord
 `config/config_forms.ini`
 
 ## History
+
 ### 1.2.4
+
 * Add documentation
 
 ### 1.2.3
+
 * Fix bug with 1.2.2 form creation from vfl2csv GUI
 * Code style improvements
 
 ### 1.2.2 2023-06-13
+
 * Allow to create form directly from vfl2csv GUI
 * Fixed error handling
 
 ### 1.2.1 2023-05-03
+
 * Increase threshold for measurement year decrementation to 07-01 instead of 06-01

@@ -29,7 +29,12 @@ class ColumnScheme:
 class ColumnSchemeSection:
     def __init__(self, data: list[dict]):
         self.data = data
-        self.by_name = {entry['override_name']: entry for entry in data}
+        self.by_name = {}
+        for entry in data:
+            try:
+                self.by_name[entry.get('override_name', entry['name'])] = entry
+            except KeyError as err:
+                raise ValueError(f'Property `name` missing in column scheme for object {entry}') from err
 
     def __getitem__(self, key) -> str | dict:
         return self.data[key]

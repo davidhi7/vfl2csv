@@ -36,8 +36,8 @@ class FormsConversionHandler(QRunnable):
                     trial_site_form.create(workbook)
                     self.signals.progress.emit(str(trial_site))
                 logger.info(f'Created {len(self.trial_sites)} sheets in output file {self.output_file}')
+                self.signals.finished.emit()
             except Exception as exc:
                 exc_traceback = traceback.format_exc()
                 logger.warning(str(exc) + '\n' + exc_traceback)
                 self.signals.error.emit(ExceptionReport(exc, exc_traceback))
-        self.signals.finished.emit()

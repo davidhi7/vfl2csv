@@ -52,9 +52,9 @@ class TrialSite:
         # verify head columns
         if head_column_count > 0:
             for i, column in enumerate(df.columns[:head_column_count]):
-                if column[1] != column_scheme.head[i]['override_name']:
+                if column[1] != column_scheme.head[i].get('override_name', column_scheme.head[i]['name']):
                     raise ValueError(
-                        f'Column "{column[1]}" of the dataframe does not match the expected name provided in '
+                        f'Column `{column[1]}` of the dataframe does not match the expected name provided in '
                         f'the columns.json file!')
                 df[column] = df[column].astype(pandas_datatypes_mapping[column_scheme.head[i]['type']])
 
@@ -67,9 +67,12 @@ class TrialSite:
                 for attribute_index in range(measurements_type_count):
                     column_index = head_column_count + measurement_index * measurements_type_count + attribute_index
                     column = df.columns[column_index]
-                    if column[1] != column_scheme.measurements[attribute_index]['override_name']:
+                    if column[1] != column_scheme.measurements[attribute_index].get(
+                            'override_name',
+                            column_scheme.measurements[attribute_index]['name']
+                    ):
                         raise ValueError(
-                            f'Column {column[1]}_{column[0]} of the dataframe does not match the expected '
+                            f'Column `{column[1]}_{column[0]}` of the dataframe does not match the expected '
                             f'name provided in the columns.json file!')
                     df[column] = df[column].astype(
                         pandas_datatypes_mapping[column_scheme.measurements[attribute_index]['type']])
@@ -98,7 +101,8 @@ class TrialSite:
         """
         for label in index:
             if measurement_column_pattern.fullmatch(label):
-                record_type, record_year = label.split('_')
+                # Fix in case there are multiple underscores in one column name
+                record_type, record_year = label.rsplit('_', maxsplit=1)
                 yield int(record_year), record_type
             else:
                 # for head columns, only use the original column label

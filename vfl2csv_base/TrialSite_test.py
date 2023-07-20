@@ -22,14 +22,17 @@ class TrialSiteTest(unittest.TestCase):
 
     sample_head_scheme = [
         {
+            "name": "Bst.-E.",
             "override_name": "Bestandeseinheit",
             "type": "uint16"
         },
         {
+            "name": "Art",
             "override_name": "Baumart",
             "type": "string"
         },
         {
+            "name": "Baum",
             "override_name": "Baumnummer",
             "type": "uint32"
         }
@@ -37,11 +40,11 @@ class TrialSiteTest(unittest.TestCase):
 
     sample_measurements_scheme = [
         {
-            "override_name": "D",
+            "name": "D",
             "type": "float64"
         },
         {
-            "override_name": "Aus",
+            "name": "Aus",
             "type": "uint16"
         }
     ]

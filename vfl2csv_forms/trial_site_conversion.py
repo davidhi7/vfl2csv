@@ -5,8 +5,8 @@ from typing import TypeAlias
 
 import pandas as pd
 
+import vfl2csv_forms
 from vfl2csv_base.TrialSite import TrialSite
-from vfl2csv_forms import column_scheme
 from vfl2csv_forms.excel import styles
 from vfl2csv_forms.excel.FormulaColumn import FormulaColumn
 from vfl2csv_forms.excel.TrialSiteFormular import TrialSiteFormular
@@ -17,33 +17,33 @@ ExpandedColumnLabel: TypeAlias = tuple[int, str]
 
 
 def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
-    trial_site.verify_column_integrity(column_scheme)
+    trial_site.verify_column_integrity(vfl2csv_forms.column_scheme)
     df, metadata = trial_site.df.copy(), trial_site.metadata
     # replace string labels with tuples of year and type of the value for easier computations
     df.columns = list(TrialSite.expand_column_labels(df.columns))
 
     # Determine the latest measurement year. Its data will act as the reference in the formular
-    latest_year = max(map(lambda label: label[0], df.columns[len(column_scheme.head):]))
+    latest_year = max(map(lambda label: label[0], df.columns[len(vfl2csv_forms.column_scheme.head):]))
 
     # find columns that are supposed to be included into the form
     # namely, all head columns and all measurement columns of `last_year`, both unless explicitly disabled in the
     # column scheme
     included_head_columns: list[ExpandedColumnLabel] = list()
     included_body_columns: list[ExpandedColumnLabel] = list()
-    for column in column_scheme.head:
+    for column in vfl2csv_forms.column_scheme.head:
         if not column.get('form_include', True):
             continue
-        column_name = column['override_name']
+        column_name = column.get('override_name', column['name'])
         # allow to manually set the display name for the form
         if 'display_name' in column:
             display_name = column.get('display_name')
             df = df.rename(columns={(-1, column_name): (-1, display_name)})
             column_name = display_name
         included_head_columns.append((-1, column_name,))
-    for column in column_scheme.measurements:
+    for column in vfl2csv_forms.column_scheme.measurements:
         if not column.get('form_include', True):
             continue
-        included_body_columns.append((latest_year, column['override_name']))
+        included_body_columns.append((latest_year, column.get('override_name', column['name'])))
 
     # filter the dataframe: filter out unneeded rows and columns
     df = filter_df(
@@ -54,6 +54,12 @@ def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
 
     # add new columns for each record attribute with the current year
     df, formulae_columns = insert_new_columns(df, datetime.date.today().year, included_body_columns)
+
+    # apply `display_name` values for old columns, must happen after insert_new_columns
+    for column in included_body_columns:
+        template = vfl2csv_forms.column_scheme.measurements.by_name[column[1]]
+        if 'display_name' in template:
+            df = df.rename(columns={column: (column[0], template['display_name'])})
 
     # set compressed column names again (type_YYYY)
     df.columns = list(TrialSite.compress_column_labels(df.columns))
@@ -77,7 +83,8 @@ def insert_new_columns(df: pd.DataFrame, new_year: int, old_columns: list[Expand
     formula_columns = []
     for old_column in old_columns:
         column_name = old_column[1]
-        template = column_scheme.measurements.by_name[column_name]
+        template = vfl2csv_forms.column_scheme.measurements.by_name[column_name]
+        column_name = template.get('display_name', column_name)
         # index of the old column in df
         column_index = df.columns.get_loc(old_column)
         # datatype of the old column, will also be the datatype of the new column

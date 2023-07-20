@@ -58,8 +58,12 @@ class TrialSiteConverter:
         new_column_names = list()
         # first, iterate head columns
         for template, column in zip(setup.column_scheme.head, self.trial_site.df.columns[0:head_column_count]):
+            # Check column name
+            if column[3] != template['name']:
+                raise ValueError(f'Head column `{template["name"]}` from template does not match corresponding input '
+                                 f'column `{column[3]}`')
             # rename columns
-            new_column_names.append(template['override_name'])
+            new_column_names.append(template.get('override_name', template['name']))
             # reassign datatype
             self.trial_site.df[column] = self.trial_site.df[column].astype(dtypes_mapping[template['type']])
 
@@ -68,17 +72,21 @@ class TrialSiteConverter:
             # number of columns already refactored
             column_shift = head_column_count + measurement_index * measurement_fields_count
             # iterate all columns of the next measurement
-            for template, column_hierarchy in zip(
+            for template, column in zip(
                     setup.column_scheme.measurements,
                     self.trial_site.df.columns[column_shift:column_shift + measurement_fields_count]
             ):
+                # Check column name
+                if column[1] != template['name']:
+                    raise ValueError(f'Measurement column `{template["name"]}` from template does not match '
+                                     f'corresponding input column `{column[1]}`')
                 # rename column
                 new_column_names.append(
-                    self.simplify_measurement_column_labels(column_hierarchy,
-                                                            template['override_name'])
+                    self.simplify_measurement_column_labels(column,
+                                                            template.get('override_name', template['name']))
                 )
                 # reassign datatype
-                self.trial_site.df[column_hierarchy] = self.trial_site.df[column_hierarchy].astype(
+                self.trial_site.df[column] = self.trial_site.df[column].astype(
                     dtypes_mapping[template['type']]
                 )
         self.trial_site.df.columns = new_column_names

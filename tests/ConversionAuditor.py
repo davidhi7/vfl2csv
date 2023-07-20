@@ -86,11 +86,11 @@ class ConversionAuditor:
                 years.append(int(year) - (0 if int(month) > 6 else 1))
             else:
                 years.append(-1)
-        labels = [column['override_name'] for column in self.column_scheme.head]
+        labels = [column.get('override_name', column['name']) for column in self.column_scheme.head]
         if (len(years) - len(self.column_scheme.head)) % len(self.column_scheme.measurements) != 0:
             raise ValueError('Invalid column count')
         measurement_count = (len(years) - len(self.column_scheme.head)) // len(self.column_scheme.measurements)
-        labels.extend(measurement_count * [column['override_name'] for column in self.column_scheme.measurements])
+        labels.extend(measurement_count * [column.get('override_name', column['name']) for column in self.column_scheme.measurements])
         header.extend(list(zip(years, labels)))
         for line in lines[17:]:
             line_tokens = []
@@ -158,8 +158,8 @@ class ConversionAuditor:
             lines = [line.replace('\n', '').split(',') for line in file.readlines()]
             for cell in lines[0]:
                 if re.fullmatch(r'\D+_\d{4}', cell):
-                    # measurement column
-                    label, year = cell.split('_')
+                    # Fix in case there are multiple underscores in one column name
+                    label, year = cell.rsplit('_', maxsplit=1)
                     header.append((int(year), label))
                 else:
                     # tree metadata column
