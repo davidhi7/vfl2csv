@@ -21,6 +21,8 @@ def verify():
     output = pd.read_excel(output_file)
     reference = pd.read_excel(reference_file)
     if not output.equals(reference):
+        logger.error('Output does not match reference')
+        logger.error(output.compare(reference))
         raise ValueError("Output file contents don't match reference file contents")
     logger.info('Test succeeded')
 
