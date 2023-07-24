@@ -1,10 +1,12 @@
 import math
 
+from openpyxl.cell import Cell
+
 # noinspection SpellCheckingInspection
 EXCEL_COLUMN_NAMES = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
 
 
-def zero_based_cell(ws, column, row):
+def zero_based_cell(ws, column, row) -> Cell:
     return ws.cell(row=row + 1, column=column + 1)
 
 

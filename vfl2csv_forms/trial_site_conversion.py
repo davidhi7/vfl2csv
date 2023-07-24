@@ -9,14 +9,14 @@ import vfl2csv_forms
 from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_forms.excel import styles
 from vfl2csv_forms.excel.FormulaColumn import FormulaColumn
-from vfl2csv_forms.excel.TrialSiteFormular import TrialSiteFormular
+from vfl2csv_forms.excel.TrialSiteForm import TrialSiteForm
 
 measurement_column_pattern = re.compile(r'\w+_\d{4}')
 
 ExpandedColumnLabel: TypeAlias = tuple[int, str]
 
 
-def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
+def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteForm:
     trial_site.verify_column_integrity(vfl2csv_forms.column_scheme)
     df, metadata = trial_site.df.copy(), trial_site.metadata
     # replace string labels with tuples of year and type of the value for easier computations
@@ -63,7 +63,7 @@ def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteFormular:
 
     # set compressed column names again (type_YYYY)
     df.columns = list(TrialSite.compress_column_labels(df.columns))
-    return TrialSiteFormular(TrialSite(df, metadata), output_path, formulae_columns)
+    return TrialSiteForm(TrialSite(df, metadata), output_path, formulae_columns)
 
 
 def filter_df(df: pd.DataFrame, columns: list[ExpandedColumnLabel], lower_notnull_offset: int) -> pd.DataFrame:

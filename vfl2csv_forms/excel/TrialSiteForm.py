@@ -32,7 +32,7 @@ dtypes_styles_mapping = {
 }
 
 
-class TrialSiteFormular:
+class TrialSiteForm:
     def __init__(self, trial_site: TrialSite, output_path: Path, formulae_columns: Iterable[FormulaColumn]):
         self.df = trial_site.df
         self.metadata = trial_site.metadata
@@ -45,6 +45,7 @@ class TrialSiteFormular:
 
         self.conditional_formatting_rules: list[tuple[str, Rule]] = []
         self.add_comment_column()
+        # one empty column between dataframe contents and formula columns
         self.first_empty_column = len(self.df.columns) + 1
 
     # noinspection SpellCheckingInspection
@@ -102,30 +103,41 @@ class TrialSiteFormular:
     def write_metadata(self) -> None:
         """Insert the metadata into the sheet and format the updated cells."""
         ws = self.worksheet
-        # merge two horizontally adjacent cells each
-        metadata_columns = (2, 4, 7, 9)
-        for first_column in metadata_columns:
-            for row in range(0, 4):
-                self.worksheet.merge_cells(zero_based_cell_range_name(first_column, row, first_column + 1, row))
+        # merge ABC and DE for first metadata column, then FG/HI for second metadata column
+        metadata_columns = [0, 3, 5, 7]
+        for row in range(0, 4):
+            self.worksheet.merge_cells(zero_based_cell_range_name(
+                metadata_columns[0], row, metadata_columns[0] + 2, row))
+            self.worksheet.merge_cells(zero_based_cell_range_name(
+                metadata_columns[1], row, metadata_columns[1] + 1, row))
+            self.worksheet.merge_cells(zero_based_cell_range_name(
+                metadata_columns[2], row, metadata_columns[2] + 1, row))
+            self.worksheet.merge_cells(zero_based_cell_range_name(
+                metadata_columns[3], row, metadata_columns[3] + 1, row))
 
         # write the data
         for index, key in enumerate(('Versuch', 'Parzelle', 'Forstamt', 'Revier')):
             zero_based_cell(ws, metadata_columns[0], index).value = f'{key}: '
             zero_based_cell(ws, metadata_columns[1], index).value = self.metadata[key]
 
-        zero_based_cell(ws, metadata_columns[2], 0).value = 'Vermessung  '
-        zero_based_cell(ws, metadata_columns[2], 1).value = 'am: '
-        zero_based_cell(ws, metadata_columns[2], 2).value = 'durch: '
+        zero_based_cell(ws, metadata_columns[2], 0).value = 'Vermessung am:'
+        zero_based_cell(ws, metadata_columns[2], 1).value = 'durch: '
 
         # apply formatting to the metadata section
         metadata_key_cells = zero_based_cell_range(ws, metadata_columns[0], 0, metadata_columns[0], 3) + \
                              zero_based_cell_range(ws, metadata_columns[2], 0, metadata_columns[2], 3)
-        metadata_value_cells = zero_based_cell_range(ws, metadata_columns[1], 0, metadata_columns[1], 3) + \
-                               zero_based_cell_range(ws, metadata_columns[3], 0, metadata_columns[3], 3)
+
+        # apply default metadata style only for first column with prefilled data
+        metadata_value_cells = zero_based_cell_range(ws, metadata_columns[1], 0, metadata_columns[1], 3)
         for row in metadata_key_cells:
             row[0].style = styles.metadata_keys.name
         for row in metadata_value_cells:
             row[0].style = styles.metadata_values.name
+
+        # for the second metadata value column generated without contents, use separate format
+        for row in range(3):
+            zero_based_cell(ws, metadata_columns[3], row).style = styles.metadata_values_underlined.name
+            zero_based_cell(ws, metadata_columns[3] + 1, row).style = styles.metadata_values_underlined.name
 
     def write_formulae_columns(self) -> None:
         for formulae_column in self.formulae_columns:
@@ -151,6 +163,10 @@ class TrialSiteFormular:
                 ).name
                 for row in self.row_span[1:]:
                     zero_based_cell(self.worksheet, column_index, row).style = style
+            elif column_index == len(self.df.columns):
+                # First column after dataframe contents that is emptys
+                for row in self.row_span[1:]:
+                    zero_based_cell(self.worksheet, column_index, row).style = styles.table_body_text
 
         # apply conditional formatting rules
         for key, rule in self.conditional_formatting_rules:
