@@ -10,7 +10,7 @@ from vfl2csv_base.ColumnScheme import ColumnScheme
 from vfl2csv_base.datatypes_mapping import pandas_datatypes_mapping
 from vfl2csv_base.exceptions.FileParsingError import FileParsingError
 
-measurement_column_pattern = re.compile(r'\w+_\d{4}')
+measurement_column_pattern = re.compile(r'^\D+_\d{4}$')
 
 
 class TrialSite:
@@ -68,9 +68,7 @@ class TrialSite:
                     column_index = head_column_count + measurement_index * measurements_type_count + attribute_index
                     column = df.columns[column_index]
                     if column[1] != column_scheme.measurements[attribute_index].get(
-                            'override_name',
-                            column_scheme.measurements[attribute_index]['name']
-                    ):
+                            'override_name', column_scheme.measurements[attribute_index]['name']):
                         raise ValueError(
                             f'Column `{column[1]}_{column[0]}` of the dataframe does not match the expected '
                             f'name provided in the columns.json file!')

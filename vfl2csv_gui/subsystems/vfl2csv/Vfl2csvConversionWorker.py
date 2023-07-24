@@ -39,8 +39,9 @@ class Vfl2csvConversionWorker(QRunnable):
                 forms_input_handler = FormsInputHandler()
                 forms_input_handler.load_input(report['metadata_output_files'])
                 # Run the form conversion worker in the same thread to prevent issues with different threads and signals
-                forms_worker = FormsConversionWorker(forms_input_handler.trial_sites, self.output_dir / 'reference.xlsx')
-                # _, forms_signals = forms_input_handler.convert(self.output_dir / 'reference.xlsx')
+                forms_worker = FormsConversionWorker(forms_input_handler.trial_sites,
+                                                     self.output_dir / 'aufnahmeformular.xlsx')
+                # _, forms_signals = forms_input_handler.convert(self.output_dir / 'aufnahmeformular.xlsx')
 
                 forms_worker.signals.progress.connect(self.signals.progress)
                 forms_worker.signals.error.connect(self.signals.error)
