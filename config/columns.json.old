@@ -1,0 +1,40 @@
+{
+  "head": [
+    {
+      "name": "Bst.-E.",
+      "override_name": "Bestandeseinheit",
+      "form_include": false,
+      "type": "uint16"
+    },
+    {
+      "name": "Art",
+      "override_name": "Baumart",
+      "display_name": "BA",
+      "type": "string"
+    },
+    {
+      "name": "Baum",
+      "override_name": "Baumnummer",
+      "display_name": "BNr",
+      "type": "uint32"
+    }
+  ],
+  "measurements": [
+    {
+      "name": "D",
+      "new_columns_count": 2,
+      "add_difference": true,
+      "type": "float64"
+    },
+    {
+      "name": "Aus",
+      "form_include": false,
+      "type": "uint8"
+    },
+    {
+      "name": "H",
+      "add_difference": true,
+      "type": "float64"
+    }
+  ]
+}

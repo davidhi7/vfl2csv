@@ -27,14 +27,96 @@
       "type": "float64"
     },
     {
+      "name": "Typ",
+      "override_name": "Typ-D",
+      "form_include": false,
+      "optional": true,
+      "type": "uint8"
+    },
+    {
+      "name": "MH",
+      "form_include": false,
+      "optional": true,
+      "type": "float64"
+    },
+    {
       "name": "Aus",
       "form_include": false,
       "type": "uint8"
     },
     {
+      "name": "NVP",
+      "form_include": false,
+      "optional": true,
+      "type": "uint16"
+    },
+    {
+      "name": "Bruch",
+      "form_include": false,
+      "optional": true,
+      "type": "uint8"
+    },
+    {
+      "name": "Sonst",
+      "form_include": false,
+      "optional": true,
+      "type": "string"
+    },
+    {
+      "name": "Klass",
+      "form_include": false,
+      "optional": true,
+      "type": "string"
+    },
+    {
+      "name": "ZSt.",
+      "form_include": false,
+      "optional": true,
+      "type": "string"
+    },
+    {
       "name": "H",
       "add_difference": true,
       "type": "float64"
+    },
+    {
+      "name": "Typ",
+      "override_name": "Typ-H",
+      "form_include": false,
+      "optional": true,
+      "type": "string"
+    },
+    {
+      "name": "K",
+      "form_include": false,
+      "optional": true,
+      "type": "float64"
+    },
+    {
+      "name": "H-BHK",
+      "form_include": false,
+      "optional": true,
+      "type": "float64"
+    },
+    {
+      "name": "Typ",
+      "override_name": "Typ-H-BHK",
+      "form_include": false,
+      "optional": true,
+      "type": "string"
+    },
+    {
+      "name": "H-Mod",
+      "form_include": false,
+      "optional": true,
+      "type": "float64"
+    },
+    {
+      "name": "Typ",
+      "override_name": "Typ-H-Mod",
+      "optional": true,
+      "form_include": false,
+      "type": "string"
     }
   ]
 }

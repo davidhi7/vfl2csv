@@ -139,6 +139,23 @@ class TrialSiteTest(unittest.TestCase):
             'DataFrame': '14607-01.csv',
         })
 
+    def test_verifyIntegrity_optional_columns(self):
+        measurements_column_scheme = list(self.sample_measurements_scheme)
+        measurements_column_scheme.append({
+            "name": "Typ-D",
+            # "optional": True,
+            "type": "uint16"
+        })
+        column_scheme = ColumnScheme(head=[], measurements=[])
+        trial_site = TrialSite(df=pd.DataFrame(columns=['D_2000', 'Aus_2000', 'Typ-D_2000', 'D_2000', 'Aus_2000']),
+                               metadata={})
+        self.assertRaises(ValueError, trial_site.verify_column_integrity, column_scheme)
+        measurements_column_scheme[-1]['optional'] = True
+        trial_site.verify_column_integrity(column_scheme)
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()
