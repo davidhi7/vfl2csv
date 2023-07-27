@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import re
-from collections import Counter
 from pathlib import Path
-from typing import Generator
+from typing import Generator, NamedTuple
 
 import pandas as pd
 
@@ -11,7 +10,12 @@ from vfl2csv_base.ColumnScheme import ColumnScheme
 from vfl2csv_base.datatypes_mapping import pandas_datatypes_mapping
 from vfl2csv_base.exceptions.FileParsingError import FileParsingError
 
-measurement_column_pattern = re.compile(r'^\D+_\d{4}$')
+measurement_column_pattern = re.compile(r'^.+_\d{4}$')
+
+
+class ExpandedColumnNotation(NamedTuple):
+    year: int
+    name: str
 
 
 class TrialSite:
@@ -48,16 +52,15 @@ class TrialSite:
         # work only on a deep copy of the dataframe
         df = self.df.copy(deep=True)
         df.columns = list(self.expand_column_labels(df.columns))
-        actual_head_column_count = sum([1 if column[0] == -1 else 0 for column in df.columns])
-        actual_measurement_column_count = len(df.columns) - actual_head_column_count
-        actual_measurement_columns_per_measurement = Counter([column[0] for column in df.columns[actual_head_column_count:]])
+        actual_head_column_count = sum([1 if column.year == -1 else 0 for column in df.columns])
+        measurement_years = sorted(set([column.year for column in df.columns[head_column_count:]]))
 
         # verify head columns
         if head_column_count > 0:
             for i, column in enumerate(df.columns[:actual_head_column_count]):
-                if column[1] != column_scheme.head[i].get('override_name', column_scheme.head[i]['name']):
+                if column.name != column_scheme.head[i].get('override_name', column_scheme.head[i]['name']):
                     raise ValueError(
-                        f'Column `{column[1]}` of the dataframe does not match the expected name provided in '
+                        f'Column `{column.name}` of the dataframe does not match the expected name provided in '
                         f'the columns.json file!')
                 df[column] = df[column].astype(pandas_datatypes_mapping[column_scheme.head[i]['type']])
         elif actual_head_column_count > 0:
@@ -66,52 +69,24 @@ class TrialSite:
         # verify body columns
         # count of expected individual records with n columns each
         if measurement_column_count > 0:
-            # current index within the column scheme
-            attribute_index = 0
-            for index, column in enumerate(df.columns[head_column_count:]):
-                expected_name = column_scheme.measurements[attribute_index].get(
-                    'override_name', column_scheme.measurements[attribute_index]['name'])
-                while column[1] != expected_name:
-                    if column_scheme.measurements[attribute_index].get('optional', False):
-                        if attribute_index + 1 < len(column_scheme.measurements.data):
-                            attribute_index += 1
-                            continue
-                        else:
-                            # If `column` is the last column of this measurement, continue with the next measurement.
-                            # If not and we already reached the end of the column scheme,
-                            # the input dataframe is not valid
-                            if len(df.columns) == index + 1:
-                                #  This is the last column; continue
-                                continue
-                            if df.columns[index][0] != column[0]:
-                                # next column belongs to a new measurement; increment and continue
-                                attribute_index = 0
-                                continue
+            # Track the index of the current measurement column
+            column_index = head_column_count
+            for year in measurement_years:
+                for scheme_column in column_scheme.measurements.data:
+                    # noinspection PyTypeChecker
+                    df_column = df.columns[column_index] if not column_index >= len(df.columns) \
+                        else ExpandedColumnNotation(year=None, name=None)
+                    # First case: column name matches measurement column data
+                    if df_column.name == scheme_column.get('override_name', scheme_column['name']):
+                        df[df_column] = df[df_column].astype(pandas_datatypes_mapping[scheme_column['type']])
+                        column_index += 1
+                        continue
+                    # Second case: column names do not match, column is optional
+                    if scheme_column.get('optional', False):
+                        continue
                     raise ValueError(
-                        f'Column `{column[1]}_{column[0]}` of the dataframe does not match the expected '
-                        f'name `{expected_name}_xyz` provided in the columns.json file!')
-                df[column] = df[column]\
-                    .astype(pandas_datatypes_mapping[column_scheme.measurements[attribute_index]['type']])
-                attribute_index += 1
-                if attribute_index >= measurement_column_count:
-                    attribute_index = 0
-
-
-            # measurement_count = (len(df.columns) - head_column_count) // measurement_column_count
-            # for measurement_index in range(measurement_count):
-            #     for attribute_index in range(measurement_column_count):
-            #         column_index = head_column_count + measurement_index * measurement_column_count + attribute_index
-            #         column = df.columns[column_index]
-            #         while column[1] != column_scheme.measurements[attribute_index].get(
-            #                 'override_name', column_scheme.measurements[attribute_index]['name']):
-            #             if column_scheme.measurements[attribute_index].get('optional', False):
-            #                 column_index += 1
-            #                 continue
-            #             raise ValueError(
-            #                 f'Column `{column[1]}_{column[0]}` of the dataframe does not match the expected '
-            #                 f'name provided in the columns.json file!')
-            #         df[column] = df[column].astype(
-            #             pandas_datatypes_mapping[column_scheme.measurements[attribute_index]['type']])
+                        f'Required column `{scheme_column.get("override_name", scheme_column["name"])}` missing in year'
+                        f'{year}')
 
         df.columns = self.compress_column_labels(df.columns)
         self.df = self.df.astype(df.dtypes)
@@ -131,7 +106,7 @@ class TrialSite:
                 yield label[1]
 
     @staticmethod
-    def expand_column_labels(index: list[str]) -> Generator[tuple[int, str], None, None]:
+    def expand_column_labels(index: list[str]) -> Generator[ExpandedColumnNotation, None, None]:
         """
         Convert labels from the string 'type_year' into the tuple `(year or -1, type)`
         """
@@ -139,10 +114,10 @@ class TrialSite:
             if measurement_column_pattern.fullmatch(label):
                 # Fix in case there are multiple underscores in one column name
                 record_type, record_year = label.rsplit('_', maxsplit=1)
-                yield int(record_year), record_type
+                yield ExpandedColumnNotation(year=int(record_year), name=record_type)
             else:
                 # for head columns, only use the original column label
-                yield -1, label
+                yield ExpandedColumnNotation(year=-1, name=label)
 
     @staticmethod
     def from_metadata_file(metadata_path: Path) -> TrialSite:

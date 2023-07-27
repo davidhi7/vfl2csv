@@ -1,19 +1,16 @@
 import datetime
 import re
 from pathlib import Path
-from typing import TypeAlias
 
 import pandas as pd
 
 import vfl2csv_forms
-from vfl2csv_base.TrialSite import TrialSite
+from vfl2csv_base.TrialSite import TrialSite, ExpandedColumnNotation
 from vfl2csv_forms.excel import styles
 from vfl2csv_forms.excel.FormulaColumn import FormulaColumn
 from vfl2csv_forms.excel.TrialSiteForm import TrialSiteForm
 
 measurement_column_pattern = re.compile(r'\w+_\d{4}')
-
-ExpandedColumnLabel: TypeAlias = tuple[int, str]
 
 
 def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteForm:
@@ -28,8 +25,8 @@ def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteForm:
     # find columns that are supposed to be included into the form
     # namely, all head columns and all measurement columns of `last_year`, both unless explicitly disabled in the
     # column scheme
-    included_head_columns: list[ExpandedColumnLabel] = list()
-    included_body_columns: list[ExpandedColumnLabel] = list()
+    included_head_columns: list[ExpandedColumnNotation] = list()
+    included_body_columns: list[ExpandedColumnNotation] = list()
     for column in vfl2csv_forms.column_scheme.head:
         if not column.get('form_include', True):
             continue
@@ -37,13 +34,14 @@ def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteForm:
         # allow to manually set the display name for the form
         if 'display_name' in column:
             display_name = column.get('display_name')
-            df = df.rename(columns={(-1, column_name): (-1, display_name)})
+            df = df.rename(columns={(-1, column_name): (ExpandedColumnNotation(year=-1, name=display_name))})
             column_name = display_name
-        included_head_columns.append((-1, column_name,))
+        included_head_columns.append(ExpandedColumnNotation(year=-1, name=column_name))
     for column in vfl2csv_forms.column_scheme.measurements:
         if not column.get('form_include', True):
             continue
-        included_body_columns.append((latest_year, column.get('override_name', column['name'])))
+        included_body_columns.append(
+            ExpandedColumnNotation(year=latest_year, name=column.get('override_name', column['name'])))
 
     # filter the dataframe: filter out unneeded rows and columns
     df = filter_df(
@@ -66,7 +64,7 @@ def convert(trial_site: TrialSite, output_path: Path) -> TrialSiteForm:
     return TrialSiteForm(TrialSite(df, metadata), output_path, formulae_columns)
 
 
-def filter_df(df: pd.DataFrame, columns: list[ExpandedColumnLabel], lower_notnull_offset: int) -> pd.DataFrame:
+def filter_df(df: pd.DataFrame, columns: list[ExpandedColumnNotation], lower_notnull_offset: int) -> pd.DataFrame:
     """
     Filter dataframe:
     1. Filter columns, only select those whose labels are in the `column` parameter
@@ -74,11 +72,11 @@ def filter_df(df: pd.DataFrame, columns: list[ExpandedColumnLabel], lower_notnul
     If `lower_notnull_offset` equals the number of filtered head columns, then any column that contains at least one
     measurement value in the remaining columns is included.
     """
-    df = df[columns]
+    df = df.filter(columns)
     return df[df.notnull().sum(axis='columns') >= lower_notnull_offset]
 
 
-def insert_new_columns(df: pd.DataFrame, new_year: int, old_columns: list[ExpandedColumnLabel]) \
+def insert_new_columns(df: pd.DataFrame, new_year: int, old_columns: list[ExpandedColumnNotation]) \
         -> tuple[pd.DataFrame, list[FormulaColumn]]:
     formula_columns = []
     for old_column in old_columns:
