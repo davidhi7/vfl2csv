@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from collections import Counter
 from pathlib import Path
 from typing import Generator
 
@@ -40,40 +41,77 @@ class TrialSite:
         Verify the integrity of the dataframe by comparing all column labels to the provided column scheme.
         Additionally, the datatypes are set according to the column scheme.
         :param column_scheme:
-        :return:
         """
         head_column_count = len(column_scheme.head)
-        measurements_type_count = len(column_scheme.measurements)
+        measurement_column_count = len(column_scheme.measurements)
 
         # work only on a deep copy of the dataframe
         df = self.df.copy(deep=True)
         df.columns = list(self.expand_column_labels(df.columns))
+        actual_head_column_count = sum([1 if column[0] == -1 else 0 for column in df.columns])
+        actual_measurement_column_count = len(df.columns) - actual_head_column_count
+        actual_measurement_columns_per_measurement = Counter([column[0] for column in df.columns[actual_head_column_count:]])
 
         # verify head columns
         if head_column_count > 0:
-            for i, column in enumerate(df.columns[:head_column_count]):
+            for i, column in enumerate(df.columns[:actual_head_column_count]):
                 if column[1] != column_scheme.head[i].get('override_name', column_scheme.head[i]['name']):
                     raise ValueError(
                         f'Column `{column[1]}` of the dataframe does not match the expected name provided in '
                         f'the columns.json file!')
                 df[column] = df[column].astype(pandas_datatypes_mapping[column_scheme.head[i]['type']])
+        elif actual_head_column_count > 0:
+            raise ValueError('Actual head column count does not match expected head column count')
 
         # verify body columns
         # count of expected individual records with n columns each
-        if measurements_type_count > 0:
-            # noinspection PyTypeChecker
-            measurement_count = (len(df.columns) - head_column_count) // measurements_type_count
-            for measurement_index in range(measurement_count):
-                for attribute_index in range(measurements_type_count):
-                    column_index = head_column_count + measurement_index * measurements_type_count + attribute_index
-                    column = df.columns[column_index]
-                    if column[1] != column_scheme.measurements[attribute_index].get(
-                            'override_name', column_scheme.measurements[attribute_index]['name']):
-                        raise ValueError(
-                            f'Column `{column[1]}_{column[0]}` of the dataframe does not match the expected '
-                            f'name provided in the columns.json file!')
-                    df[column] = df[column].astype(
-                        pandas_datatypes_mapping[column_scheme.measurements[attribute_index]['type']])
+        if measurement_column_count > 0:
+            # current index within the column scheme
+            attribute_index = 0
+            for index, column in enumerate(df.columns[head_column_count:]):
+                expected_name = column_scheme.measurements[attribute_index].get(
+                    'override_name', column_scheme.measurements[attribute_index]['name'])
+                while column[1] != expected_name:
+                    if column_scheme.measurements[attribute_index].get('optional', False):
+                        if attribute_index + 1 < len(column_scheme.measurements.data):
+                            attribute_index += 1
+                            continue
+                        else:
+                            # If `column` is the last column of this measurement, continue with the next measurement.
+                            # If not and we already reached the end of the column scheme,
+                            # the input dataframe is not valid
+                            if len(df.columns) == index + 1:
+                                #  This is the last column; continue
+                                continue
+                            if df.columns[index][0] != column[0]:
+                                # next column belongs to a new measurement; increment and continue
+                                attribute_index = 0
+                                continue
+                    raise ValueError(
+                        f'Column `{column[1]}_{column[0]}` of the dataframe does not match the expected '
+                        f'name `{expected_name}_xyz` provided in the columns.json file!')
+                df[column] = df[column]\
+                    .astype(pandas_datatypes_mapping[column_scheme.measurements[attribute_index]['type']])
+                attribute_index += 1
+                if attribute_index >= measurement_column_count:
+                    attribute_index = 0
+
+
+            # measurement_count = (len(df.columns) - head_column_count) // measurement_column_count
+            # for measurement_index in range(measurement_count):
+            #     for attribute_index in range(measurement_column_count):
+            #         column_index = head_column_count + measurement_index * measurement_column_count + attribute_index
+            #         column = df.columns[column_index]
+            #         while column[1] != column_scheme.measurements[attribute_index].get(
+            #                 'override_name', column_scheme.measurements[attribute_index]['name']):
+            #             if column_scheme.measurements[attribute_index].get('optional', False):
+            #                 column_index += 1
+            #                 continue
+            #             raise ValueError(
+            #                 f'Column `{column[1]}_{column[0]}` of the dataframe does not match the expected '
+            #                 f'name provided in the columns.json file!')
+            #         df[column] = df[column].astype(
+            #             pandas_datatypes_mapping[column_scheme.measurements[attribute_index]['type']])
 
         df.columns = self.compress_column_labels(df.columns)
         self.df = self.df.astype(df.dtypes)
