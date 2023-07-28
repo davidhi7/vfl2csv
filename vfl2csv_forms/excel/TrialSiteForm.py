@@ -18,17 +18,17 @@ from vfl2csv_forms.excel.utilities import EXCEL_COLUMN_NAMES, zero_based_cell_na
 from vfl2csv_forms.excel.utilities import zero_based_cell
 
 dtypes_styles_mapping = {
-    'string': styles.table_body_text,
-    'Int8': styles.table_body_integer,
-    'Int16': styles.table_body_integer,
-    'Int32': styles.table_body_integer,
-    'Int64': styles.table_body_integer,
-    'UInt8': styles.table_body_integer,
-    'UInt16': styles.table_body_integer,
-    'UInt32': styles.table_body_integer,
-    'UInt64': styles.table_body_integer,
-    'Float32': styles.table_body_rational,
-    'Float64': styles.table_body_rational
+    'string': styles.table_body_text_border,
+    'Int8': styles.table_body_integer_border,
+    'Int16': styles.table_body_integer_border,
+    'Int32': styles.table_body_integer_border,
+    'Int64': styles.table_body_integer_border,
+    'UInt8': styles.table_body_integer_border,
+    'UInt16': styles.table_body_integer_border,
+    'UInt32': styles.table_body_integer_border,
+    'UInt64': styles.table_body_integer_border,
+    'Float32': styles.table_body_rational_border,
+    'Float64': styles.table_body_rational_border
 }
 
 
@@ -103,17 +103,17 @@ class TrialSiteForm:
     def write_metadata(self) -> None:
         """Insert the metadata into the sheet and format the updated cells."""
         ws = self.worksheet
-        # merge ABC and DE for first metadata column, then FG/HI for second metadata column
-        metadata_columns = [0, 3, 5, 7]
+        # merge AB and CD for first metadata column, then EF/GHI for second metadata column
+        metadata_columns = [0, 2, 4, 6]
         for row in range(0, 4):
             self.worksheet.merge_cells(zero_based_cell_range_name(
-                metadata_columns[0], row, metadata_columns[0] + 2, row))
+                metadata_columns[0], row, metadata_columns[0] + 1, row))
             self.worksheet.merge_cells(zero_based_cell_range_name(
                 metadata_columns[1], row, metadata_columns[1] + 1, row))
             self.worksheet.merge_cells(zero_based_cell_range_name(
                 metadata_columns[2], row, metadata_columns[2] + 1, row))
             self.worksheet.merge_cells(zero_based_cell_range_name(
-                metadata_columns[3], row, metadata_columns[3] + 1, row))
+                metadata_columns[3], row, metadata_columns[3] + 2, row))
 
         # write the data
         for index, key in enumerate(('Versuch', 'Parzelle', 'Forstamt', 'Revier')):
@@ -135,9 +135,11 @@ class TrialSiteForm:
             row[0].style = styles.metadata_values.name
 
         # for the second metadata value column generated without contents, use separate format
+        # Also this format must be applied for every 'child' of the merged cell
         for row in range(3):
             zero_based_cell(ws, metadata_columns[3], row).style = styles.metadata_values_underlined.name
             zero_based_cell(ws, metadata_columns[3] + 1, row).style = styles.metadata_values_underlined.name
+            zero_based_cell(ws, metadata_columns[3] + 2, row).style = styles.metadata_values_underlined.name
 
     def write_formulae_columns(self) -> None:
         for formulae_column in self.formulae_columns:
@@ -152,8 +154,12 @@ class TrialSiteForm:
         (except for headers) not part of the dataframe, that is formula columns and comment columns (Aus/Bruch).
         """
         for column_index in range(self.first_empty_column):
-            # apply style to header of all columns
-            zero_based_cell(self.worksheet, column_index, self.table_head_row).style = styles.table_head.name
+            # apply outlined header style to header of dataframe columns, normal header style to remaining columns
+            if column_index < len(self.df.columns):
+                zero_based_cell(self.worksheet, column_index, self.table_head_row).style = styles.table_head_border.name
+            else:
+                zero_based_cell(self.worksheet, column_index, self.table_head_row).style = styles.table_head.name
+
             if column_index < len(self.df.columns):
                 # Do only format the values below the header if the column index is still contained in the dataframe
                 # Custom columns that are not contained in the dataframe should be formatted separately.
@@ -164,7 +170,7 @@ class TrialSiteForm:
                 for row in self.row_span[1:]:
                     zero_based_cell(self.worksheet, column_index, row).style = style
             elif column_index == len(self.df.columns):
-                # First column after dataframe contents that is emptys
+                # First column after dataframe contents that is empty; don't put border around cells
                 for row in self.row_span[1:]:
                     zero_based_cell(self.worksheet, column_index, row).style = styles.table_body_text
 
@@ -179,20 +185,22 @@ class TrialSiteForm:
         for column in range(self.first_empty_column):
             column_content: list[list[Cell]] = zero_based_cell_range(self.worksheet, column, self.row_span[0], column,
                                                                      self.row_span[-1])
-            max_length = 0
             if column_content[0][0].value is None:
                 continue
             else:
                 max_length = get_character_count(column_content[0][0].value, decimal_digits=1)
 
             # only scan content if there is any content
-            if len(column_content) >= 2:
+            if len(column_content) > 1:
                 first_content_value: str = column_content[1][0].value
                 if not (isinstance(first_content_value, str) and first_content_value.startswith('=')):
                     # If condition above is not true, then we have a column with formulas and cannot compute the width
                     # of the formula's output
                     for row in column_content:
                         max_length = max(max_length, get_character_count(row[0].value, decimal_digits=1))
+
+            # set lower limit to 3, so we don't have too narrow cells
+            max_length = max(max_length, 3)
 
             # adding one and multiplying by 1.3 fits well
             column_width = 1.3 * (max_length + 1)

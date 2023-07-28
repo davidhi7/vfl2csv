@@ -5,28 +5,36 @@ from openpyxl.workbook import Workbook
 _full_cell_border = Border(bottom=Side(style='thin'), left=Side(style='thin'), top=Side(style='thin'),
                            right=Side(style='thin'))
 
-metadata_keys = NamedStyle(name='metadata-keys',
+metadata_keys = NamedStyle(name='metadata key cells',
                            font=Font(bold=True, name='Calibri', size=12),
                            alignment=Alignment(horizontal='right')
                            )
 
-metadata_values = NamedStyle(name='metadata-values', font=Font(name='Calibri', size=12))
+metadata_values = NamedStyle(name='metadata value cells', font=Font(name='Calibri', size=12))
 
-metadata_values_underlined = NamedStyle(name='metadata-values-underlined', font=Font(name='Calibri', size=12),
+metadata_values_underlined = NamedStyle(name='underlined metadata value cells', font=Font(name='Calibri', size=12),
                                         border=Border(bottom=Side(style='thin')))
 
+table_head = NamedStyle(name='table head cells', font=Font(bold=True, name='Calibri', size=12),
+                        alignment=Alignment(horizontal='center', vertical='center'))
+table_head_border = NamedStyle(name='table head cells (with outlines)', font=Font(bold=True, name='Calibri', size=12),
+                               alignment=Alignment(horizontal='center', vertical='center'), border=_full_cell_border)
 
-table_head = NamedStyle(name='table-head',
-                        font=Font(bold=True, name='Calibri', size=12),
-                        alignment=Alignment(horizontal='center', vertical='center'),
-                        border=_full_cell_border
-                        )
+table_body_text = NamedStyle(name='table body cells (text)', font=Font(name='Calibri', size=12))
+table_body_integer = NamedStyle(name='table body cells (integer)', font=Font(name='Calibri', size=12),
+                                number_format='0')
+table_body_rational = NamedStyle(name='table body cells (rational)', font=Font(name='Calibri', size=12),
+                                 number_format='0.0')
 
-table_body_text = NamedStyle(name='table-body-text', font=Font(name='Calibri', size=12), border=_full_cell_border)
-table_body_integer = NamedStyle(name='table-body-integer', font=Font(name='Calibri', size=12), number_format='0',
-                                border=_full_cell_border)
-table_body_rational = NamedStyle(name='table-body-rational', font=Font(name='Calibri', size=12), number_format='0.0',
-                                 border=_full_cell_border)
+table_body_text_border = NamedStyle(name='table body cells (text, with outlines)', font=Font(name='Calibri', size=12),
+                                    border=_full_cell_border)
+table_body_integer_border = NamedStyle(name='table body cells (integer, with outlines)',
+                                       font=Font(name='Calibri', size=12), number_format='0',
+                                       border=_full_cell_border)
+table_body_rational_border = NamedStyle(name='table body cells (rational, with outlines)',
+                                        font=Font(name='Calibri', size=12),
+                                        number_format='0.0',
+                                        border=_full_cell_border)
 
 
 # noinspection SpellCheckingInspection,PyDefaultArgument
@@ -95,6 +103,7 @@ def full_conditional_formatting_list(__mutable={'count': 1}) -> list[Rule]:
 
 
 def register(workbook: Workbook) -> None:
-    for style in (metadata_keys, metadata_values, metadata_values_underlined, table_head, table_body_text,
-                  table_body_integer, table_body_rational):
+    for style in (metadata_keys, metadata_values, metadata_values_underlined, table_head, table_head_border,
+                  table_body_text, table_body_integer, table_body_rational, table_body_text_border,
+                  table_body_integer_border, table_body_rational_border):
         workbook.add_named_style(style)
