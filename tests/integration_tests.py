@@ -4,7 +4,6 @@ import re
 import subprocess
 import sys
 import tempfile
-import unittest.mock
 from pathlib import Path
 from subprocess import Popen
 

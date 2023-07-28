@@ -5,10 +5,9 @@ import pandas as pd
 
 from vfl2csv_base import test_config
 from vfl2csv_base.ColumnScheme import ColumnScheme
-from vfl2csv_base.TrialSite import TrialSite
+from vfl2csv_base.TrialSite import TrialSite, ExpandedColumnNotation
 
 
-# noinspection SpellCheckingInspection
 class TrialSiteTest(unittest.TestCase):
     sample_metadata = {
         "Forstamt": "5628   Bad Berka",
@@ -92,13 +91,13 @@ class TrialSiteTest(unittest.TestCase):
 
     def test_verifyIntegrity_head_errors(self) -> None:
         column_scheme = ColumnScheme(head=self.sample_head_scheme, measurements=self.sample_measurements_scheme)
-        trial_site = TrialSite(df=pd.DataFrame(columns=['Bestandeseinheittypo', 'Baumart', 'Baumnummer']), metadata={})
+        trial_site = TrialSite(df=pd.DataFrame(columns=['Bestandeseinheit_typo', 'Baumart', 'Baumnummer']), metadata={})
         self.assertRaises(ValueError, trial_site.verify_column_integrity, column_scheme)
 
     def test_verifyIntegrity_measurements_errors(self) -> None:
         column_scheme = ColumnScheme(head=self.sample_head_scheme, measurements=self.sample_measurements_scheme)
         trial_site = TrialSite(df=pd.DataFrame(
-            columns=['Dtypo_1980', 'Aus_1980', 'D_2000', 'Aus_2000', 'D_2020', 'Aus_2020']), metadata={})
+            columns=['D_typo_1980', 'Aus_1980', 'D_2000', 'Aus_2000', 'D_2020', 'Aus_2020']), metadata={})
         self.assertRaises(ValueError, trial_site.verify_column_integrity, column_scheme)
 
     def test_verifyIntegrity_head_errors_missing(self) -> None:
@@ -120,7 +119,9 @@ class TrialSiteTest(unittest.TestCase):
 
     def test_compressColumnLabels(self):
         self.assertEqual(
-            list(TrialSite.compress_column_labels([(-1, 'Baumart'), (-1, 'Baumnummer'), (2000, 'D'), (2000, 'Aus')])),
+            list(TrialSite.compress_column_labels([
+                ExpandedColumnNotation(-1, 'Baumart'), ExpandedColumnNotation(-1, 'Baumnummer'),
+                ExpandedColumnNotation(2000, 'D'), ExpandedColumnNotation(2000, 'Aus')])),
             ['Baumart', 'Baumnummer', 'D_2000', 'Aus_2000']
         )
 
@@ -149,9 +150,11 @@ class TrialSiteTest(unittest.TestCase):
         column_scheme = ColumnScheme(head=[], measurements=measurements_column_scheme)
         trial_site = TrialSite(df=pd.DataFrame(columns=['D_2000', 'Aus_2000', 'Typ-D_2000', 'D_2010', 'Aus_2010']),
                                metadata={})
+        # Expect error because `Typ-D` is not optional
         self.assertRaises(ValueError, trial_site.verify_column_integrity, column_scheme)
         # measurements_column_scheme[-1]['optional'] = True
         column_scheme.measurements.by_name['Typ-D']['optional'] = True
+        # Do no longer expect error as column is optional now
         trial_site.verify_column_integrity(column_scheme)
 
 

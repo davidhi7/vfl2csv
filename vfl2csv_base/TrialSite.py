@@ -67,7 +67,6 @@ class TrialSite:
             raise ValueError('Actual head column count does not match expected head column count')
 
         # verify body columns
-        # count of expected individual records with n columns each
         if measurement_column_count > 0:
             # Track the index of the current measurement column
             column_index = head_column_count
@@ -95,7 +94,7 @@ class TrialSite:
         return f'{self.metadata["Revier"]}/{self.metadata["Versuch"]}-{self.metadata["Parzelle"]}'
 
     @staticmethod
-    def compress_column_labels(multi_index: list[tuple[int, str]]) -> Generator[str, None, None]:
+    def compress_column_labels(multi_index: list[ExpandedColumnNotation]) -> Generator[str, None, None]:
         """
         Convert labels from the tuple `(year or -1, type)` into the string 'type_year'
         """
