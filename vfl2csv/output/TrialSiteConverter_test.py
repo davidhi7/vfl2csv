@@ -2,12 +2,15 @@ import re
 import shutil
 import unittest
 from datetime import date
+from pathlib import Path
 
 import pandas as pd
 from pandas import MultiIndex
 
+from vfl2csv import setup
 from vfl2csv.output.TrialSiteConverter import TrialSiteConverter
 from vfl2csv_base import test_config
+from vfl2csv_base.ColumnScheme import ColumnScheme
 from vfl2csv_base.TrialSite import TrialSite
 
 
@@ -42,28 +45,34 @@ class TrialSiteConverterTest(unittest.TestCase):
         shutil.rmtree(cls.tmp_dir)
 
     def test_refactor_dataframe(self):
-        df = pd.DataFrame(columns=self.sample_multiIndex)
-        trial_site_converter = TrialSiteConverter(TrialSite(df, metadata=dict()))
-        trial_site_converter.refactor_dataframe()
-        df = trial_site_converter.trial_site.df
-        # expect 2 tree data labels (id and species) and 12 (4*3) measurement columns
-        self.assertEqual(len(df.columns), 15)
-        self.assertEqual(df.columns[0], 'Bestandeseinheit')
-        self.assertEqual(df.columns[1], 'Baumart')
-        self.assertEqual(df.columns[2], 'Baumnummer')
-        for i, column_label in enumerate(df.columns[3:]):
-            self.assertIsInstance(column_label, str)
-            if i % 3 == 0:
-                # first measurement type: diameter
-                self.assertIsNotNone(re.fullmatch(r'D_\d{4}', column_label))
-            elif i % 3 == 1:
-                # second measurement type: ausscheidungskennung
-                self.assertIsNotNone(re.fullmatch(r'Aus_\d{4}', column_label))
-            elif i % 3 == 2:
-                # third measurement type: height
-                self.assertIsNotNone(re.fullmatch(r'H_\d{4}', column_label))
-        self.assertEqual(df.dtypes.array, (pd.UInt16Dtype, pd.StringDtype, pd.UInt16Dtype) + 4 * (
-            pd.Float64Dtype, pd.UInt8Dtype, pd.Float64Dtype))
+        # Simple hack to fix this after introducing the expanded default column scheme
+        old_column_scheme = setup.column_scheme
+        try:
+            setup.column_scheme = ColumnScheme.from_file(path=Path('config/columns.json.old'))
+            df = pd.DataFrame(columns=self.sample_multiIndex)
+            trial_site_converter = TrialSiteConverter(TrialSite(df, metadata=dict()))
+            trial_site_converter.refactor_dataframe()
+            df = trial_site_converter.trial_site.df
+            # expect 2 tree data labels (id and species) and 12 (4*3) measurement columns
+            self.assertEqual(len(df.columns), 15)
+            self.assertEqual(df.columns[0], 'Bestandeseinheit')
+            self.assertEqual(df.columns[1], 'Baumart')
+            self.assertEqual(df.columns[2], 'Baumnummer')
+            for i, column_label in enumerate(df.columns[3:]):
+                self.assertIsInstance(column_label, str)
+                if i % 3 == 0:
+                    # first measurement type: diameter
+                    self.assertIsNotNone(re.fullmatch(r'D_\d{4}', column_label))
+                elif i % 3 == 1:
+                    # second measurement type: ausscheidungskennung
+                    self.assertIsNotNone(re.fullmatch(r'Aus_\d{4}', column_label))
+                elif i % 3 == 2:
+                    # third measurement type: height
+                    self.assertIsNotNone(re.fullmatch(r'H_\d{4}', column_label))
+            self.assertEqual(df.dtypes.array, (pd.UInt16Dtype, pd.StringDtype, pd.UInt16Dtype) + 4 * (
+                pd.Float64Dtype, pd.UInt8Dtype, pd.Float64Dtype))
+        finally:
+            setup.column_scheme = old_column_scheme
 
     def test_trim_metadata(self):
         trial_site_converter = TrialSiteConverter(TrialSite(df=None, metadata={
