@@ -31,7 +31,8 @@ class ExcelInputSheet(InputData):
             key, value = row[0].value.split(':')
             metadata[key.strip()] = value.strip()
 
-        df = pd.read_excel(self.input_stream, sheet_name=self.sheet_name, header=list(range(0, 4)), skiprows=13)
+        df = pd.read_excel(self.input_stream, sheet_name=self.sheet_name, header=list(range(0, 4)), skiprows=13,
+                           na_values=[' '])
 
         return TrialSite(df, metadata)
 

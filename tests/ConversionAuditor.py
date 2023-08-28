@@ -106,6 +106,12 @@ class ConversionAuditor:
         return metadata, header, data
 
     def audit_converted_metadata_files(self, paths: list[Path]) -> None:
+        """
+        Verify the correctness of converted files by comparing data and metadata.
+
+        @param paths: List of paths of metadata files
+        @return: None
+        """
         reference_sites_index = {}
         for site in self.reference:
             key = (site[0]['Versuch'], site[0]['Parzelle'])
@@ -120,8 +126,7 @@ class ConversionAuditor:
                              ', '.join(remaining_trial_site_names))
 
     @staticmethod
-    def _verify_metadata_embedded_path(pattern: str, metadata: dict[str, str], actual_path: Path) \
-            -> ValueError | None:
+    def _verify_metadata_embedded_path(pattern: str, metadata: dict[str, str], actual_path: Path) -> None:
         for key, value in metadata.items():
             pattern = pattern.replace(f'{{{key.lower()}}}', value)
         pattern_tokens = re.split(r'[\/\\]', pattern)
@@ -133,7 +138,15 @@ class ConversionAuditor:
                              f'Expected path: {"/".join(pattern_tokens)}')
         return
 
-    def _verify_converted_trial_site(self, path: Path, original_trial_sites: dict[tuple[str, str], TrialSiteContent]):
+    def _verify_converted_trial_site(self, path: Path, original_trial_sites: dict[tuple[str, str], TrialSiteContent]) \
+            -> None:
+        """
+        Compare the equality of metadata and data
+
+        @param path: Path to the newly created file
+        @param original_trial_sites: Data of the original trial site
+        @return:
+        """
         metadata: TrialSiteMetadata = {}
         header: TrialSiteHeader = []
         data: TrialSiteData
@@ -189,17 +202,23 @@ class ConversionAuditor:
         for row_index in range(len(data)):
             for col_index in range(len(data[row_index])):
                 error_flag = False
-                if re.fullmatch(r'\d+[.,]\d+', data[row_index][col_index]):
-                    data_value = data[row_index][col_index].replace(',', '.')
-                    original_data_value = original_data[row_index][col_index].replace(',', '.')
+                cell_value = data[row_index][col_index]
+                original_cell_value = original_data[row_index][col_index]
+                if re.fullmatch(r'\d+[.,]\d+', cell_value):
+                    # comparison of floating point numbers
+                    data_value = cell_value.replace(',', '.')
+                    original_data_value = original_cell_value.replace(',', '.')
                     if float(data_value) != float(original_data_value):
                         error_flag = True
                 else:
-                    if data[row_index][col_index] != original_data[row_index][col_index]:
-                        error_flag = True
+                    # Comparison of values that are not floating point numbers
+                    if cell_value != original_cell_value:
+                        # Values with a single space are converted into NA
+                        if not (cell_value == 'NA' and original_cell_value == ' '):
+                            error_flag = True
                 if error_flag:
                     raise ValueError(f'Data of converted trial site {trialsite_key_str} does not match data of '
                                      f'original trial site in line {row_index + 1}, column {col_index + 1}.\n'
-                                     f'Converted: {data[row_index][col_index]}\n'
-                                     f'Original: {original_data[row_index][col_index]}')
+                                     f'Converted: {cell_value}\n'
+                                     f'Original: {original_cell_value}')
         del original_trial_sites[trialsite_key]
