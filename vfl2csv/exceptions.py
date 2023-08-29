@@ -2,5 +2,5 @@ class ConversionException(Exception):
     ...
 
 
-class VerificationException(ValueError):
+class VerificationException(Exception):
     ...

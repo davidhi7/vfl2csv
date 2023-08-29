@@ -4,6 +4,7 @@ import re
 import subprocess
 import sys
 import tempfile
+import unittest.mock
 from pathlib import Path
 from subprocess import Popen
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 cwd = Path(__file__).parent.parent
 
 config = config_factory.get_config(Path('config/config_vfl2csv.ini'))
-column_scheme_path = Path('config/columns.json')
+column_scheme_path = test_config['Input'].getpath('vfl2csv_test_columns_config')
 column_scheme = ColumnScheme.from_file(column_scheme_path)
 
 auditor = ConversionAuditor(config, column_scheme)
@@ -67,13 +68,14 @@ def run_test(tmp_dir: Path, input_dir: Path):
 
 
 with tempfile.TemporaryDirectory() as tmp_dir:
+    tmp_dir_path = Path(tmp_dir)
     # Excel file conversion
     print('=== Run integration tests on Excel input ===')
     input_dir: Path = test_config['Input'].getpath('excel_sample_input_dir')
     config.set('Input', 'input_format', 'Excel')
     config.set('Input', 'input_file_extension', 'xlsx')
     config.set('Multiprocessing', 'enabled', 'False')
-    run_test(Path(tmp_dir) / 'excel', input_dir)
+    run_test(tmp_dir_path / 'excel', input_dir)
 
     # TSV file conversion
     print('=== Run integration tests on tab-delimited input ===')
@@ -81,7 +83,7 @@ with tempfile.TemporaryDirectory() as tmp_dir:
     config.set('Input', 'input_format', 'TSV')
     config.set('Input', 'input_file_extension', 'txt')
     config.set('Multiprocessing', 'enabled', 'False')
-    run_test(Path(tmp_dir) / 'tsv', input_dir)
+    run_test(tmp_dir_path / 'tsv', input_dir)
 
     # Excel files with multiprocessing
     print('=== Run integration tests using multiprocessing ===')
@@ -90,7 +92,7 @@ with tempfile.TemporaryDirectory() as tmp_dir:
     config.set('Input', 'input_file_extension', 'xlsx')
     config.set('Multiprocessing', 'enabled', 'True')
     config.set('Multiprocessing', 'sheets_per_core', '1')
-    run_test(Path(tmp_dir) / 'mp-tsv', input_dir)
+    run_test(tmp_dir_path / 'mp-excel', input_dir)
 
     # TSV files with multiprocessing
     print('=== Run integration tests using multiprocessing ===')
@@ -99,6 +101,6 @@ with tempfile.TemporaryDirectory() as tmp_dir:
     config.set('Input', 'input_file_extension', 'txt')
     config.set('Multiprocessing', 'enabled', 'True')
     config.set('Multiprocessing', 'sheets_per_core', '1')
-    run_test(Path(tmp_dir) / 'mp-excel', input_dir)
+    run_test(tmp_dir_path / 'mp-tsv', input_dir)
 
     print('=== Completed without any exceptions ===')

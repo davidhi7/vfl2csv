@@ -2,12 +2,14 @@ import logging
 import multiprocessing
 import traceback
 from collections import Counter
+from configparser import ConfigParser
 from multiprocessing import RLock, Pool
 from pathlib import Path
 from typing import TypedDict, Optional, Callable
 
 import numpy as np
 
+import vfl2csv
 from tests.ConversionAuditor import ConversionAuditor
 from vfl2csv import setup
 from vfl2csv.exceptions import ConversionException, VerificationException
@@ -15,6 +17,7 @@ from vfl2csv.input.ExcelInputSheet import ExcelInputSheet
 from vfl2csv.input.InputData import InputData
 from vfl2csv.input.TsvInputFile import TsvInputFile
 from vfl2csv.output.TrialSiteConverter import TrialSiteConverter
+from vfl2csv_base.ColumnScheme import ColumnScheme
 from vfl2csv_base.exceptions.ExceptionReport import ExceptionReport
 
 CONFIG_ALLOWED_INPUT_FORMATS = ('TSV', 'Excel')
@@ -68,6 +71,8 @@ def find_input_data(input_path: str | Path | list[str | Path]) -> tuple[list[Pat
 
 
 def trial_site_pipeline(
+        config: ConfigParser,
+        column_scheme: ColumnScheme,
         input_batch: list[InputData],
         output_data_pattern: Path,
         output_metadata_pattern: Path,
@@ -78,6 +83,8 @@ def trial_site_pipeline(
 ) -> Report:
     """
     Convert a batch of input data.
+    @param column_scheme: Column scheme to work with
+    @param config: Configuration to work with
     @param input_batch: List of `InputData` objects
     @param output_data_pattern: Pattern for storing data files
     @param output_metadata_pattern: Pattern for storing metadata files
@@ -90,6 +97,8 @@ def trial_site_pipeline(
     omitted.
     @return: report of all conversions containing metadata and exceptions.
     """
+    vfl2csv.setup.config = config
+    vfl2csv.setup.column_scheme = column_scheme
     process_logger = logging.getLogger(f'process {process_index if process_index is not None else "root"}')
     # store all metadata output files to check for exceptions later
     metadata_output_files = []
@@ -168,6 +177,8 @@ def run(output_dir: Path, input_path: str | Path | list[str | Path],
                 # Therefore, we invoke the callbacks in the main process while communicating with the other processes
                 # using a queue
                 process_args = zip(
+                    process_count * [vfl2csv.setup.config],
+                    process_count * [vfl2csv.setup.column_scheme],
                     np.array_split(input_trial_sites, process_count),
                     process_count * [output_data_file],
                     process_count * [output_metadata_file],
@@ -202,13 +213,17 @@ def run(output_dir: Path, input_path: str | Path | list[str | Path],
     else:
         # allow disabling multiprocessing for easier debugging and optimized performance when working with little data
         logger.info('Multiprocessing is disabled')
-        summarised_result: Report = trial_site_pipeline(input_trial_sites,
-                                                        output_data_file,
-                                                        output_metadata_file,
-                                                        RLock(),
-                                                        on_progress=on_progress,
-                                                        on_progress_queue=None,
-                                                        process_index=0)
+        summarised_result: Report = trial_site_pipeline(
+            vfl2csv.setup.config,
+            vfl2csv.setup.column_scheme,
+            input_trial_sites,
+            output_data_file,
+            output_metadata_file,
+            RLock(),
+            on_progress=on_progress,
+            on_progress_queue=None,
+            process_index=0
+        )
     summarised_result: Report = dict(summarised_result)
 
     if len(summarised_result['exceptions']) != 0:

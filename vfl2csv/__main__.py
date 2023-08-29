@@ -16,7 +16,7 @@ def start(args):
         vfl2csv.set_custom_configs(config_path=arguments['config'], column_scheme_path=arguments['column_scheme'])
     try:
         run(arguments['output'], arguments['input'], on_progress=None)
-    except ConversionException | VerificationException as _:
+    except (ConversionException, VerificationException) as _:
         logger.warning('Failed to convert files')
         logger.warning(traceback.format_exc())
         return 1
