@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pathlib import Path
 from typing import Iterable
 
@@ -45,7 +47,7 @@ class ExcelInputSheet(InputData):
         return self.string_representation()
 
     @staticmethod
-    def iterate_files(input_files: Iterable[Path]) -> list['ExcelInputSheet']:
+    def iterate_files(input_files: Iterable[Path]) -> list[ExcelInputSheet]:
         workbooks = list(ExcelWorkbook(path) for path in input_files)
         input_sheets = list()
         for workbook in workbooks:
