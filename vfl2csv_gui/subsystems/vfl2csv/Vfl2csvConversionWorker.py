@@ -1,12 +1,10 @@
 import logging
-import traceback
 from pathlib import Path
 
 from PySide6.QtCore import QRunnable
 
 from vfl2csv import batch_converter
 from vfl2csv.input.InputData import InputData
-from vfl2csv_base.exceptions.ExceptionReport import ExceptionReport
 from vfl2csv_gui.interfaces.CommunicationSignals import CommunicationSignals
 from vfl2csv_gui.subsystems.forms.FormsConversionWorker import FormsConversionHandler as FormsConversionWorker
 from vfl2csv_gui.subsystems.forms.FormsInputHandler import FormsInputHandler as FormsInputHandler
@@ -49,7 +47,6 @@ class Vfl2csvConversionWorker(QRunnable):
                 forms_worker.run()
             else:
                 self.signals.finished.emit()
-        except Exception as exc:
-            exc_traceback = traceback.format_exc()
-            logger.warning(str(exc) + '\n' + exc_traceback)
-            self.signals.error.emit(ExceptionReport(exc, exc_traceback))
+        except Exception as exception:
+            logger.exception(msg='Error during vfl2csv conversion')
+            self.signals.error.emit(exception)

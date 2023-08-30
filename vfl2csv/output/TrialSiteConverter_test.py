@@ -50,7 +50,7 @@ class TrialSiteConverterTest(unittest.TestCase):
         try:
             setup.column_scheme = ColumnScheme.from_file(path=Path('config/columns.json.old'))
             df = pd.DataFrame(columns=self.sample_multiIndex)
-            trial_site_converter = TrialSiteConverter(TrialSite(df, metadata=dict()))
+            trial_site_converter = TrialSiteConverter(TrialSite(df, metadata=dict()), None)
             trial_site_converter.refactor_dataframe()
             df = trial_site_converter.trial_site.df
             # expect 2 tree data labels (id and species) and 12 (4*3) measurement columns
@@ -80,7 +80,7 @@ class TrialSiteConverterTest(unittest.TestCase):
             '1': 'a  b',
             '2': 'a\nb',
             '3': 'a \n b'
-        }))
+        }), None)
         expectations = [' ', 'a b', 'a b', 'a b']
         trial_site_converter.trim_metadata()
         for i in range(4):
@@ -88,14 +88,15 @@ class TrialSiteConverterTest(unittest.TestCase):
 
     def test_refactor_dataframe_exceptions(self):
         # test empty column set
-        trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([()])), metadata=dict()))
+        trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([()])), metadata=dict()),
+                                        None)
         self.assertRaises(ValueError, trial_site.refactor_dataframe)
 
         # test column set with fewer columns than head columns in the template
         trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([
             ('Aufnahme', 'Wert', 'Einheit', 'Bst.-E.'),
             ('Aufnahme', 'Wert', 'Einheit', 'Art')
-        ])), metadata=dict()))
+        ])), metadata=dict()), None)
         self.assertRaises(ValueError, trial_site.refactor_dataframe)
 
         # test column set with measurement columns lacking one field compared to the template
@@ -105,7 +106,7 @@ class TrialSiteConverterTest(unittest.TestCase):
             ('Aufnahme', 'Wert', 'Einheit', 'Baum'),
             ('23.07.1984', 'D', 'cm', '159'),
             ('23.07.1984', 'Aus', 'Unnamed: 4_level_2', '15')
-        ])), metadata=dict()))
+        ])), metadata=dict()), None)
         self.assertRaises(ValueError, trial_site.refactor_dataframe)
 
         # test wrong column names in input
@@ -116,7 +117,7 @@ class TrialSiteConverterTest(unittest.TestCase):
             ('23.07.1984', 'D', 'cm', '159'),
             ('23.07.1984', 'Aus', 'Unnamed: 4_level_2', '15'),
             ('23.07.1984', 'H', 'Unnamed: 4_level_2', '159')
-        ])), metadata=dict()))
+        ])), metadata=dict()), None)
         self.assertRaises(ValueError, trial_site.refactor_dataframe)
 
         trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([
@@ -126,7 +127,7 @@ class TrialSiteConverterTest(unittest.TestCase):
             ('23.07.1984', 'wrong', 'cm', '159'),
             ('23.07.1984', 'Aus', 'Unnamed: 4_level_2', '15'),
             ('23.07.1984', 'H', 'Unnamed: 4_level_2', '159')
-        ])), metadata=dict()))
+        ])), metadata=dict()), None)
         self.assertRaises(ValueError, trial_site.refactor_dataframe)
 
     def test_simplifyColumnLabels_expect_decremented_year(self) -> None:
@@ -164,7 +165,7 @@ class TrialSiteConverterTest(unittest.TestCase):
                 pd.NA, pd.NA, pd.NA
             ]
         })
-        trial_site = TrialSiteConverter(TrialSite(df=test_df, metadata=dict()))
+        trial_site = TrialSiteConverter(TrialSite(df=test_df, metadata=dict()), None)
         trial_site.write_data(filepath=self.tmp_dir / 'data.csv')
         with open(self.tmp_dir / 'data.csv', 'r') as file:
             self.assertEqual(file.read(), "meta-data,D_2014\n1,NA\n2,NA\n3,NA\n")
@@ -175,7 +176,7 @@ class TrialSiteConverterTest(unittest.TestCase):
             'key-2': 'value-2',
             'key-3': 'value-3'
         }
-        trial_site = TrialSiteConverter(TrialSite(df=pd.DataFrame(), metadata=test_metadata))
+        trial_site = TrialSiteConverter(TrialSite(df=pd.DataFrame(), metadata=test_metadata), None)
         trial_site.write_metadata(filepath=self.tmp_dir / 'metadata.txt')
         with open(self.tmp_dir / 'metadata.txt', 'r') as file:
             self.assertEqual(file.read(), "key-1=value-1\nkey-2=value-2\nkey-3=value-3\n")

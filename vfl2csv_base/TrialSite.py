@@ -8,7 +8,7 @@ import pandas as pd
 
 from vfl2csv_base.ColumnScheme import ColumnScheme
 from vfl2csv_base.datatypes_mapping import pandas_datatypes_mapping
-from vfl2csv_base.exceptions.FileParsingError import FileParsingError
+from vfl2csv_base.exceptions.IOErrors import FileParsingError, TrialSiteFormatError
 
 measurement_column_pattern = re.compile(r'^.+_\d{4}$')
 
@@ -59,12 +59,11 @@ class TrialSite:
         if head_column_count > 0:
             for i, column in enumerate(df.columns[:actual_head_column_count]):
                 if column.name != column_scheme.head[i].get('override_name', column_scheme.head[i]['name']):
-                    raise ValueError(
-                        f'Column `{column.name}` of the dataframe does not match the expected name provided in '
-                        f'the columns.json file!')
+                    raise TrialSiteFormatError(
+                        f'Column `{column.name}` of the dataframe does not match the expected column name')
                 df[column] = df[column].astype(pandas_datatypes_mapping[column_scheme.head[i]['type']])
         elif actual_head_column_count > 0:
-            raise ValueError('Actual head column count does not match expected head column count')
+            raise TrialSiteFormatError('Actual head column count does not match expected head column count')
 
         # verify body columns
         if measurement_column_count > 0:
@@ -83,7 +82,7 @@ class TrialSite:
                     # Second case: column names do not match, column is optional
                     if scheme_column.get('optional', False):
                         continue
-                    raise ValueError(
+                    raise TrialSiteFormatError(
                         f'Required column `{scheme_column.get("override_name", scheme_column["name"])}` missing in year'
                         f'{year}')
 
@@ -91,7 +90,10 @@ class TrialSite:
         self.df = self.df.astype(df.dtypes)
 
     def __str__(self) -> str:
-        return f'{self.metadata["Revier"]}/{self.metadata["Versuch"]}-{self.metadata["Parzelle"]}'
+        revier = self.metadata.get('Revier', 'Unknown Revier')
+        versuch = self.metadata.get('Versuch', 'Unknown Versuch')
+        parzelle = self.metadata.get('Parzelle', 'Unknown Parzelle')
+        return f'{revier}/{versuch}-{parzelle}'
 
     @staticmethod
     def compress_column_labels(multi_index: list[ExpandedColumnNotation]) -> Generator[str, None, None]:
@@ -135,6 +137,6 @@ class TrialSite:
 
         df_path = metadata_path.parent / Path(metadata['DataFrame'])
         if not df_path.is_file():
-            raise FileParsingError(f'Relative path {Path(metadata["DataFrame"])} is not a valid file')
+            raise FileNotFoundError(f'Relative path {Path(metadata["DataFrame"])} is not a valid file')
         df = pd.read_csv(df_path)
         return TrialSite(df, metadata)

@@ -6,13 +6,15 @@ from typing import Optional
 from vfl2csv import setup
 from vfl2csv_base.TrialSite import TrialSite
 from vfl2csv_base.datatypes_mapping import pandas_datatypes_mapping as dtypes_mapping
+from vfl2csv_base.exceptions.IOErrors import TrialSiteFormatError
 
 HierarchicalColumnLabel = tuple[datetime.date | datetime.datetime | str, str, str, str]
 
 
 class TrialSiteConverter:
-    def __init__(self, trial_site: TrialSite):
+    def __init__(self, trial_site: TrialSite, file_path: Path):
         self.trial_site = trial_site
+        self.file_path = file_path
 
     def refactor_dataframe(self) -> None:
         """
@@ -50,7 +52,7 @@ class TrialSiteConverter:
         # `measurement_column_count` must be a multiple of `measurement_fields_count` and the count of all columns must
         # be at least the count of all head columns
         if measurement_column_count % measurement_fields_count != 0 or column_count < head_column_count:
-            raise ValueError('Invalid column count')
+            raise TrialSiteFormatError(self.trial_site, 'Unexpected count and/or arrangement of data columns')
         # count of all measurement recordings, so sets of every field
         measurement_count = measurement_column_count // measurement_fields_count
 
@@ -60,8 +62,9 @@ class TrialSiteConverter:
         for template, column in zip(setup.column_scheme.head, self.trial_site.df.columns[0:head_column_count]):
             # Check column name
             if column[3] != template['name']:
-                raise ValueError(f'Head column `{template["name"]}` from template does not match corresponding input '
-                                 f'column `{column[3]}`')
+                raise TrialSiteFormatError(
+                    self.trial_site,
+                    f'Input file column `{column[3]}` is found instead of expected column `{template["name"]}`')
             # rename columns
             new_column_names.append(template.get('override_name', template['name']))
             # reassign datatype
@@ -78,8 +81,9 @@ class TrialSiteConverter:
             ):
                 # Check column name
                 if column[1] != template['name']:
-                    raise ValueError(f'Measurement column `{template["name"]}` from template does not match '
-                                     f'corresponding input column `{column[1]}`')
+                    raise TrialSiteFormatError(self.trial_site,
+                                               f'Input file column `{column[1]}_{column[0]}` is found '
+                                               f'instead of expected column `{template["name"]}_{column[0]}`')
                 # rename column
                 new_column_names.append(
                     self.simplify_measurement_column_labels(column,

@@ -6,6 +6,7 @@ import pandas as pd
 from vfl2csv import setup
 from vfl2csv.input.InputData import InputData
 from vfl2csv_base.TrialSite import TrialSite
+from vfl2csv_base.exceptions.IOErrors import FileParsingError
 
 
 class TsvInputFile(InputData):
@@ -17,25 +18,28 @@ class TsvInputFile(InputData):
         TrialSite class, which represents measurement and metadata in a common format.
         :param file_path: Path object leading to the output file
         """
-        self.file_path = file_path
+        super().__init__(file_path)
 
     def parse(self) -> TrialSite:
-        file_stream = open(self.file_path, 'r', encoding=setup.config['Input'].get('tsv_encoding', 'utf_8'))
-        # skip first 4 rows containing unused data
-        metadata = dict()
-        for _ in range(4):
-            file_stream.readline()
-        # read following 5 rows containing one key-value-pair each
-        for _ in range(7):
-            key, value = file_stream.readline().split(':')
-            metadata[key.strip()] = value.strip()
-        # move back to start of the stream
-        file_stream.seek(0)
+        try:
+            file_stream = open(self.file_path, 'r', encoding=setup.config['Input'].get('tsv_encoding', 'utf_8'))
+            # skip first 4 rows containing unused data
+            metadata = dict()
+            for _ in range(4):
+                file_stream.readline()
+            # read following 5 rows containing one key-value-pair each
+            for _ in range(7):
+                key, value = file_stream.readline().split(':')
+                metadata[key.strip()] = value.strip()
+            # move back to start of the stream
+            file_stream.seek(0)
 
-        df = pd.read_csv(file_stream, sep='\t', skiprows=14, header=list(range(0, 4)), decimal=',', na_values=[' '])
-        # this last column is only created by pandas because in the output format, each row ends with one tabulator
-        # instead of the last value. Consequently, this last column does not contain any values and needs to be removed.
-        df = df.drop(columns=df.columns[-1])
+            df = pd.read_csv(file_stream, sep='\t', skiprows=14, header=list(range(0, 4)), decimal=',', na_values=[' '])
+            # this last column is only created by pandas because in the output format, each row ends with one tabulator
+            # instead of the last value. Consequently, this last column does not contain any values and needs to be removed.
+            df = df.drop(columns=df.columns[-1])
+        except (ValueError, OSError) as error:
+            raise FileParsingError(self.file_path) from error
         return TrialSite(df, metadata)
 
     def string_representation(self, short=False):

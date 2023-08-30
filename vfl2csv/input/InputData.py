@@ -10,6 +10,9 @@ from vfl2csv_base.TrialSite import TrialSite
 
 class InputData(ABC):
 
+    def __init__(self, file_path: Path):
+        self.file_path = file_path
+
     @abstractmethod
     def parse(self) -> TrialSite: ...
 

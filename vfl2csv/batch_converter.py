@@ -12,13 +12,13 @@ import numpy as np
 import vfl2csv
 from tests.ConversionAuditor import ConversionAuditor
 from vfl2csv import setup
-from vfl2csv.exceptions import ConversionException, VerificationException
+from vfl2csv.exceptions import VerificationException
 from vfl2csv.input.ExcelInputSheet import ExcelInputSheet
 from vfl2csv.input.InputData import InputData
 from vfl2csv.input.TsvInputFile import TsvInputFile
 from vfl2csv.output.TrialSiteConverter import TrialSiteConverter
 from vfl2csv_base.ColumnScheme import ColumnScheme
-from vfl2csv_base.exceptions.ExceptionReport import ExceptionReport
+from vfl2csv_base.exceptions.IOErrors import FileSavingError
 
 CONFIG_ALLOWED_INPUT_FORMATS = ('TSV', 'Excel')
 logger = logging.getLogger(__name__)
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 
 class Report(TypedDict):
     total_count: int
-    exceptions: list[ExceptionReport]
+    exceptions: list[Exception]
     metadata_output_files: list[Path]
 
 
@@ -70,6 +70,7 @@ def find_input_data(input_path: str | Path | list[str | Path]) -> tuple[list[Pat
     return input_files, input_data
 
 
+# noinspection PyBroadException
 def trial_site_pipeline(
         config: ConfigParser,
         column_scheme: ColumnScheme,
@@ -99,15 +100,16 @@ def trial_site_pipeline(
     """
     vfl2csv.setup.config = config
     vfl2csv.setup.column_scheme = column_scheme
-    process_logger = logging.getLogger(f'process {process_index if process_index is not None else "root"}')
+    process_logger = logging.getLogger(f'process {process_index}' if process_index is not None else __name__)
     # store all metadata output files to check for exceptions later
     metadata_output_files = []
     errors = []
     for input_data in input_batch:
         try:
+
             process_logger.info(f'Converting input {str(input_data)}')
             trial_site = input_data.parse()
-            converter = TrialSiteConverter(trial_site)
+            converter = TrialSiteConverter(trial_site, input_data.file_path)
             converter.refactor_dataframe()
             converter.trim_metadata()
 
@@ -124,14 +126,19 @@ def trial_site_pipeline(
                 data_output_file.touch(exist_ok=False)
                 metadata_output_file.touch(exist_ok=False)
 
-            converter.write_data(data_output_file)
-            converter.write_metadata(metadata_output_file)
+            try:
+                converter.write_data(data_output_file)
+            except OSError as error:
+                raise FileSavingError(data_output_file) from error
+            try:
+                converter.write_metadata(metadata_output_file)
+            except OSError as error:
+                raise FileSavingError(metadata_output_file) from error
 
             metadata_output_files.append(metadata_output_file)
         except Exception as exc:
-            exc_traceback = traceback.format_exc()
-            process_logger.warning(f'Exception in process {process_index}: {str(exc)}\n{exc_traceback}')
-            errors.append(ExceptionReport(exc, exc_traceback))
+            errors.append(exc)
+            process_logger.exception(f'Failed conversion for trial site `{input_data.string_representation()}`')
         finally:
             if on_progress is not None:
                 on_progress(str(input_data))
@@ -230,7 +237,7 @@ def run(output_dir: Path, input_path: str | Path | list[str | Path],
         message = f'{len(summarised_result["exceptions"])} exceptions occurred during converting ' \
                   f'{summarised_result["total_count"]} trial sites'
         logger.warning(message)
-        raise ConversionException(message)
+        raise ExceptionGroup(message, summarised_result['exceptions'])
 
     logger.info(
         f'Converted {summarised_result["total_count"]} trial sites successfully, proceed with verification of '

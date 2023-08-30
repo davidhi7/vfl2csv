@@ -10,6 +10,7 @@ from openpyxl.cell import Cell, ReadOnlyCell
 from openpyxl.cell.read_only import EmptyCell
 
 from vfl2csv_base.ColumnScheme import ColumnScheme
+from vfl2csv_base.exceptions.IOErrors import IllegalConfigError
 
 TrialSiteMetadata = dict[str, str]
 TrialSiteHeader = list[tuple[int, str]]
@@ -37,7 +38,7 @@ class ConversionAuditor:
             for path in paths:
                 self.reference.append(self._parse_tsv_file(path))
         else:
-            raise ValueError('`file_type` must be either "Excel" or "TSV"!')
+            raise IllegalConfigError('`file_type` must be either "Excel" or "TSV"!')
 
     def _parse_excel_file(self, file: Path) -> list[TrialSiteContent]:
         wb = load_workbook(file, read_only=True)

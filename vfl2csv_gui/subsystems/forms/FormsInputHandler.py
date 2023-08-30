@@ -4,7 +4,7 @@ from pathlib import Path
 from PySide6.QtCore import QThreadPool
 
 from vfl2csv_base.TrialSite import TrialSite
-from vfl2csv_base.exceptions.FileParsingError import FileParsingError
+from vfl2csv_base.exceptions.IOErrors import FileParsingError
 from vfl2csv_forms import config
 from vfl2csv_gui.interfaces.AbstractInputHandler import AbstractInputHandler
 from vfl2csv_gui.interfaces.CommunicationSignals import CommunicationSignals

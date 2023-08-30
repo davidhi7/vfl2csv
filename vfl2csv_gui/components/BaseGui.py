@@ -7,11 +7,10 @@ from PySide6.QtCore import Qt, Slot, QSize
 from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QTableWidget, \
     QAbstractItemView, QHeaderView, QMessageBox, QFileDialog, QTableWidgetItem, QProgressBar, QSizePolicy, QCheckBox
 
-from vfl2csv_base.exceptions.FileParsingError import FileParsingError
+from vfl2csv_base.exceptions.IOErrors import FileParsingError
 from vfl2csv_gui.components.QHLine import QHLine
 from vfl2csv_gui.interfaces.AbstractInputHandler import AbstractInputHandler
 from vfl2csv_gui.interfaces.ConversionGuiConfig import ConversionGuiConfig
-from vfl2csv_base.exceptions.ExceptionReport import ExceptionReport
 
 logger = logging.getLogger(__name__)
 
@@ -118,9 +117,9 @@ class BaseGui(QWidget):
             else:
                 self.input_handler.sort()
         except FileParsingError as file_parsing_exception:
-            self.handle_exception(ExceptionReport(file_parsing_exception, traceback.format_exc()))
+            self.handle_exception(file_parsing_exception)
         except Exception as exception:
-            self.handle_exception(ExceptionReport(exception, traceback.format_exc()))
+            self.handle_exception(exception)
         finally:
             self.update_input_status()
 
@@ -158,7 +157,7 @@ class BaseGui(QWidget):
         signals.progress.connect(self.increment_progress_bar)
         signals.finished.connect(self.finish_conversion)
         signals.error.connect(
-            lambda exception_report: self.finish_conversion(success=False, exception_report=exception_report))
+            lambda exception: self.finish_conversion(success=False, exception=exception))
 
     def setup_progress_bar(self, steps: int):
         self.progress_bar.setMinimum(0)
@@ -174,11 +173,11 @@ class BaseGui(QWidget):
         self.progress_bar.setValue(self.progress_bar.value() + 1)
 
     @Slot()
-    def finish_conversion(self, success: bool = True, exception_report: ExceptionReport = None):
+    def finish_conversion(self, success: bool = True, exception: Exception = None):
         if success:
             self.notify_success(self.text_map['done'])
-        elif exception_report:
-            self.handle_exception(exception_report)
+        elif exception:
+            self.handle_exception(exception)
         self.progress_bar.setVisible(False)
         self.manage_space()
         self.run_button.setDisabled(False)
@@ -189,16 +188,23 @@ class BaseGui(QWidget):
     def notify_warning(self, message: str) -> None:
         self.notification(message, None, None, icon=QMessageBox.Icon.Warning)
 
-    def notify_error(self, message: str, exception: Exception, traceback: str) -> None:
+    def notify_error(self, message: str, exception: Exception) -> None:
+        informative_text = f'{type(exception).__name__}: {str(exception)}'
+        if isinstance(exception, ExceptionGroup):
+            for i, nested_exception in enumerate(exception.exceptions):
+                informative_text += f'\n{i + 1}: {str(nested_exception)}'
+
         self.notification(text=message,
-                          informative_text=f'{type(exception).__name__}: {str(exception)}',
-                          detailed_text=traceback,
-                          icon=QMessageBox.Icon.Critical
-                          )
+                          informative_text=informative_text,
+                          detailed_text=str(exception.__traceback__),
+                          icon=QMessageBox.Icon.Critical)
+
+    @Slot()
+    def handle_exception(self, exception: Exception) -> None:
+        self.notify_error(self.text_map['conversion-error-title'], exception)
 
     def notification(self, text: str, informative_text: Optional[str], detailed_text: Optional[str],
-                     icon: QMessageBox.Icon) \
-            -> None:
+                     icon: QMessageBox.Icon) -> None:
         msg_box = QMessageBox(self)
         msg_box.setIcon(icon or QMessageBox.Icon.NoIcon)
         msg_box.setText(text)
@@ -244,10 +250,3 @@ class BaseGui(QWidget):
 
     def manage_space(self) -> None:
         self.status_table.setMinimumHeight(self.get_qtable_widget_size().height())
-
-    @Slot()
-    def handle_exception(self, exception_report: ExceptionReport):
-        exception = exception_report.exception
-        traceback = exception_report.traceback
-        logger.error(str(exception) + '\n' + traceback)
-        self.notify_error(self.text_map['conversion-error-title'], exception, traceback)

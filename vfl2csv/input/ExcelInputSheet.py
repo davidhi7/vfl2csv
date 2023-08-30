@@ -8,6 +8,7 @@ import pandas as pd
 from vfl2csv.input.ExcelWorkbook import ExcelWorkbook
 from vfl2csv.input.InputData import InputData
 from vfl2csv_base.TrialSite import TrialSite
+from vfl2csv_base.exceptions.IOErrors import FileParsingError
 
 
 class ExcelInputSheet(InputData):
@@ -19,24 +20,27 @@ class ExcelInputSheet(InputData):
         :param workbook: ExcelWorkbook instance
         :param sheet_name: Name of the sheet containing all trial site data
         """
-        self.file_path = workbook.path
+        super().__init__(workbook.path)
         self.open_workbook = workbook.open_workbook
         self.input_stream = workbook.in_mem_file
         self.sheet_name = sheet_name
 
     def parse(self) -> TrialSite:
-        # extract metadata saved in the columns A5:A11 in a 'key : value' format
-        metadata = dict()
-        sheet = self.open_workbook[self.sheet_name]
-        # less legible syntax:
-        for row in sheet['A5:A11']:
-            key, value = row[0].value.split(':')
-            metadata[key.strip()] = value.strip()
+        try:
+            # extract metadata saved in the columns A5:A11 in a 'key : value' format
+            metadata = dict()
+            sheet = self.open_workbook[self.sheet_name]
+            # less legible syntax:
+            for row in sheet['A5:A11']:
+                key, value = row[0].value.split(':')
+                metadata[key.strip()] = value.strip()
 
-        df = pd.read_excel(self.input_stream, sheet_name=self.sheet_name, header=list(range(0, 4)), skiprows=13,
-                           na_values=[' '])
+            df = pd.read_excel(self.input_stream, sheet_name=self.sheet_name, header=list(range(0, 4)), skiprows=13,
+                               na_values=[' '])
 
-        return TrialSite(df, metadata)
+            return TrialSite(df, metadata)
+        except Exception as exc:
+            raise FileParsingError(self.file_path) from exc
 
     def string_representation(self, short=False):
         if short:
