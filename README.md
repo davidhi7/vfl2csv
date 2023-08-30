@@ -10,7 +10,7 @@ Both components are part of the unified GUI `vfl2csv_gui`.
 
 ## Dependencies
 
-* Recent Python 3
+* Python 3.11
 * `pandas`
 * `OpenPyXL`
 * `PySide6`
