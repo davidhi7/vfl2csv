@@ -10,9 +10,8 @@ from typing import TypedDict, Optional, Callable
 import numpy as np
 
 import vfl2csv
-from tests.ConversionAuditor import ConversionAuditor
+from tests.ConversionAuditor import ConversionAuditor, VerificationException
 from vfl2csv import setup
-from vfl2csv.exceptions import VerificationException
 from vfl2csv.input.ExcelInputSheet import ExcelInputSheet
 from vfl2csv.input.InputData import InputData
 from vfl2csv.input.TsvInputFile import TsvInputFile
@@ -249,7 +248,7 @@ def run(output_dir: Path, input_path: str | Path | list[str | Path],
         auditor.audit_converted_metadata_files(summarised_result['metadata_output_files'])
         logger.info('Verification succeeded')
         return summarised_result
-    except ValueError as exception:
-        logger.error(f'Verification failed: {exception}')
-        logger.error(traceback.format_exc())
-        raise VerificationException(exception)
+    except VerificationException as exception:
+        message = f'Integrity verification of converted data failed: Converted files may be uncorrect'
+        logger.exception(message)
+        raise VerificationException(message) from exception

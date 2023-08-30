@@ -20,6 +20,10 @@ TrialSiteContent = tuple[TrialSiteMetadata, TrialSiteHeader, TrialSiteData]
 ExcelCell = Cell | ReadOnlyCell | EmptyCell
 
 
+class VerificationException(Exception):
+    pass
+
+
 class ConversionAuditor:
     logger = logging.getLogger(__name__)
 
@@ -123,8 +127,8 @@ class ConversionAuditor:
             remaining_trial_site_names = []
             for key, value in reference_sites_index.items():
                 remaining_trial_site_names.append('-'.join(key))
-            raise ValueError('Count of remaining reference sites is greater than zero, remaining sites: ' +
-                             ', '.join(remaining_trial_site_names))
+            raise VerificationException('Count of remaining reference sites is greater than zero, remaining sites: ' +
+                                        ', '.join(remaining_trial_site_names))
 
     @staticmethod
     def _verify_metadata_embedded_path(pattern: str, metadata: dict[str, str], actual_path: Path) -> None:
@@ -134,7 +138,7 @@ class ConversionAuditor:
         # get the last N components of the file path (i.e. the filename and the N-1 last directories)
         path_tokens = re.split(r'[\/\\]', str(actual_path.absolute()))[-len(pattern_tokens):]
         if pattern_tokens != path_tokens:
-            raise ValueError(f'Actual file path does not match expected file path.\n'
+            raise VerificationException(f'Actual file path does not match expected file path.\n'
                              f'Actual path: {"/".join(path_tokens)}\n'
                              f'Expected path: {"/".join(pattern_tokens)}')
         return
@@ -183,22 +187,22 @@ class ConversionAuditor:
         trialsite_key = (metadata['Versuch'], metadata['Parzelle'])
         trialsite_key_str = '-'.join(trialsite_key)
         if trialsite_key not in original_trial_sites:
-            raise ValueError(f'[{trialsite_key_str}] No original trial site with matching key')
+            raise VerificationException(f'[{trialsite_key_str}] No original trial site with matching key')
 
         original_metadata, original_header, original_data = original_trial_sites[trialsite_key]
         if original_metadata != metadata:
-            raise ValueError(f'Metadata of converted trial site {trialsite_key_str} does not match metadata of '
-                             f'original trial site')
+            raise VerificationException(f'Metadata of converted trial site {trialsite_key_str} does not match metadata of '
+                                        f'original trial site')
 
         if original_header != header:
-            raise ValueError(f'Header of converted trial site {trialsite_key_str} does not match header of original '
-                             f'trial site.\n'
-                             f'Converted: {header}\n'
-                             f'Original: {original_header}')
+            raise VerificationException(f'Header of converted trial site {trialsite_key_str} does not match header of original '
+                                         f'trial site.\n'
+                                         f'Converted: {header}\n'
+                                         f'Original: {original_header}')
 
         if len(original_data) != len(data):
-            raise ValueError(f'Number of data rows of converted trial site {trialsite_key_str} does not match data '
-                             f'of original trial site')
+            raise VerificationException(f'Number of data rows of converted trial site {trialsite_key_str} does not match data '
+                                        f'of original trial site')
 
         for row_index in range(len(data)):
             for col_index in range(len(data[row_index])):
@@ -218,8 +222,8 @@ class ConversionAuditor:
                         if not (cell_value == 'NA' and original_cell_value == ' '):
                             error_flag = True
                 if error_flag:
-                    raise ValueError(f'Data of converted trial site {trialsite_key_str} does not match data of '
-                                     f'original trial site in line {row_index + 1}, column {col_index + 1}.\n'
-                                     f'Converted: {cell_value}\n'
-                                     f'Original: {original_cell_value}')
+                    raise VerificationException(f'Data of converted trial site {trialsite_key_str} does not match data of '
+                                                f'original trial site in line {row_index + 1}, column {col_index + 1}.\n'
+                                                f'Converted: {cell_value}\n'
+                                                f'Original: {original_cell_value}')
         del original_trial_sites[trialsite_key]

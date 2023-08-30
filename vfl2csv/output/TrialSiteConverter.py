@@ -123,7 +123,7 @@ class TrialSiteConverter:
             try:
                 date = datetime.datetime.strptime(hierarchy[0], '%d.%m.%Y')
             except ValueError as err:
-                raise ValueError(
+                raise TrialSiteFormatError(
                     f'Measurement date {hierarchy[0]} does not match the expected format "dd.mm.YYYY"!') from err
 
         measurement_type = override_name if override_name is not None else hierarchy[1]

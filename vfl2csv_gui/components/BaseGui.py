@@ -192,11 +192,11 @@ class BaseGui(QWidget):
         informative_text = f'{type(exception).__name__}: {str(exception)}'
         if isinstance(exception, ExceptionGroup):
             for i, nested_exception in enumerate(exception.exceptions):
-                informative_text += f'\n{i + 1}: {str(nested_exception)}'
+                informative_text += f'\n{i + 1}. {type(nested_exception).__name__}: {str(nested_exception)}'
 
         self.notification(text=message,
                           informative_text=informative_text,
-                          detailed_text=str(exception.__traceback__),
+                          detailed_text='\n'.join(traceback.format_tb(exception.__traceback__)),
                           icon=QMessageBox.Icon.Critical)
 
     @Slot()

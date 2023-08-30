@@ -31,4 +31,4 @@ def get_character_count(value: str | int | float, decimal_digits: int) -> int:
         # count of digits before the decimal point + the decimal points and count of displayed decimal digits
         return int(math.log10(value)) + 1 + decimal_digits
     else:
-        raise ValueError('Given value must be of type `int`, `float` or `string`!')
+        raise TypeError('Given value must be of type `int`, `float` or `string`!')

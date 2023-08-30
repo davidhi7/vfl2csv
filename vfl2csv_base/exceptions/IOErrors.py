@@ -19,10 +19,11 @@ class FileSavingError(Exception):
 
 class TrialSiteFormatError(Exception):
     def __int__(self, trial_site: TrialSite, message: str | None = None):
-        exception_text = f'Failed to handle trial site "{str(trial_site)}": Invalid format'
+        exception_text = f'Failed to handle trial site "{str(trial_site)}": Invalid data format'
         if message:
             exception_text += '\n'
             exception_text += message
+        super().__init__(exception_text)
 
 
 class IllegalConfigError(Exception):

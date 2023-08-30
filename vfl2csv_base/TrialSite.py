@@ -8,7 +8,7 @@ import pandas as pd
 
 from vfl2csv_base.ColumnScheme import ColumnScheme
 from vfl2csv_base.datatypes_mapping import pandas_datatypes_mapping
-from vfl2csv_base.exceptions.IOErrors import FileParsingError, TrialSiteFormatError
+from vfl2csv_base.exceptions import IOErrors
 
 measurement_column_pattern = re.compile(r'^.+_\d{4}$')
 
@@ -59,11 +59,11 @@ class TrialSite:
         if head_column_count > 0:
             for i, column in enumerate(df.columns[:actual_head_column_count]):
                 if column.name != column_scheme.head[i].get('override_name', column_scheme.head[i]['name']):
-                    raise TrialSiteFormatError(
+                    raise IOErrors.TrialSiteFormatError(
                         f'Column `{column.name}` of the dataframe does not match the expected column name')
                 df[column] = df[column].astype(pandas_datatypes_mapping[column_scheme.head[i]['type']])
         elif actual_head_column_count > 0:
-            raise TrialSiteFormatError('Actual head column count does not match expected head column count')
+            raise IOErrors.TrialSiteFormatError('Actual head column count does not match expected head column count')
 
         # verify body columns
         if measurement_column_count > 0:
@@ -82,7 +82,7 @@ class TrialSite:
                     # Second case: column names do not match, column is optional
                     if scheme_column.get('optional', False):
                         continue
-                    raise TrialSiteFormatError(
+                    raise IOErrors.TrialSiteFormatError(
                         f'Required column `{scheme_column.get("override_name", scheme_column["name"])}` missing in year'
                         f'{year}')
 
@@ -133,7 +133,7 @@ class TrialSite:
                     # remove trailing newline in value
                     metadata[key] = value.rstrip()
         except UnicodeDecodeError as err:
-            raise FileParsingError(metadata_path) from err
+            raise IOErrors.FileParsingError(metadata_path) from err
 
         df_path = metadata_path.parent / Path(metadata['DataFrame'])
         if not df_path.is_file():

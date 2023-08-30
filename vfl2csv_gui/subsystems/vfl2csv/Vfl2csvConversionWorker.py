@@ -30,16 +30,11 @@ class Vfl2csvConversionWorker(QRunnable):
         try:
             report = batch_converter.run(self.output_dir, self.input_files, on_progress=self.handle_progress)
             if self.setting_create_form:
-                if len(report['metadata_output_files']) != len(self.input_data):
-                    raise ValueError('Count of gathered trial site metadata files does not match count of input files.'
-                                     f'Metadata files: {len(report["metadata_output_files"])}, '
-                                     f'input files: {len(self.input_data)}')
                 forms_input_handler = FormsInputHandler()
                 forms_input_handler.load_input(report['metadata_output_files'])
                 # Run the form conversion worker in the same thread to prevent issues with different threads and signals
                 forms_worker = FormsConversionWorker(forms_input_handler.trial_sites,
                                                      self.output_dir / 'aufnahmeformular.xlsx')
-                # _, forms_signals = forms_input_handler.convert(self.output_dir / 'aufnahmeformular.xlsx')
 
                 forms_worker.signals.progress.connect(self.signals.progress)
                 forms_worker.signals.error.connect(self.signals.error)

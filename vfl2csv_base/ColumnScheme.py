@@ -34,9 +34,9 @@ class ColumnSchemeSection:
             try:
                 entry_name = entry.get('override_name', entry['name'])
             except KeyError as err:
-                raise ValueError(f'Property `name` missing in column scheme for object `{entry}`') from err
+                raise KeyError(f'Property `name` missing in column scheme for object `{entry}`') from err
             if entry_name in self.by_name.keys():
-                raise ValueError(f'Duplicate column name/override_name `{entry_name}`')
+                raise KeyError(f'Duplicate column name/override_name `{entry_name}`')
             self.by_name[entry_name] = entry
 
     def __getitem__(self, key) -> str | dict:

@@ -6,7 +6,6 @@ from PySide6.QtCore import Slot, QRunnable
 from pandas import ExcelWriter
 
 from vfl2csv_base.TrialSite import TrialSite
-from vfl2csv_base.exceptions.ExceptionReport import ExceptionReport
 from vfl2csv_forms import trial_site_conversion
 from vfl2csv_forms.excel import styles
 from vfl2csv_gui.interfaces.CommunicationSignals import CommunicationSignals
@@ -40,4 +39,4 @@ class FormsConversionHandler(QRunnable):
             except Exception as exc:
                 exc_traceback = traceback.format_exc()
                 logger.warning(str(exc) + '\n' + exc_traceback)
-                self.signals.error.emit(ExceptionReport(exc, exc_traceback))
+                self.signals.error.emit(exc)
