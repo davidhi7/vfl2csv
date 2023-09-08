@@ -60,10 +60,12 @@ class TrialSite:
             for i, column in enumerate(df.columns[:actual_head_column_count]):
                 if column.name != column_scheme.head[i].get('override_name', column_scheme.head[i]['name']):
                     raise IOErrors.TrialSiteFormatError(
+                        self,
                         f'Column `{column.name}` of the dataframe does not match the expected column name')
                 df[column] = df[column].astype(pandas_datatypes_mapping[column_scheme.head[i]['type']])
         elif actual_head_column_count > 0:
-            raise IOErrors.TrialSiteFormatError('Actual head column count does not match expected head column count')
+            raise IOErrors.TrialSiteFormatError(self,
+                                                'Actual head column count does not match expected head column count')
 
         # verify body columns
         if measurement_column_count > 0:
@@ -83,8 +85,9 @@ class TrialSite:
                     if scheme_column.get('optional', False):
                         continue
                     raise IOErrors.TrialSiteFormatError(
-                        f'Required column `{scheme_column.get("override_name", scheme_column["name"])}` missing in year'
-                        f'{year}')
+                        self,
+                        f'Required column `{scheme_column.get("override_name", scheme_column["name"])}` missing in '
+                        f'year {year}')
 
         df.columns = self.compress_column_labels(df.columns)
         self.df = self.df.astype(df.dtypes)

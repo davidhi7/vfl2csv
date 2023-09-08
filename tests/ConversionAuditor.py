@@ -184,19 +184,21 @@ class ConversionAuditor:
                     header.append((-1, cell))
             data = lines[1:]
 
-        trialsite_key = (metadata['Versuch'], metadata['Parzelle'])
-        trialsite_key_str = '-'.join(trialsite_key)
-        if trialsite_key not in original_trial_sites:
+        trial_site_key = (metadata['Versuch'], metadata['Parzelle'])
+        trialsite_key_str = '-'.join(trial_site_key)
+        if trial_site_key not in original_trial_sites:
             raise VerificationException(f'[{trialsite_key_str}] No original trial site with matching key')
 
-        original_metadata, original_header, original_data = original_trial_sites[trialsite_key]
+        original_metadata, original_header, original_data = original_trial_sites[trial_site_key]
         if original_metadata != metadata:
-            raise VerificationException(f'Metadata of converted trial site {trialsite_key_str} does not match metadata of '
-                                        f'original trial site')
+            raise VerificationException(
+                f'Metadata of converted trial site {trialsite_key_str} does not match metadata of '
+                f'original trial site')
 
         if original_header != header:
-            raise VerificationException(f'Header of converted trial site {trialsite_key_str} does not match header of original '
-                                         f'trial site.\n'
+            raise VerificationException(
+                f'Header of converted trial site {trialsite_key_str} does not match header of original '
+                f'trial site.\n'
                                          f'Converted: {header}\n'
                                          f'Original: {original_header}')
 
@@ -226,4 +228,4 @@ class ConversionAuditor:
                                                 f'original trial site in line {row_index + 1}, column {col_index + 1}.\n'
                                                 f'Converted: {cell_value}\n'
                                                 f'Original: {original_cell_value}')
-        del original_trial_sites[trialsite_key]
+        del original_trial_sites[trial_site_key]

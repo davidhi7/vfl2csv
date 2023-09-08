@@ -7,7 +7,8 @@ import pandas as pd
 import vfl2csv_forms
 from vfl2csv_base import config_factory
 from vfl2csv_base.ColumnScheme import ColumnScheme
-from vfl2csv_gui.subsystems.forms.FormsInputHandler import FormsInputHandler, FormsConversionHandler
+from vfl2csv_gui.subsystems.forms.FormsConversionWorker import FormsConversionHandler
+from vfl2csv_gui.subsystems.forms.FormsInputHandler import FormsInputHandler
 
 logger = logging.getLogger(__name__)
 cwd = Path(__file__).parent.parent

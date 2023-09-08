@@ -12,6 +12,7 @@ from vfl2csv.output.TrialSiteConverter import TrialSiteConverter
 from vfl2csv_base import test_config
 from vfl2csv_base.ColumnScheme import ColumnScheme
 from vfl2csv_base.TrialSite import TrialSite
+from vfl2csv_base.exceptions.IOErrors import TrialSiteFormatError
 
 
 # noinspection PyTypeChecker
@@ -48,7 +49,7 @@ class TrialSiteConverterTest(unittest.TestCase):
         # Simple hack to fix this after introducing the expanded default column scheme
         old_column_scheme = setup.column_scheme
         try:
-            setup.column_scheme = ColumnScheme.from_file(path=Path('config/columns.json.old'))
+            setup.column_scheme = ColumnScheme.from_file(path=Path('config/columns_simple.json'))
             df = pd.DataFrame(columns=self.sample_multiIndex)
             trial_site_converter = TrialSiteConverter(TrialSite(df, metadata=dict()), None)
             trial_site_converter.refactor_dataframe()
@@ -90,14 +91,14 @@ class TrialSiteConverterTest(unittest.TestCase):
         # test empty column set
         trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([()])), metadata=dict()),
                                         None)
-        self.assertRaises(ValueError, trial_site.refactor_dataframe)
+        self.assertRaises(TrialSiteFormatError, trial_site.refactor_dataframe)
 
         # test column set with fewer columns than head columns in the template
         trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([
             ('Aufnahme', 'Wert', 'Einheit', 'Bst.-E.'),
             ('Aufnahme', 'Wert', 'Einheit', 'Art')
         ])), metadata=dict()), None)
-        self.assertRaises(ValueError, trial_site.refactor_dataframe)
+        self.assertRaises(TrialSiteFormatError, trial_site.refactor_dataframe)
 
         # test column set with measurement columns lacking one field compared to the template
         trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([
@@ -107,7 +108,7 @@ class TrialSiteConverterTest(unittest.TestCase):
             ('23.07.1984', 'D', 'cm', '159'),
             ('23.07.1984', 'Aus', 'Unnamed: 4_level_2', '15')
         ])), metadata=dict()), None)
-        self.assertRaises(ValueError, trial_site.refactor_dataframe)
+        self.assertRaises(TrialSiteFormatError, trial_site.refactor_dataframe)
 
         # test wrong column names in input
         trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([
@@ -118,7 +119,7 @@ class TrialSiteConverterTest(unittest.TestCase):
             ('23.07.1984', 'Aus', 'Unnamed: 4_level_2', '15'),
             ('23.07.1984', 'H', 'Unnamed: 4_level_2', '159')
         ])), metadata=dict()), None)
-        self.assertRaises(ValueError, trial_site.refactor_dataframe)
+        self.assertRaises(TrialSiteFormatError, trial_site.refactor_dataframe)
 
         trial_site = TrialSiteConverter(TrialSite(pd.DataFrame(columns=MultiIndex.from_tuples([
             ('Aufnahme', 'Wert', 'Einheit', 'Bst.-E.'),
@@ -128,33 +129,53 @@ class TrialSiteConverterTest(unittest.TestCase):
             ('23.07.1984', 'Aus', 'Unnamed: 4_level_2', '15'),
             ('23.07.1984', 'H', 'Unnamed: 4_level_2', '159')
         ])), metadata=dict()), None)
-        self.assertRaises(ValueError, trial_site.refactor_dataframe)
+        self.assertRaises(TrialSiteFormatError, trial_site.refactor_dataframe)
 
     def test_simplifyColumnLabels_expect_decremented_year(self) -> None:
         # Test with no override_name
-        self.assertEqual('D_2021', TrialSiteConverter.simplify_measurement_column_labels(
-            (date.fromisoformat('2022-01-01'), 'D', 'cm', '0'), override_name=None))
-        self.assertEqual('H_2021', TrialSiteConverter.simplify_measurement_column_labels(
-            (date.fromisoformat('2022-06-30'), 'H', 'm', '0'), override_name=None))
+        self.assertEqual('D_2021', TrialSiteConverter.simplify_measurement_column_labels(None,
+                                                                                         (date.fromisoformat(
+                                                                                             '2022-01-01'), 'D', 'cm',
+                                                                                          '0'), override_name=None))
+        self.assertEqual('H_2021', TrialSiteConverter.simplify_measurement_column_labels(None,
+                                                                                         (date.fromisoformat(
+                                                                                             '2022-06-30'), 'H', 'm',
+                                                                                          '0'), override_name=None))
 
         # Test with given override_name
-        self.assertEqual('test123_2021', TrialSiteConverter.simplify_measurement_column_labels(
-            (date.fromisoformat('2022-01-01'), 'D', 'cm', '0'), override_name='test123'))
-        self.assertEqual('test456_2021', TrialSiteConverter.simplify_measurement_column_labels(
-            (date.fromisoformat('2022-06-30'), 'H', 'm', '0'), override_name='test456'))
+        self.assertEqual('test123_2021', TrialSiteConverter.simplify_measurement_column_labels(None,
+                                                                                               (date.fromisoformat(
+                                                                                                   '2022-01-01'), 'D',
+                                                                                                'cm', '0'),
+                                                                                               override_name='test123'))
+        self.assertEqual('test456_2021', TrialSiteConverter.simplify_measurement_column_labels(None,
+                                                                                               (date.fromisoformat(
+                                                                                                   '2022-06-30'), 'H',
+                                                                                                'm', '0'),
+                                                                                               override_name='test456'))
 
     def test_simplifyColumnLabels_expect_equal_year(self) -> None:
         # Test with no override_name
-        self.assertEqual('D_2022', TrialSiteConverter.simplify_measurement_column_labels(
-            (date.fromisoformat('2022-07-01'), 'D', 'cm', '0'), override_name=None))
-        self.assertEqual('H_2022', TrialSiteConverter.simplify_measurement_column_labels(
-            (date.fromisoformat('2022-12-31'), 'H', 'm', '0'), override_name=None))
+        self.assertEqual('D_2022', TrialSiteConverter.simplify_measurement_column_labels(None,
+                                                                                         (date.fromisoformat(
+                                                                                             '2022-07-01'), 'D', 'cm',
+                                                                                          '0'), override_name=None))
+        self.assertEqual('H_2022', TrialSiteConverter.simplify_measurement_column_labels(None,
+                                                                                         (date.fromisoformat(
+                                                                                             '2022-12-31'), 'H', 'm',
+                                                                                          '0'), override_name=None))
 
         # Test with given override_name
-        self.assertEqual('test123_2022', TrialSiteConverter.simplify_measurement_column_labels(
-            (date.fromisoformat('2022-07-01'), 'D', 'cm', '0'), override_name='test123'))
-        self.assertEqual('test456_2022', TrialSiteConverter.simplify_measurement_column_labels(
-            (date.fromisoformat('2022-12-31'), 'H', 'm', '0'), override_name='test456'))
+        self.assertEqual('test123_2022', TrialSiteConverter.simplify_measurement_column_labels(None,
+                                                                                               (date.fromisoformat(
+                                                                                                   '2022-07-01'), 'D',
+                                                                                                'cm', '0'),
+                                                                                               override_name='test123'))
+        self.assertEqual('test456_2022', TrialSiteConverter.simplify_measurement_column_labels(None,
+                                                                                               (date.fromisoformat(
+                                                                                                   '2022-12-31'), 'H',
+                                                                                                'm', '0'),
+                                                                                               override_name='test456'))
 
     def test_writeData(self):
         test_df = pd.DataFrame.from_dict({

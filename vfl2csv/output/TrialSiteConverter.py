@@ -86,7 +86,7 @@ class TrialSiteConverter:
                                                f'instead of expected column `{template["name"]}_{column[0]}`')
                 # rename column
                 new_column_names.append(
-                    self.simplify_measurement_column_labels(column,
+                    self.simplify_measurement_column_labels(self.trial_site, column,
                                                             template.get('override_name', template['name']))
                 )
                 # reassign datatype
@@ -104,11 +104,13 @@ class TrialSiteConverter:
             self.trial_site.metadata[key] = re.sub(r'\s+', ' ', value)
 
     @staticmethod
-    def simplify_measurement_column_labels(hierarchy: HierarchicalColumnLabel, override_name: Optional[str]) -> str:
+    def simplify_measurement_column_labels(trial_site: TrialSite, hierarchy: HierarchicalColumnLabel,
+                                           override_name: Optional[str]) -> str:
         """
         Reformat measurement column labels for the dataframe.
         Simplify the tuple of four header values into one string
         See comments of #refactor_dataframe for more explanations
+        :param trial_site: Trial site (used only for error handling)
         :param hierarchy: Tuple consisting of four values
         :param override_name: If not None, use this as measurement name prefix instead of the prefix provided in the
         column hierarchy.
@@ -124,6 +126,7 @@ class TrialSiteConverter:
                 date = datetime.datetime.strptime(hierarchy[0], '%d.%m.%Y')
             except ValueError as err:
                 raise TrialSiteFormatError(
+                    trial_site,
                     f'Measurement date {hierarchy[0]} does not match the expected format "dd.mm.YYYY"!') from err
 
         measurement_type = override_name if override_name is not None else hierarchy[1]

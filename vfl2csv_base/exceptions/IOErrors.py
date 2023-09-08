@@ -1,6 +1,10 @@
+from __future__ import annotations
+
+import typing
 from pathlib import Path
 
-from vfl2csv_base.TrialSite import TrialSite
+if typing.TYPE_CHECKING:
+    from vfl2csv_base.TrialSite import TrialSite
 
 
 class FileParsingError(Exception):
@@ -18,11 +22,10 @@ class FileSavingError(Exception):
 
 
 class TrialSiteFormatError(Exception):
-    def __int__(self, trial_site: TrialSite, message: str | None = None):
+    def __init__(self, trial_site: TrialSite, message: str | None = None):
         exception_text = f'Failed to handle trial site "{str(trial_site)}": Invalid data format'
         if message:
-            exception_text += '\n'
-            exception_text += message
+            exception_text += '. ' + message
         super().__init__(exception_text)
 
 
