@@ -43,6 +43,7 @@ class TrialSite:
     def verify_column_integrity(self, column_scheme: ColumnScheme) -> None:
         """
         Verify the integrity of the dataframe by comparing all column labels to the provided column scheme.
+        Their `optional` column property is taken into account if columns are missing.
         Additionally, the datatypes are set according to the column scheme.
         :param column_scheme:
         """
