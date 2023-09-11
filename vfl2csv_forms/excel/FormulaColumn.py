@@ -5,19 +5,23 @@ from typing import Union
 from openpyxl.formatting import Rule
 from openpyxl.styles import NamedStyle
 
-from vfl2csv_forms.excel.utilities import zero_based_cell, zero_based_cell_name, zero_based_cell_range_name
+from vfl2csv_forms.excel.utilities import (
+    zero_based_cell,
+    zero_based_cell_name,
+    zero_based_cell_range_name,
+)
 
 
 class FormulaColumn:
-
-    def __init__(self,
-                 is_binary_operator: bool,
-                 function: str,
-                 label: str,
-                 column_arguments: list[Union[int, FormulaColumn]],
-                 style: NamedStyle,
-                 conditional_formatting: list[Rule]
-                 ):
+    def __init__(
+            self,
+            is_binary_operator: bool,
+            function: str,
+            label: str,
+            column_arguments: list[Union[int, FormulaColumn]],
+            style: NamedStyle,
+            conditional_formatting: list[Rule],
+    ):
         """
         Create a formula column for the output Excel sheet.
         :param is_binary_operator: True if function is a binary operator like +, -, *, /
@@ -26,7 +30,9 @@ class FormulaColumn:
         :param column_arguments: Columns (0-based numbers) to apply the function on
         """
         if is_binary_operator and len(column_arguments) != 2:
-            raise ValueError('Require exactly two output columns when using binary operators!')
+            raise ValueError(
+                "Require exactly two output columns when using binary operators!"
+            )
 
         self.is_binary_operator = is_binary_operator
         self.function = function
@@ -53,7 +59,9 @@ class FormulaColumn:
         for column_arg in self.column_arguments:
             if isinstance(column_arg, FormulaColumn):
                 if column_arg.yielded_column is None:
-                    column_arg.insert(target_column=target_column + column_shift, rows=rows, ws=ws)
+                    column_arg.insert(
+                        target_column=target_column + column_shift, rows=rows, ws=ws
+                    )
                     column_shift += 1
                 index = column_arg.yielded_column
             else:
@@ -63,12 +71,14 @@ class FormulaColumn:
             if self.is_binary_operator:
                 cell_0 = zero_based_cell_name(argument_columns[0], row)
                 cell_1 = zero_based_cell_name(argument_columns[1], row)
-                inner_formula = f'{cell_0} {self.function} {cell_1}'
+                inner_formula = f"{cell_0} {self.function} {cell_1}"
                 # wrap formula into if clauses so if one of the cells is empty, the resulting cell is also empty
                 formula = f'=IF(AND(ISNUMBER({cell_0}), ISNUMBER({cell_1})), {inner_formula}, "")'
             else:
                 # Separator must be a comma, see https://openpyxl.readthedocs.io/en/stable/usage.html#using-formulae
-                column_enumeration = ', '.join(zero_based_cell_name(column, row) for column in argument_columns)
+                column_enumeration = ", ".join(
+                    zero_based_cell_name(column, row) for column in argument_columns
+                )
                 # wrap the formula into IFERROR to prevent ugly error codes
                 formula = f'=IFERROR({self.function}({column_enumeration}), "")'
             zero_based_cell(ws, target_column, row).value = formula
@@ -78,8 +88,10 @@ class FormulaColumn:
         if len(rows) >= 2:
             for rule in self.conditional_formatting_rules:
                 ws.conditional_formatting.add(
-                    zero_based_cell_range_name(target_column, rows[1], target_column, rows[-1]),
-                    rule
+                    zero_based_cell_range_name(
+                        target_column, rows[1], target_column, rows[-1]
+                    ),
+                    rule,
                 )
         self.yielded_column = target_column + column_shift
         return column_shift + 1

@@ -9,19 +9,22 @@ from vfl2csv_base.TrialSite import TrialSite
 
 
 class InputData(ABC):
-
     def __init__(self, file_path: Path):
         self.file_path = file_path
 
     @abstractmethod
-    def parse(self) -> TrialSite: ...
+    def parse(self) -> TrialSite:
+        ...
 
     @abstractmethod
-    def __str__(self) -> TrialSite: ...
+    def __str__(self) -> TrialSite:
+        ...
 
     @abstractmethod
-    def string_representation(self, short=False): ...
+    def string_representation(self, short=False):
+        ...
 
     @staticmethod
     @abstractmethod
-    def iterate_files(files: Iterable[Path]) -> list[InputData]: ...
+    def iterate_files(files: Iterable[Path]) -> list[InputData]:
+        ...

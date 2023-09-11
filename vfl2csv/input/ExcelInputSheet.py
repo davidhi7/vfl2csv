@@ -31,12 +31,17 @@ class ExcelInputSheet(InputData):
             metadata = dict()
             sheet = self.open_workbook[self.sheet_name]
             # less legible syntax:
-            for row in sheet['A5:A11']:
-                key, value = row[0].value.split(':')
+            for row in sheet["A5:A11"]:
+                key, value = row[0].value.split(":")
                 metadata[key.strip()] = value.strip()
 
-            df = pd.read_excel(self.input_stream, sheet_name=self.sheet_name, header=list(range(0, 4)), skiprows=13,
-                               na_values=[' '])
+            df = pd.read_excel(
+                self.input_stream,
+                sheet_name=self.sheet_name,
+                header=list(range(0, 4)),
+                skiprows=13,
+                na_values=[" "],
+            )
 
             return TrialSite(df, metadata)
         except Exception as exc:
@@ -44,8 +49,8 @@ class ExcelInputSheet(InputData):
 
     def string_representation(self, short=False):
         if short:
-            return f'{self.file_path.name} - {self.sheet_name}'
-        return f'{self.file_path} - {self.sheet_name}'
+            return f"{self.file_path.name} - {self.sheet_name}"
+        return f"{self.file_path} - {self.sheet_name}"
 
     def __str__(self) -> str:
         return self.string_representation()
@@ -55,5 +60,7 @@ class ExcelInputSheet(InputData):
         workbooks = list(ExcelWorkbook(path) for path in input_files)
         input_sheets = list()
         for workbook in workbooks:
-            input_sheets.extend(ExcelInputSheet(workbook, sheet_name) for sheet_name in workbook.sheets)
+            input_sheets.extend(
+                ExcelInputSheet(workbook, sheet_name) for sheet_name in workbook.sheets
+            )
         return input_sheets

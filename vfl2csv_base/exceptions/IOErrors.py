@@ -11,7 +11,7 @@ class FileParsingError(Exception):
     def __init__(self, file: str | Path, message: str | None = None):
         exception_text = f'Failed to parse file "{str(file)}": Invalid file format'
         if message:
-            exception_text += '\n'
+            exception_text += "\n"
             exception_text += message
         super().__init__(exception_text)
 
@@ -23,9 +23,11 @@ class FileSavingError(Exception):
 
 class TrialSiteFormatError(Exception):
     def __init__(self, trial_site: TrialSite, message: str | None = None):
-        exception_text = f'Failed to handle trial site "{str(trial_site)}": Invalid data format'
+        exception_text = (
+            f'Failed to handle trial site "{str(trial_site)}": Invalid data format'
+        )
         if message:
-            exception_text += '. ' + message
+            exception_text += ". " + message
         super().__init__(exception_text)
 
 

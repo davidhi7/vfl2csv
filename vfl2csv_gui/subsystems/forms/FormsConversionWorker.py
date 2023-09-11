@@ -23,18 +23,22 @@ class FormsConversionHandler(QRunnable):
     def run(self) -> None:
         self.output_file.touch(exist_ok=True)
 
-        with ExcelWriter(self.output_file, engine='openpyxl') as writer:
+        with ExcelWriter(self.output_file, engine="openpyxl") as writer:
             try:
                 workbook = writer.book
                 styles.register(workbook)
                 for trial_site in self.trial_sites:
-                    logger.info(f'Creating sheet for trial site {str(trial_site)}')
-                    trial_site_form = trial_site_conversion.convert(trial_site, self.output_file)
+                    logger.info(f"Creating sheet for trial site {str(trial_site)}")
+                    trial_site_form = trial_site_conversion.convert(
+                        trial_site, self.output_file
+                    )
                     trial_site_form.init_worksheet(writer)
                     trial_site_form.create(workbook)
                     self.signals.progress.emit(str(trial_site))
-                logger.info(f'Created {len(self.trial_sites)} sheets in output file {self.output_file}')
+                logger.info(
+                    f"Created {len(self.trial_sites)} sheets in output file {self.output_file}"
+                )
                 self.signals.finished.emit()
             except Exception as exc:
-                logger.exception('Creation of trial site form failed')
+                logger.exception("Creation of trial site form failed")
                 self.signals.error.emit(exc)

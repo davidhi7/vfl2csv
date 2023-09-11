@@ -3,7 +3,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
-from vfl2csv_base import config_factory, default_column_scheme_json, default_column_scheme_path
+from vfl2csv_base import (
+    config_factory,
+    default_column_scheme_json,
+    default_column_scheme_path,
+)
 from vfl2csv_base.ColumnScheme import ColumnScheme
 
 default_config = """[Input]
@@ -31,12 +35,18 @@ class Setup:
     column_scheme: ColumnScheme
 
 
-setup = Setup(config=config_factory.get_config('./config/config_vfl2csv.ini', default_config),
-              column_scheme=ColumnScheme.from_file(default_column_scheme_path, default_column_scheme_json))
+setup = Setup(
+    config=config_factory.get_config("./config/config_vfl2csv.ini", default_config),
+    column_scheme=ColumnScheme.from_file(
+        default_column_scheme_path, default_column_scheme_json
+    ),
+)
 
 
 def set_custom_configs(config_path: Optional[Path], column_scheme_path: Optional[Path]):
     if config_path is not None:
         setup.config = config_factory.get_config(config_path, template=default_config)
     if column_scheme_path is not None:
-        setup.column_scheme = ColumnScheme.from_file(column_scheme_path, template=default_column_scheme_json)
+        setup.column_scheme = ColumnScheme.from_file(
+            column_scheme_path, template=default_column_scheme_json
+        )

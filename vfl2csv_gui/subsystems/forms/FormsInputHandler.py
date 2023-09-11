@@ -13,7 +13,6 @@ logger = logging.getLogger(__name__)
 
 
 class FormsInputHandler(AbstractInputHandler):
-
     def __init__(self):
         super().__init__()
         self.trial_sites = []
@@ -28,10 +27,10 @@ class FormsInputHandler(AbstractInputHandler):
             raise FileNotFoundError(str(path))
 
         if path.is_dir():
-            if config['Input'].getboolean('directory_search_recursively', False):
-                generator = path.rglob(config['Input'].get('metadata_search_pattern'))
+            if config["Input"].getboolean("directory_search_recursively", False):
+                generator = path.rglob(config["Input"].get("metadata_search_pattern"))
             else:
-                generator = path.glob(config['Input'].get('metadata_search_pattern'))
+                generator = path.glob(config["Input"].get("metadata_search_pattern"))
             for content in generator:
                 self.load_input(content)
         elif path.is_file():
@@ -39,35 +38,37 @@ class FormsInputHandler(AbstractInputHandler):
             try:
                 self.trial_sites.append(TrialSite.from_metadata_file(path))
             except Exception:
-                logger.exception(f'Failed to parse file `{str(path)}`')
+                logger.exception(f"Failed to parse file `{str(path)}`")
                 self.trial_sites.clear()
                 raise
 
     def clear(self) -> None:
         self.trial_sites.clear()
 
-    def convert(self, output_file: Path, settings: dict[str, bool] = None) -> tuple[int, CommunicationSignals]:
+    def convert(
+            self, output_file: Path, settings: dict[str, bool] = None
+    ) -> tuple[int, CommunicationSignals]:
         steps = len(self.trial_sites)
         worker = FormsConversionHandler(self.trial_sites, output_file)
         QThreadPool.globalInstance().start(worker)
         return steps, worker.signals
 
     def table_representation(self) -> list[list[str]]:
-        return [[
-            trial_site.metadata['Versuch'],
-            trial_site.metadata['Parzelle']
-        ] for trial_site in self.trial_sites]
+        return [
+            [trial_site.metadata["Versuch"], trial_site.metadata["Parzelle"]]
+            for trial_site in self.trial_sites
+        ]
 
     def sort(self) -> None:
         self.trial_sites = sorted(self.trial_sites, key=self.sort_decorate_trial_site)
 
     @staticmethod
     def sort_decorate_trial_site(trial_site: TrialSite) -> tuple[str, int]:
-        trial = trial_site.metadata['Versuch'] or ''
+        trial = trial_site.metadata["Versuch"] or ""
         try:
-            plot = int(trial_site.metadata['Parzelle'])
+            plot = int(trial_site.metadata["Parzelle"])
         except ValueError:
-            plot = trial_site.metadata['Parzelle']
+            plot = trial_site.metadata["Parzelle"]
         return trial, plot
 
     def __len__(self):

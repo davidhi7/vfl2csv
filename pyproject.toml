@@ -1,0 +1,3 @@
+[tool.black]
+target-versions = ["py311"]
+max-line-length = 100

@@ -8,20 +8,23 @@ from vfl2csv_base import test_config
 
 
 class ExcelInputSheetTest(unittest.TestCase):
-
     def setUp(self) -> None:
-        excel_workbook = ExcelWorkbook(test_config['Input'].getpath('excel_sample_input_file'))
-        self.sample_instance = ExcelInputSheet(excel_workbook, '09703_P2')
+        excel_workbook = ExcelWorkbook(
+            test_config["Input"].getpath("excel_sample_input_file")
+        )
+        self.sample_instance = ExcelInputSheet(excel_workbook, "09703_P2")
 
     def test_iterate_files(self):
-        sheets = ExcelInputSheet.iterate_files(test_config['Input'].getpath('excel_sample_input_dir').glob('*.xlsx'))
+        sheets = ExcelInputSheet.iterate_files(
+            test_config["Input"].getpath("excel_sample_input_dir").glob("*.xlsx")
+        )
         self.assertEqual(len(sheets), 17)
 
     def test_parse_dataframe(self):
         df: pd.DataFrame = self.sample_instance.parse().df
         self.assertEqual(len(df.columns), 21)
         self.assertEqual(len(df), 468)
-        values_count = df.count(axis='rows')
+        values_count = df.count(axis="rows")
         for column in df.columns[3:]:
             self.assertEqual(len(column), 4)
             values_expected = int(column[3])
@@ -29,20 +32,26 @@ class ExcelInputSheetTest(unittest.TestCase):
 
     def test_parse_metadata(self):
         metadata: dict = self.sample_instance.parse().metadata
-        self.assertEqual(metadata, {
-            "Forstamt": "5628   Bad Berka",
-            "Revier": "Tiefborn",
-            "Versuch": "09703",
-            "Parzelle": "02",
-            "Teilfläche": "2524 a3",
-            "Standort": "Uf-K1",
-            "Höhenlage": "420"
-        })
+        self.assertEqual(
+            metadata,
+            {
+                "Forstamt": "5628   Bad Berka",
+                "Revier": "Tiefborn",
+                "Versuch": "09703",
+                "Parzelle": "02",
+                "Teilfläche": "2524 a3",
+                "Standort": "Uf-K1",
+                "Höhenlage": "420",
+            },
+        )
 
     def test_str(self):
-        self.assertEqual(str(self.sample_instance),
-                         str(test_config['Input'].getpath('excel_sample_input_file')) + ' - 09703_P2')
+        self.assertEqual(
+            str(self.sample_instance),
+            str(test_config["Input"].getpath("excel_sample_input_file"))
+            + " - 09703_P2",
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

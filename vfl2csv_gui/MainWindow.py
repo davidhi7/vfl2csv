@@ -15,16 +15,16 @@ class MainWindow(QWidget):
         layout = QVBoxLayout()
         tab_widget = QTabWidget()
 
-        vfl2csv_ui = BaseGui(config=vfl2csv_gui_config,
-                             input_handler=Vfl2csvInputHandler())
-        forms_ui = BaseGui(config=forms_gui_config,
-                           input_handler=FormsInputHandler())
+        vfl2csv_ui = BaseGui(
+            config=vfl2csv_gui_config, input_handler=Vfl2csvInputHandler()
+        )
+        forms_ui = BaseGui(config=forms_gui_config, input_handler=FormsInputHandler())
 
-        tab_widget.addTab(vfl2csv_ui, 'Konvertierung')
-        tab_widget.addTab(forms_ui, 'Formulare')
+        tab_widget.addTab(vfl2csv_ui, "Konvertierung")
+        tab_widget.addTab(forms_ui, "Formulare")
         layout.addWidget(tab_widget)
         self.setLayout(layout)
-        self.setWindowTitle('vfl2csv')
+        self.setWindowTitle("vfl2csv")
 
 
 def start():

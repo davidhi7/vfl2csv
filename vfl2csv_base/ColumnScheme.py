@@ -13,17 +13,17 @@ class ColumnScheme:
         self.measurements = ColumnSchemeSection(measurements)
 
     @staticmethod
-    def from_file(path: Path | str, template: str = '{}') -> ColumnScheme:
+    def from_file(path: Path | str, template: str = "{}") -> ColumnScheme:
         if not isinstance(path, Path):
             path = Path(path)
         if not path.is_file():
-            logger.info('Create new column scheme config file ' + str(path.absolute()))
+            logger.info("Create new column scheme config file " + str(path.absolute()))
             path.parent.mkdir(exist_ok=True)
-            with open(path, 'w') as file:
+            with open(path, "w") as file:
                 file.write(template)
-        with open(path, 'r') as file:
+        with open(path, "r") as file:
             scheme = json.load(file)
-            return ColumnScheme(scheme['head'], scheme['measurements'])
+            return ColumnScheme(scheme["head"], scheme["measurements"])
 
 
 class ColumnSchemeSection:
@@ -32,11 +32,13 @@ class ColumnSchemeSection:
         self.by_name = {}
         for entry in data:
             try:
-                entry_name = entry.get('override_name', entry['name'])
+                entry_name = entry.get("override_name", entry["name"])
             except KeyError as err:
-                raise KeyError(f'Property `name` missing in column scheme for object `{entry}`') from err
+                raise KeyError(
+                    f"Property `name` missing in column scheme for object `{entry}`"
+                ) from err
             if entry_name in self.by_name.keys():
-                raise KeyError(f'Duplicate column name/override_name `{entry_name}`')
+                raise KeyError(f"Duplicate column name/override_name `{entry_name}`")
             self.by_name[entry_name] = entry
 
     def __getitem__(self, key) -> str | dict:

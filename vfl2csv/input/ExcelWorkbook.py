@@ -13,7 +13,7 @@ class ExcelWorkbook:
         self.path = path
 
         # read file into memory to not have to load the file repeatedly with openpyxl and pandas
-        with open(path, 'rb') as file:
+        with open(path, "rb") as file:
             self.in_mem_file = io.BytesIO(file.read())
 
         self.open_workbook = openpyxl.load_workbook(self.in_mem_file)
