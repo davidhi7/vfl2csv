@@ -80,6 +80,10 @@ Measurement columns can occur multiple times but must always be in the right ord
 
 ## History
 
+### 1.2.7
+
+* Improve error handling throughout all components
+
 ### 1.2.6
 
 * Support for optional fields during file validation for form creation (all columns are still mandatory for initial
