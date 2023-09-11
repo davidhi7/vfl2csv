@@ -4,7 +4,6 @@ from pathlib import Path
 from PySide6.QtCore import QThreadPool
 
 from vfl2csv_base.TrialSite import TrialSite
-from vfl2csv_base.exceptions.IOErrors import FileParsingError
 from vfl2csv_forms import config
 from vfl2csv_gui.interfaces.AbstractInputHandler import AbstractInputHandler
 from vfl2csv_gui.interfaces.CommunicationSignals import CommunicationSignals
@@ -36,11 +35,11 @@ class FormsInputHandler(AbstractInputHandler):
             for content in generator:
                 self.load_input(content)
         elif path.is_file():
+            path = Path(input_paths)
             try:
-                path = Path(input_paths)
                 self.trial_sites.append(TrialSite.from_metadata_file(path))
-            except FileParsingError as err:
-                logger.error(f'Error during reading file {err.file}', exc_info=True)
+            except Exception:
+                logger.exception(f'Failed to parse file `{str(path)}`')
                 self.trial_sites.clear()
                 raise
 

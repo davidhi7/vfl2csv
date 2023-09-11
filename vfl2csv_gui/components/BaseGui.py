@@ -7,7 +7,6 @@ from PySide6.QtCore import Qt, Slot, QSize
 from PySide6.QtWidgets import QLabel, QWidget, QVBoxLayout, QPushButton, QHBoxLayout, QTableWidget, \
     QAbstractItemView, QHeaderView, QMessageBox, QFileDialog, QTableWidgetItem, QProgressBar, QSizePolicy, QCheckBox
 
-from vfl2csv_base.exceptions.IOErrors import FileParsingError
 from vfl2csv_gui.components.QHLine import QHLine
 from vfl2csv_gui.interfaces.AbstractInputHandler import AbstractInputHandler
 from vfl2csv_gui.interfaces.ConversionGuiConfig import ConversionGuiConfig
@@ -112,16 +111,14 @@ class BaseGui(QWidget):
         self.input_handler.clear()
         try:
             self.input_handler.load_input(input_paths)
-            if len(self.input_handler) == 0:
-                self.notify_warning(self.text_map['input-no-files-found'])
-            else:
-                self.input_handler.sort()
-        except FileParsingError as file_parsing_exception:
-            self.handle_exception(file_parsing_exception)
-        except Exception as exception:
-            self.handle_exception(exception)
-        finally:
-            self.update_input_status()
+        except Exception as exc:
+            self.handle_exception(exc)
+
+        if len(self.input_handler) == 0:
+            self.notify_warning(self.text_map['input-no-files-found'])
+        else:
+            self.input_handler.sort()
+        self.update_input_status()
 
     @Slot()
     def create(self) -> None:
@@ -190,9 +187,13 @@ class BaseGui(QWidget):
 
     def notify_error(self, message: str, exception: Exception) -> None:
         informative_text = f'{type(exception).__name__}: {str(exception)}'
+        if exception.__cause__:
+            informative_text += f'. Caused by: {str(exception.__cause__)}'
         if isinstance(exception, ExceptionGroup):
             for i, nested_exception in enumerate(exception.exceptions):
                 informative_text += f'\n{i + 1}. {type(nested_exception).__name__}: {str(nested_exception)}'
+                if exception.__cause__:
+                    informative_text += f'. Caused by: {str(exception.__cause__)}'
 
         self.notification(text=message,
                           informative_text=informative_text,

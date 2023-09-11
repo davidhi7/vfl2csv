@@ -1,5 +1,4 @@
 import logging
-import traceback
 from pathlib import Path
 
 from PySide6.QtCore import Slot, QRunnable
@@ -29,7 +28,7 @@ class FormsConversionHandler(QRunnable):
                 workbook = writer.book
                 styles.register(workbook)
                 for trial_site in self.trial_sites:
-                    logger.info(f'Converting trial site {str(trial_site)}')
+                    logger.info(f'Creating sheet for trial site {str(trial_site)}')
                     trial_site_form = trial_site_conversion.convert(trial_site, self.output_file)
                     trial_site_form.init_worksheet(writer)
                     trial_site_form.create(workbook)
@@ -37,6 +36,5 @@ class FormsConversionHandler(QRunnable):
                 logger.info(f'Created {len(self.trial_sites)} sheets in output file {self.output_file}')
                 self.signals.finished.emit()
             except Exception as exc:
-                exc_traceback = traceback.format_exc()
-                logger.warning(str(exc) + '\n' + exc_traceback)
+                logger.exception('Creation of trial site form failed')
                 self.signals.error.emit(exc)
