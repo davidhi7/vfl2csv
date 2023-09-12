@@ -33,7 +33,8 @@ jobs:
 
       - name: Build artifacts
         run: >
-          python -m nuitka --standalone --assume-yes-for-downloads  --enable-plugin=multiprocessing --follow-imports vfl2csv
+          python -m nuitka --standalone --assume-yes-for-downloads  --enable-plugin=multiprocessing --follow-imports 
+          --include-plugin-files=README.md --include-plguin-files=LICENSE vfl2csv
 
       - name: Run integration tests on artifact (Windows)
         if: matrix.os == 'windows-latest'
