@@ -39,8 +39,8 @@ jobs:
         if: matrix.os != 'macos-latest'
         run: >
           python -m nuitka --standalone --assume-yes-for-downloads --disable-console --follow-imports
-          --enable-plugin=pyside6 --enable-plugin=multiprocessing --include-plugin-files=README.md 
-          --include-plugin-files=LICENSE vfl2csv_gui
+          --enable-plugin=pyside6 --enable-plugin=multiprocessing --include-data-file=README.md=README.md 
+          --include-data-file=LICENSE=LICENSE vfl2csv_gui
 
       - name: Build artifacts (macOS specific)
         if: matrix.os == 'macos-latest'
@@ -48,8 +48,8 @@ jobs:
         # ("FATAL: Error, cannot disable console unless also using '--macos-create-app-bundle'.")
         run: >
           python -m nuitka --standalone --assume-yes-for-downloads --follow-imports
-          --enable-plugin=pyside6 --enable-plugin=multiprocessing --include-plugin-files=README.md 
-          --include-plugin-files=LICENSE vfl2csv_gui
+          --enable-plugin=pyside6 --enable-plugin=multiprocessing --include-data-file=README.md=README.md 
+          --include-data-file=LICENSE=LICENSE vfl2csv_gui
 
       - name: Run integration tests on artifact (Windows)
         if: matrix.os == 'windows-latest'
