@@ -40,7 +40,7 @@ jobs:
         run: >
           python -m nuitka --standalone --assume-yes-for-downloads --disable-console --follow-imports
           --enable-plugin=pyside6 --enable-plugin=multiprocessing --include-plugin-files=README.md 
-          --include-plguin-files=LICENSE vfl2csv_gui
+          --include-plugin-files=LICENSE vfl2csv_gui
 
       - name: Build artifacts (macOS specific)
         if: matrix.os == 'macos-latest'
@@ -49,7 +49,7 @@ jobs:
         run: >
           python -m nuitka --standalone --assume-yes-for-downloads --follow-imports
           --enable-plugin=pyside6 --enable-plugin=multiprocessing --include-plugin-files=README.md 
-          --include-plguin-files=LICENSE vfl2csv_gui
+          --include-plugin-files=LICENSE vfl2csv_gui
 
       - name: Run integration tests on artifact (Windows)
         if: matrix.os == 'windows-latest'
